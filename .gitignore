@@ -1,5 +1,8 @@
 node_modules
 .env
-.env.local
 dist
 .turbo
+build
+*.log
+.DS_Store
+migration.sql

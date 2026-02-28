@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ework_social_dev
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    command: >
+      postgres
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  postgres_data:
