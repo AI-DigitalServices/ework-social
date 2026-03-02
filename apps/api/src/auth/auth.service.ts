@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,9 +22,7 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    if (existing) {
-      throw new ConflictException('Email already in use');
-    }
+    if (existing) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
 
@@ -42,36 +41,25 @@ export class AuthService {
             members: {
               create: {
                 role: 'OWNER',
-                user: {
-                  connect: { email: dto.email },
-                },
+                user: { connect: { email: dto.email } },
               },
             },
             subscription: {
               create: {
                 plan: 'FREE',
                 status: 'TRIALING',
-                trialEndsAt: new Date(
-                  Date.now() + 7 * 24 * 60 * 60 * 1000,
-                ),
+                trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
               },
             },
           },
         },
       },
-      include: {
-        ownedWorkspaces: true,
-      },
+      include: { ownedWorkspaces: true },
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
-
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
+      user: { id: user.id, name: user.name, email: user.email },
       workspace: user.ownedWorkspaces[0],
       ...tokens,
     };
@@ -80,45 +68,43 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: {
-        ownedWorkspaces: true,
-      },
+      include: { ownedWorkspaces: true },
     });
 
-    if (!user || !user.password) {
+    if (!user || !user.password)
       throw new UnauthorizedException('Invalid credentials');
-    }
 
     const valid = await bcrypt.compare(dto.password, user.password);
-
-    if (!valid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const tokens = await this.generateTokens(user.id, user.email);
-
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
+      user: { id: user.id, name: user.name, email: user.email },
       workspace: user.ownedWorkspaces[0],
       ...tokens,
     };
   }
 
+  async me(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { ownedWorkspaces: true },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      workspace: user.ownedWorkspaces[0],
+    };
+  }
+
   async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
-
-    const accessToken = await this.jwt.signAsync(payload, {
-      expiresIn: '15m',
-    });
-
-    const refreshToken = await this.jwt.signAsync(payload, {
-      expiresIn: '7d',
-    });
-
+    const accessToken = await this.jwt.signAsync(payload, { expiresIn: '15m' });
+    const refreshToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
     return { accessToken, refreshToken };
   }
 }
