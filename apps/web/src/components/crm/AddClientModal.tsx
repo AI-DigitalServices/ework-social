@@ -56,7 +56,7 @@ export default function AddClientModal({ onClose, onAdded }: Props) {
               type="text"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 placeholder-slate-400 bg-white"
               placeholder="Acme Digital Agency"
               required
             />
@@ -70,7 +70,7 @@ export default function AddClientModal({ onClose, onAdded }: Props) {
               type="email"
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 placeholder-slate-400 bg-white"
               placeholder="client@company.com"
             />
           </div>
@@ -83,7 +83,7 @@ export default function AddClientModal({ onClose, onAdded }: Props) {
               type="text"
               value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 placeholder-slate-400 bg-white"
               placeholder="+234 800 000 0000"
             />
           </div>
@@ -96,7 +96,7 @@ export default function AddClientModal({ onClose, onAdded }: Props) {
               type="text"
               value={form.tags}
               onChange={e => setForm({ ...form, tags: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 placeholder-slate-400 bg-white"
               placeholder="e-commerce, fashion, lagos"
             />
           </div>

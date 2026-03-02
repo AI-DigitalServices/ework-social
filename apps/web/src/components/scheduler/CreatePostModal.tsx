@@ -20,6 +20,8 @@ interface Props {
   onCreated: (post: any) => void;
 }
 
+const inputClass = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 placeholder-slate-400 bg-white";
+
 export default function CreatePostModal({ accounts, onClose, onCreated }: Props) {
   const { workspace } = useAuthStore();
   const [form, setForm] = useState({
@@ -55,7 +57,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-800">Create Post</h2>
@@ -67,9 +69,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
         <div className="p-6 space-y-5">
           {/* Account selector */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Post to
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Post to</label>
             <div className="flex flex-wrap gap-2">
               {accounts.map(account => (
                 <button
@@ -90,9 +90,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
 
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Content
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Content</label>
             <div className="relative">
               <textarea
                 value={form.content}
@@ -102,7 +100,8 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
                 }}
                 rows={5}
                 placeholder="What do you want to share?"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 placeholder-slate-400 bg-white resize-none"
+                style={{ color: '#0f172a' }}
               />
               <span className={`absolute bottom-3 right-3 text-xs ${charCount > 280 ? 'text-red-500' : 'text-slate-400'}`}>
                 {charCount}/280
@@ -128,7 +127,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
                     </p>
                   </div>
                 </div>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap">{form.content}</p>
+                <p className="text-slate-800 text-sm whitespace-pre-wrap">{form.content}</p>
               </div>
             </div>
           )}
@@ -142,7 +141,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               type="datetime-local"
               value={form.scheduledAt}
               onChange={e => setForm({ ...form, scheduledAt: e.target.value })}
-              className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 bg-white"
             />
           </div>
         </div>
