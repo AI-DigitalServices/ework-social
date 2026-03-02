@@ -1,74 +1,104 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
+import {
+  CalendarDays,
+  Users,
+  TrendingUp,
+  Share2,
+  ArrowRight,
+} from 'lucide-react';
+import Link from 'next/link';
+
+const stats = [
+  { label: 'Scheduled Posts', value: '0', icon: CalendarDays, color: 'bg-blue-500', href: '/dashboard/scheduler' },
+  { label: 'Active Clients', value: '0', icon: Users, color: 'bg-green-500', href: '/dashboard/crm' },
+  { label: 'Open Leads', value: '0', icon: TrendingUp, color: 'bg-yellow-500', href: '/dashboard/crm' },
+  { label: 'Social Accounts', value: '0', icon: Share2, color: 'bg-purple-500', href: '/dashboard/settings' },
+];
+
+const quickActions = [
+  { label: 'Schedule a Post', href: '/dashboard/scheduler', color: 'bg-blue-600' },
+  { label: 'Add a Client', href: '/dashboard/crm', color: 'bg-green-600' },
+  { label: 'View Analytics', href: '/dashboard/analytics', color: 'bg-purple-600' },
+];
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, workspace, isAuthenticated, logout } = useAuthStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
-
-  if (!user) return null;
+  const { user, workspace } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-blue-600">eWork Social</span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-600 font-medium">{workspace?.name}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-slate-600 text-sm">👋 {user.name}</span>
-          <button
-            onClick={() => { logout(); router.push('/login'); }}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
-          Welcome back, {user.name}! 👋
-        </h1>
-        <p className="text-slate-500 mb-10">
+    <div>
+      {/* Welcome */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-800">
+          Welcome back, {user?.name}! 👋
+        </h2>
+        <p className="text-slate-500 mt-1">
           Here's what's happening with {workspace?.name} today.
         </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          {[
-            { label: 'Scheduled Posts', value: '0', color: 'bg-blue-500' },
-            { label: 'Active Clients', value: '0', color: 'bg-green-500' },
-            { label: 'Open Leads', value: '0', color: 'bg-yellow-500' },
-            { label: 'Social Accounts', value: '0', color: 'bg-purple-500' },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <div className={`w-10 h-10 ${stat.color} rounded-lg mb-4`} />
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Link
+              key={stat.label}
+              href={stat.href}
+              className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition group"
+            >
+              <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-4`}>
+                <Icon className="w-5 h-5 text-white" />
+              </div>
               <p className="text-3xl font-bold text-slate-800">{stat.value}</p>
               <p className="text-slate-500 text-sm mt-1">{stat.label}</p>
-            </div>
-          ))}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Quick actions + Getting started */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            {quickActions.map((action) => (
+              <Link
+                key={action.label}
+                href={action.href}
+                className="flex items-center justify-between p-4 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition group"
+              >
+                <span className="font-medium text-slate-700 group-hover:text-blue-700">
+                  {action.label}
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+              </Link>
+            ))}
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-100 text-center">
-          <p className="text-4xl mb-4">🚀</p>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">
-            Your workspace is ready!
-          </h2>
-          <p className="text-slate-500 max-w-md mx-auto">
-            Connect your first social media account to start scheduling posts and managing your clients.
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white">
+          <h3 className="font-bold text-lg mb-2">🚀 Get Started</h3>
+          <p className="text-blue-100 text-sm mb-6">
+            Connect your first social account to unlock scheduling and analytics.
           </p>
-          <button className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition">
-            Connect Social Account
-          </button>
+          <div className="space-y-3 text-sm">
+            {[
+              'Connect social account',
+              'Schedule your first post',
+              'Add your first client',
+            ].map((step, i) => (
+              <div key={step} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                  {i + 1}
+                </div>
+                <span className="text-blue-100">{step}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
