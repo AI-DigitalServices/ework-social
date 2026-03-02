@@ -28,10 +28,7 @@ export default function RegisterPage() {
     setError('');
     try {
       const data = await registerAction(
-        form.name,
-        form.email,
-        form.password,
-        form.workspaceName
+        form.name, form.email, form.password, form.workspaceName
       );
       setAuth(data.user, data.workspace, data.accessToken, data.refreshToken);
       router.push('/dashboard');
@@ -42,75 +39,42 @@ export default function RegisterPage() {
     }
   };
 
+  const inputClass = "w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 placeholder-slate-400 bg-white";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-2xl">⚡</span>
+          </div>
           <h1 className="text-3xl font-bold text-white">eWork Social</h1>
           <p className="text-slate-400 mt-2">Create your free account</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Your Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Work Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="you@agency.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Min 8 characters"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Agency / Workspace Name
-              </label>
-              <input
-                type="text"
-                name="workspaceName"
-                value={form.workspaceName}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="My Digital Agency"
-                required
-              />
-            </div>
+            {[
+              { label: 'Your Name', name: 'name', type: 'text', placeholder: 'John Doe' },
+              { label: 'Work Email', name: 'email', type: 'email', placeholder: 'you@agency.com' },
+              { label: 'Password', name: 'password', type: 'password', placeholder: 'Min 8 characters' },
+              { label: 'Agency / Workspace Name', name: 'workspaceName', type: 'text', placeholder: 'My Digital Agency' },
+            ].map(field => (
+              <div key={field.name}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={form[field.name as keyof typeof form]}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder={field.placeholder}
+                  required
+                />
+              </div>
+            ))}
 
             {error && (
               <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
