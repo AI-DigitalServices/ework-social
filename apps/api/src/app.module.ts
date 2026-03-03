@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { CrmModule } from './crm/crm.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ResponderModule } from './responder/responder.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     CrmModule,
     SchedulerModule,
     AnalyticsModule,
+    ResponderModule,
   ],
 })
 export class AppModule {}

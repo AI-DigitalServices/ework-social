@@ -174,3 +174,19 @@ enum LeadStage {
   ACTIVE
   DORMANT
 }
+
+model AutoResponderRule {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  name            String
+  platform        String
+  triggerType     String
+  keywords        String[]
+  responseMessage String
+  responseType    String   @default("comment")
+  isActive        Boolean  @default(true)
+  updateLeadStage String?
+  triggerCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
