@@ -6,6 +6,7 @@ import { CrmModule } from './crm/crm.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ResponderModule } from './responder/responder.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ResponderModule } from './responder/responder.module';
     SchedulerModule,
     AnalyticsModule,
     ResponderModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

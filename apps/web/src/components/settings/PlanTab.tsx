@@ -1,14 +1,17 @@
 'use client';
 
-import { Check, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, Zap, Loader } from 'lucide-react';
+import { useAuthStore } from '@/store/auth.store';
+import api from '@/lib/api';
 
 const plans = [
   {
     name: 'Free Trial',
     price: '$0',
     period: '7 days',
+    planCode: null,
     color: 'border-slate-200',
-    badge: '',
     features: [
       '3 social accounts',
       'Facebook + Instagram only',
@@ -22,6 +25,7 @@ const plans = [
     name: 'Starter',
     price: '$5',
     period: '/month',
+    planCode: process.env.NEXT_PUBLIC_PAYSTACK_STARTER_PLAN,
     color: 'border-blue-200',
     badge: 'Most Popular',
     badgeColor: 'bg-blue-600',
@@ -39,6 +43,7 @@ const plans = [
     name: 'Growth',
     price: '$12',
     period: '/month',
+    planCode: process.env.NEXT_PUBLIC_PAYSTACK_GROWTH_PLAN,
     color: 'border-green-200',
     badge: 'Best Value',
     badgeColor: 'bg-green-600',
@@ -57,6 +62,7 @@ const plans = [
     name: 'Agency Pro',
     price: '$29',
     period: '/month',
+    planCode: process.env.NEXT_PUBLIC_PAYSTACK_AGENCY_PRO_PLAN,
     color: 'border-purple-200',
     badge: 'For Agencies',
     badgeColor: 'bg-purple-600',
@@ -76,26 +82,84 @@ const plans = [
 ];
 
 export default function PlanTab() {
-  const currentPlan = 'Free Trial';
+  const { user, workspace } = useAuthStore();
+  const [currentPlan, setCurrentPlan] = useState('FREE');
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (workspace?.id) loadSubscription();
+  }, [workspace?.id]);
+
+  const loadSubscription = async () => {
+    try {
+      const res = await api.get(`/billing/subscription?workspaceId=${workspace!.id}`);
+      setCurrentPlan(res.data?.plan || 'FREE');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpgrade = async (planCode: string, planName: string) => {
+    setError('');
+    setLoading(planName);
+    try {
+      const res = await api.post('/billing/checkout', {
+        priceId: planCode,
+        workspaceId: workspace!.id,
+        userId: user!.id,
+      });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Checkout failed. Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const isCurrentPlan = (planName: string) => {
+    if (planName === 'Free Trial' && currentPlan === 'FREE') return true;
+    if (planName === 'Starter' && currentPlan === 'STARTER') return true;
+    if (planName === 'Growth' && currentPlan === 'GROWTH') return true;
+    if (planName === 'Agency Pro' && currentPlan === 'AGENCY_PRO') return true;
+    return false;
+  };
 
   return (
     <div>
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Zap className="w-5 h-5 text-yellow-600" />
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
+          {error}
+        </div>
+      )}
+
+      {currentPlan === 'FREE' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 flex items-center gap-3">
+          <Zap className="w-5 h-5 text-yellow-600 shrink-0" />
           <div>
             <p className="font-semibold text-yellow-800">You're on the Free Trial</p>
-            <p className="text-yellow-600 text-sm">5 days remaining · Upgrade to keep access</p>
+            <p className="text-yellow-600 text-sm">Upgrade to keep access after trial ends</p>
           </div>
         </div>
-        <button className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition">
-          Upgrade Now
-        </button>
-      </div>
+      )}
+
+      {currentPlan !== 'FREE' && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 flex items-center gap-3">
+          <Check className="w-5 h-5 text-green-600 shrink-0" />
+          <div>
+            <p className="font-semibold text-green-800">Active {currentPlan} subscription</p>
+            <p className="text-green-600 text-sm">Thank you for subscribing to eWork Social!</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {plans.map((plan) => {
-          const isCurrent = plan.name === currentPlan;
+          const isCurrent = isCurrentPlan(plan.name);
+          const isLoadingThis = loading === plan.name;
+
           return (
             <div
               key={plan.name}
@@ -104,7 +168,7 @@ export default function PlanTab() {
               }`}
             >
               {plan.badge && (
-                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 ${plan.badgeColor} text-white text-xs font-bold rounded-full`}>
+                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 ${plan.badgeColor} text-white text-xs font-bold rounded-full whitespace-nowrap`}>
                   {plan.badge}
                 </span>
               )}
@@ -130,14 +194,27 @@ export default function PlanTab() {
               </ul>
 
               <button
-                className={`w-full py-2.5 rounded-lg text-sm font-medium transition ${
+                onClick={() => plan.planCode && !isCurrent && handleUpgrade(plan.planCode, plan.name)}
+                disabled={isCurrent || !plan.planCode || isLoadingThis}
+                className={`w-full py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
                   isCurrent
                     ? 'bg-slate-100 text-slate-400 cursor-default'
+                    : !plan.planCode
+                    ? 'bg-slate-100 text-slate-400 cursor-default'
+                    : isLoadingThis
+                    ? 'bg-blue-400 text-white cursor-wait'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
-                disabled={isCurrent}
               >
-                {isCurrent ? 'Current Plan' : `Upgrade to ${plan.name}`}
+                {isLoadingThis ? (
+                  <><Loader className="w-4 h-4 animate-spin" /> Redirecting...</>
+                ) : isCurrent ? (
+                  'Current Plan'
+                ) : !plan.planCode ? (
+                  'Free Trial'
+                ) : (
+                  `Upgrade to ${plan.name}`
+                )}
               </button>
             </div>
           );

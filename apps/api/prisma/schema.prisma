@@ -190,3 +190,5 @@ model AutoResponderRule {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+// Add these fields to existing Subscription model via raw SQL
