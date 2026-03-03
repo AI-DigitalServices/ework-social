@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface User {
   id: string;
@@ -15,27 +16,30 @@ interface Workspace {
 interface AuthState {
   user: User | null;
   workspace: Workspace | null;
-  accessToken: string | null;
-  isAuthenticated: boolean;
-  setAuth: (user: User, workspace: Workspace, accessToken: string, refreshToken: string) => void;
+  token: string | null;
+  setAuth: (user: User, workspace: Workspace, token: string) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  workspace: null,
-  accessToken: null,
-  isAuthenticated: false,
-
-  setAuth: (user, workspace, accessToken, refreshToken) => {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ user, workspace, accessToken, isAuthenticated: true });
-  },
-
-  logout: () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    set({ user: null, workspace: null, accessToken: null, isAuthenticated: false });
-  },
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      workspace: null,
+      token: null,
+      setAuth: (user, workspace, token) => {
+        // Also set cookie for middleware
+        document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+        set({ user, workspace, token });
+      },
+      logout: () => {
+        // Clear cookie
+        document.cookie = 'auth-token=; path=/; max-age=0';
+        set({ user: null, workspace: null, token: null });
+      },
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+);

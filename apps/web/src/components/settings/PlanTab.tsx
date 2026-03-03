@@ -8,7 +8,7 @@ import api from '@/lib/api';
 const plans = [
   {
     name: 'Free Trial',
-    price: '$0',
+    price: '₦0',
     period: '7 days',
     planCode: null,
     color: 'border-slate-200',
@@ -23,7 +23,7 @@ const plans = [
   },
   {
     name: 'Starter',
-    price: '$5',
+    price: '₦5,000',
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_STARTER_PLAN,
     color: 'border-blue-200',
@@ -41,7 +41,7 @@ const plans = [
   },
   {
     name: 'Growth',
-    price: '$12',
+    price: '₦12,000',
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_GROWTH_PLAN,
     color: 'border-green-200',
@@ -60,7 +60,7 @@ const plans = [
   },
   {
     name: 'Agency Pro',
-    price: '$29',
+    price: '₦29,000',
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_AGENCY_PRO_PLAN,
     color: 'border-purple-200',
@@ -85,7 +85,7 @@ export default function PlanTab() {
   const { user, workspace } = useAuthStore();
   const [currentPlan, setCurrentPlan] = useState('FREE');
   const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [checkoutError, setCheckoutError] = useState('');
 
   useEffect(() => {
     if (workspace?.id) loadSubscription();
@@ -94,14 +94,14 @@ export default function PlanTab() {
   const loadSubscription = async () => {
     try {
       const res = await api.get(`/billing/subscription?workspaceId=${workspace!.id}`);
-      setCurrentPlan(res.data?.plan || 'FREE');
-    } catch (err) {
-      console.error(err);
+      if (res.data?.plan) setCurrentPlan(res.data.plan);
+    } catch {
+      // Silently fail - default to FREE
     }
   };
 
   const handleUpgrade = async (planCode: string, planName: string) => {
-    setError('');
+    setCheckoutError('');
     setLoading(planName);
     try {
       const res = await api.post('/billing/checkout', {
@@ -113,7 +113,9 @@ export default function PlanTab() {
         window.location.href = res.data.url;
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Checkout failed. Please try again.');
+      setCheckoutError(
+        err.response?.data?.message || 'Checkout failed. Please try again.'
+      );
     } finally {
       setLoading(null);
     }
@@ -129,9 +131,9 @@ export default function PlanTab() {
 
   return (
     <div>
-      {error && (
+      {checkoutError && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
-          {error}
+          {checkoutError}
         </div>
       )}
 
@@ -140,7 +142,7 @@ export default function PlanTab() {
           <Zap className="w-5 h-5 text-yellow-600 shrink-0" />
           <div>
             <p className="font-semibold text-yellow-800">You're on the Free Trial</p>
-            <p className="text-yellow-600 text-sm">Upgrade to keep access after trial ends</p>
+            <p className="text-yellow-600 text-sm">Upgrade to keep access after your trial ends</p>
           </div>
         </div>
       )}
@@ -194,7 +196,11 @@ export default function PlanTab() {
               </ul>
 
               <button
-                onClick={() => plan.planCode && !isCurrent && handleUpgrade(plan.planCode, plan.name)}
+                onClick={() => {
+                  if (plan.planCode && !isCurrent && !isLoadingThis) {
+                    handleUpgrade(plan.planCode, plan.name);
+                  }
+                }}
                 disabled={isCurrent || !plan.planCode || isLoadingThis}
                 className={`w-full py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
                   isCurrent

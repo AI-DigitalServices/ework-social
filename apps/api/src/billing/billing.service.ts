@@ -19,28 +19,48 @@ export class BillingService {
     };
   }
 
+  private getPlanAmount(planCode: string): number {
+    // Amounts in kobo (Naira x 100)
+    // Starter: ₦5,000 = 500,000 kobo
+    // Growth: ₦12,000 = 1,200,000 kobo
+    // Agency Pro: ₦29,000 = 2,900,000 kobo
+    const amounts: Record<string, number> = {
+      [this.config.get('PAYSTACK_STARTER_PLAN')!]: 500000,
+      [this.config.get('PAYSTACK_GROWTH_PLAN')!]: 1200000,
+      [this.config.get('PAYSTACK_AGENCY_PRO_PLAN')!]: 2900000,
+    };
+    return amounts[planCode] || 500000;
+  }
+
   async createCheckoutSession(
     planCode: string,
     workspaceId: string,
     userId: string,
     userEmail: string,
   ) {
-    const response = await axios.post(
-      `${this.paystackBase}/transaction/initialize`,
-      {
-        email: userEmail,
-        plan: planCode,
-        callback_url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan&success=true`,
-        metadata: {
-          workspaceId,
-          userId,
-          cancel_action: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan`,
+    try {
+      const amount = this.getPlanAmount(planCode);
+      const response = await axios.post(
+        `${this.paystackBase}/transaction/initialize`,
+        {
+          email: userEmail,
+          amount,
+          plan: planCode,
+          currency: 'NGN',
+          callback_url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan&success=true`,
+          metadata: {
+            workspaceId,
+            userId,
+            cancel_action: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan`,
+          },
         },
-      },
-      { headers: this.headers },
-    );
-
-    return { url: response.data.data.authorization_url };
+        { headers: this.headers },
+      );
+      return { url: response.data.data.authorization_url };
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Paystack error';
+      throw new BadRequestException(message);
+    }
   }
 
   async verifyTransaction(reference: string) {
@@ -64,7 +84,6 @@ export class BillingService {
     }
 
     const { event, data } = payload;
-
     switch (event) {
       case 'subscription.create':
       case 'charge.success':
@@ -74,7 +93,6 @@ export class BillingService {
         await this.handleSubscriptionDisabled(data);
         break;
     }
-
     return { received: true };
   }
 
@@ -127,12 +145,8 @@ export class BillingService {
   }
 
   async createPortalSession(workspaceId: string) {
-    const sub = await this.prisma.subscription.findFirst({
-      where: { workspaceId },
-    });
     return {
       url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan`,
-      message: 'Contact support to manage subscription',
     };
   }
 }
