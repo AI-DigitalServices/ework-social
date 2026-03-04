@@ -20,16 +20,21 @@ export class BillingService {
   }
 
   private getPlanAmount(planCode: string): number {
-    // Amounts in kobo (Naira x 100)
-    // Starter: ₦5,000 = 500,000 kobo
-    // Growth: ₦12,000 = 1,200,000 kobo
-    // Agency Pro: ₦29,000 = 2,900,000 kobo
     const amounts: Record<string, number> = {
       [this.config.get('PAYSTACK_STARTER_PLAN')!]: 500000,
       [this.config.get('PAYSTACK_GROWTH_PLAN')!]: 1200000,
       [this.config.get('PAYSTACK_AGENCY_PRO_PLAN')!]: 2900000,
     };
     return amounts[planCode] || 500000;
+  }
+
+  private getPlanFromCode(planCode: string): string {
+    const map: Record<string, string> = {
+      [this.config.get('PAYSTACK_STARTER_PLAN')!]: 'STARTER',
+      [this.config.get('PAYSTACK_GROWTH_PLAN')!]: 'GROWTH',
+      [this.config.get('PAYSTACK_AGENCY_PRO_PLAN')!]: 'AGENCY_PRO',
+    };
+    return map[planCode] || 'STARTER';
   }
 
   async createCheckoutSession(
@@ -48,11 +53,7 @@ export class BillingService {
           plan: planCode,
           currency: 'NGN',
           callback_url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan&success=true`,
-          metadata: {
-            workspaceId,
-            userId,
-            cancel_action: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan`,
-          },
+          metadata: { workspaceId, userId },
         },
         { headers: this.headers },
       );
@@ -63,12 +64,39 @@ export class BillingService {
     }
   }
 
-  async verifyTransaction(reference: string) {
-    const response = await axios.get(
-      `${this.paystackBase}/transaction/verify/${reference}`,
-      { headers: this.headers },
-    );
-    return response.data.data;
+  async verifyAndUpdatePlan(reference: string, workspaceId: string) {
+    try {
+      const response = await axios.get(
+        `${this.paystackBase}/transaction/verify/${reference}`,
+        { headers: this.headers },
+      );
+
+      const data = response.data.data;
+      if (data.status !== 'success') return { success: false };
+
+      const planCode = data.plan?.plan_code;
+      const plan = planCode ? this.getPlanFromCode(planCode) : 'STARTER';
+
+      await this.prisma.subscription.upsert({
+        where: { workspaceId },
+        update: {
+          plan: plan as any,
+          status: 'ACTIVE',
+          stripeId: data.reference,
+        },
+        create: {
+          workspaceId,
+          plan: plan as any,
+          status: 'ACTIVE',
+          stripeId: data.reference,
+        },
+      });
+
+      return { success: true, plan };
+    } catch (err) {
+      console.error('Verify error:', err);
+      return { success: false };
+    }
   }
 
   async handleWebhook(payload: any, signature: string) {
@@ -85,7 +113,6 @@ export class BillingService {
 
     const { event, data } = payload;
     switch (event) {
-      case 'subscription.create':
       case 'charge.success':
         await this.handlePaymentSuccess(data);
         break;
@@ -105,48 +132,25 @@ export class BillingService {
 
     await this.prisma.subscription.upsert({
       where: { workspaceId },
-      update: {
-        plan: plan as any,
-        status: 'ACTIVE',
-        stripeId: data.subscription_code || data.reference,
-      },
-      create: {
-        workspaceId,
-        plan: plan as any,
-        status: 'ACTIVE',
-        stripeId: data.subscription_code || data.reference,
-      },
+      update: { plan: plan as any, status: 'ACTIVE', stripeId: data.reference },
+      create: { workspaceId, plan: plan as any, status: 'ACTIVE', stripeId: data.reference },
     });
   }
 
   private async handleSubscriptionDisabled(data: any) {
     const workspaceId = data.metadata?.workspaceId;
     if (!workspaceId) return;
-
     await this.prisma.subscription.updateMany({
       where: { workspaceId },
       data: { plan: 'FREE' as any, status: 'CANCELLED' },
     });
   }
 
-  private getPlanFromCode(planCode: string): string {
-    const map: Record<string, string> = {
-      [this.config.get('PAYSTACK_STARTER_PLAN')!]: 'STARTER',
-      [this.config.get('PAYSTACK_GROWTH_PLAN')!]: 'GROWTH',
-      [this.config.get('PAYSTACK_AGENCY_PRO_PLAN')!]: 'AGENCY_PRO',
-    };
-    return map[planCode] || 'FREE';
-  }
-
   async getSubscription(workspaceId: string) {
-    return this.prisma.subscription.findFirst({
-      where: { workspaceId },
-    });
+    return this.prisma.subscription.findFirst({ where: { workspaceId } });
   }
 
   async createPortalSession(workspaceId: string) {
-    return {
-      url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan`,
-    };
+    return { url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan` };
   }
 }

@@ -40,7 +40,7 @@ export class BillingController {
     @Query('reference') reference: string,
     @Query('workspaceId') workspaceId: string,
   ) {
-    return this.billingService.verifyTransaction(reference);
+    return this.billingService.verifyAndUpdatePlan(reference, workspaceId);
   }
 
   @Get('subscription')

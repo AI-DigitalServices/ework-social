@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import SocialAccountsTab from '@/components/settings/SocialAccountsTab';
 import ProfileTab from '@/components/settings/ProfileTab';
@@ -19,6 +19,7 @@ const tabs = [
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { workspace } = useAuthStore();
   const [activeTab, setActiveTab] = useState('social');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -28,26 +29,35 @@ export default function SettingsPage() {
     const tab = searchParams.get('tab');
     const success = searchParams.get('success');
     const reference = searchParams.get('reference');
+    const trxref = searchParams.get('trxref');
 
     if (tab) setActiveTab(tab);
 
-    if (success === 'true' && reference && workspace?.id) {
+    const payRef = reference || trxref;
+
+    if (success === 'true' && payRef && workspace?.id) {
       setActiveTab('plan');
-      verifyPayment(reference);
+      verifyAndUpdatePlan(payRef);
     } else if (success === 'true') {
       setActiveTab('plan');
       setPaymentSuccess(true);
     }
   }, [searchParams, workspace?.id]);
 
-  const verifyPayment = async (reference: string) => {
+  const verifyAndUpdatePlan = async (reference: string) => {
     setVerifying(true);
     try {
-      await api.get(`/billing/verify?reference=${reference}&workspaceId=${workspace!.id}`);
-      setPaymentSuccess(true);
+      const res = await api.get(
+        `/billing/verify?reference=${reference}&workspaceId=${workspace!.id}`
+      );
+      if (res.data) {
+        setPaymentSuccess(true);
+        // Clean URL
+        router.replace('/dashboard/settings?tab=plan');
+      }
     } catch (err) {
       console.error('Verification error:', err);
-      setPaymentSuccess(true); // Still show success
+      setPaymentSuccess(true);
     } finally {
       setVerifying(false);
     }
@@ -60,7 +70,6 @@ export default function SettingsPage() {
         <p className="text-slate-500 mt-1">Manage your account and workspace settings.</p>
       </div>
 
-      {/* Payment success banner */}
       {paymentSuccess && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
           <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
@@ -80,7 +89,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -101,12 +109,11 @@ export default function SettingsPage() {
         })}
       </div>
 
-      {/* Tab content */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
         {activeTab === 'social' && <SocialAccountsTab />}
         {activeTab === 'profile' && <ProfileTab />}
         {activeTab === 'workspace' && <WorkspaceTab />}
-        {activeTab === 'plan' && <PlanTab />}
+        {activeTab === 'plan' && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
       </div>
     </div>
   );
