@@ -103,7 +103,7 @@ export class AuthService {
 
   async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
-    const accessToken = await this.jwt.signAsync(payload, { expiresIn: '15m' });
+    const accessToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
     const refreshToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
     return { accessToken, refreshToken };
   }
