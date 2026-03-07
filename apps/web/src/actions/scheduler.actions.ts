@@ -20,12 +20,8 @@ export async function deletePostAction(id: string) {
   return res.data;
 }
 
+// Now pulls REAL connected accounts from social module
 export async function getSocialAccountsAction(workspaceId: string) {
-  const res = await api.get(`/scheduler/accounts?workspaceId=${workspaceId}`);
-  return res.data;
-}
-
-export async function createMockAccountAction(workspaceId: string, platform: string, accountName: string) {
-  const res = await api.post('/scheduler/accounts/mock', { workspaceId, platform, accountName });
+  const res = await api.get(`/social/accounts?workspaceId=${workspaceId}`);
   return res.data;
 }

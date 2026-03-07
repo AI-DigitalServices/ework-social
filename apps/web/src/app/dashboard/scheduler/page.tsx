@@ -2,24 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
-import { getPostsAction, getSocialAccountsAction, createMockAccountAction } from '@/actions/scheduler.actions';
+import { getPostsAction, getSocialAccountsAction } from '@/actions/scheduler.actions';
 import PostCard from '@/components/scheduler/PostCard';
 import CreatePostModal from '@/components/scheduler/CreatePostModal';
 import CalendarView from '@/components/scheduler/CalendarView';
-import {
-  Plus, LayoutGrid, Calendar, Clock, CheckCircle,
-  FileText, Share2, Zap,
-} from 'lucide-react';
+import { Plus, LayoutGrid, Calendar, Clock, CheckCircle, FileText, Share2, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function SchedulerPage() {
   const { workspace } = useAuthStore();
+  const router = useRouter();
   const [posts, setPosts] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [view, setView] = useState<'grid' | 'calendar'>('grid');
   const [filter, setFilter] = useState('ALL');
-  const [addingMock, setAddingMock] = useState(false);
 
   useEffect(() => {
     if (workspace?.id) loadData();
@@ -40,185 +38,166 @@ export default function SchedulerPage() {
     }
   };
 
-  const handleAddMockAccount = async (platform: string) => {
-    setAddingMock(true);
-    try {
-      const account = await createMockAccountAction(
-        workspace!.id,
-        platform,
-        `@myagency_${platform.toLowerCase()}`
-      );
-      setAccounts(prev => [...prev, account]);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAddingMock(false);
-    }
-  };
-
   const handlePostCreated = (post: any) => {
     setPosts(prev => [post, ...prev]);
   };
 
-  const handlePostDeleted = (id: string) => {
-    setPosts(prev => prev.filter(p => p.id !== id));
+  const filteredPosts = filter === 'ALL' ? posts : posts.filter(p => p.status === filter);
+
+  const stats = {
+    total: posts.length,
+    scheduled: posts.filter(p => p.status === 'SCHEDULED').length,
+    published: posts.filter(p => p.status === 'PUBLISHED').length,
+    drafts: posts.filter(p => p.status === 'DRAFT').length,
   };
 
-  const filteredPosts = filter === 'ALL'
-    ? posts
-    : posts.filter(p => p.status === filter);
-
-  const stats = [
-    { label: 'Total Posts', value: posts.length, icon: FileText, color: 'text-slate-600 bg-slate-100' },
-    { label: 'Scheduled', value: posts.filter(p => p.status === 'SCHEDULED').length, icon: Clock, color: 'text-blue-600 bg-blue-100' },
-    { label: 'Published', value: posts.filter(p => p.status === 'PUBLISHED').length, icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-    { label: 'Drafts', value: posts.filter(p => p.status === 'DRAFT').length, icon: FileText, color: 'text-yellow-600 bg-yellow-100' },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Post Scheduler</h2>
-          <p className="text-slate-500 mt-1">Create and schedule posts across all platforms.</p>
+          <h1 className="text-2xl font-bold text-slate-800">Post Scheduler</h1>
+          <p className="text-slate-500 text-sm mt-1">Create and schedule posts across your connected accounts</p>
         </div>
-        <button
-          onClick={() => accounts.length > 0 ? setShowCreateModal(true) : null}
-          disabled={accounts.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
-        >
-          <Plus className="w-4 h-4" />
-          Create Post
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+            <button onClick={() => setView('grid')} className={`p-2 rounded-lg transition ${view === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setView('calendar')} className={`p-2 rounded-lg transition ${view === 'calendar' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
+              <Calendar className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            disabled={accounts.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Create Post
+          </button>
+        </div>
       </div>
+
+      {/* No accounts warning */}
+      {accounts.length === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Share2 className="w-5 h-5 text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-800">No social accounts connected</p>
+              <p className="text-amber-700 text-sm mt-0.5">Connect your Facebook or Instagram account to start scheduling posts.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/dashboard/settings?tab=social')}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition flex-shrink-0"
+          >
+            <Settings className="w-4 h-4" />
+            Connect Account
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {stats.map(stat => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
-                <Icon className="w-5 h-5" />
-              </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Posts', value: stats.total, icon: FileText, color: 'text-slate-600', bg: 'bg-slate-50' },
+          { label: 'Scheduled', value: stats.scheduled, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Published', value: stats.published, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+          { label: 'Drafts', value: stats.drafts, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+        ].map(stat => (
+          <div key={stat.label} className={`${stat.bg} rounded-xl p-4 border border-slate-100`}>
+            <div className="flex items-center gap-3">
+              <stat.icon className={`w-5 h-5 ${stat.color}`} />
               <div>
                 <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
-                <p className="text-slate-500 text-xs">{stat.label}</p>
+                <p className="text-xs text-slate-500">{stat.label}</p>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* No accounts state */}
-      {accounts.length === 0 && !loading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Share2 className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-blue-800">No social accounts connected</p>
-              <p className="text-blue-600 text-sm">Add a demo account to start creating posts</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {['FACEBOOK', 'INSTAGRAM'].map(platform => (
-              <button
-                key={platform}
-                onClick={() => handleAddMockAccount(platform)}
-                disabled={addingMock}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-              >
-                {platform === 'FACEBOOK' ? '📘' : '📸'} Add {platform}
-              </button>
+      {/* Connected accounts bar */}
+      {accounts.length > 0 && (
+        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Posting to:</p>
+          <div className="flex flex-wrap gap-2">
+            {accounts.map(account => (
+              <span key={account.id} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
+                {account.platform === 'FACEBOOK' ? '📘' : account.platform === 'INSTAGRAM' ? '📸' : '📱'}
+                {account.accountName}
+              </span>
             ))}
           </div>
+          <button
+            onClick={() => router.push('/dashboard/settings?tab=social')}
+            className="ml-auto text-xs text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Manage →
+          </button>
         </div>
       )}
 
-      {/* Connected accounts */}
-      {accounts.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          {accounts.map(account => (
-            <div key={account.id} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-sm">
-              <span>{account.platform === 'FACEBOOK' ? '📘' : account.platform === 'INSTAGRAM' ? '📸' : '📱'}</span>
-              <span className="font-medium text-slate-700">{account.accountName}</span>
-              <span className="w-2 h-2 bg-green-400 rounded-full" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* View controls */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-          {[
-            { id: 'ALL', label: 'All' },
-            { id: 'DRAFT', label: 'Drafts' },
-            { id: 'SCHEDULED', label: 'Scheduled' },
-            { id: 'PUBLISHED', label: 'Published' },
-          ].map(f => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                filter === f.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2">
+        {['ALL', 'DRAFT', 'SCHEDULED', 'PUBLISHED', 'FAILED'].map(status => (
           <button
-            onClick={() => setView('grid')}
-            className={`p-2 rounded-lg transition ${view === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+              filter === status ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300'
+            }`}
           >
-            <LayoutGrid className="w-4 h-4" />
+            {status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
+            {status !== 'ALL' && (
+              <span className="ml-1.5 text-xs opacity-75">
+                ({posts.filter(p => p.status === status).length})
+              </span>
+            )}
           </button>
-          <button
-            onClick={() => setView('calendar')}
-            className={`p-2 rounded-lg transition ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
-          >
-            <Calendar className="w-4 h-4" />
-          </button>
-        </div>
+        ))}
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="text-center py-16 text-slate-400">Loading posts...</div>
-      ) : view === 'calendar' ? (
-        <CalendarView posts={posts} />
+      {view === 'calendar' ? (
+        <CalendarView posts={filteredPosts} />
       ) : filteredPosts.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-16 text-center">
-          <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-slate-800 mb-2">No posts yet</h3>
-          <p className="text-slate-500 mb-6">
-            {accounts.length === 0
-              ? 'Connect a social account first to create posts.'
-              : 'Create your first post to get started.'}
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-slate-400" />
+          </div>
+          <p className="font-semibold text-slate-700">No posts yet</p>
+          <p className="text-slate-400 text-sm mt-1">
+            {accounts.length === 0 ? 'Connect a social account first' : 'Create your first post to get started'}
           </p>
           {accounts.length > 0 && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition"
+              className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition"
             >
-              Create Your First Post
+              Create First Post
             </button>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredPosts.map(post => (
-            <PostCard key={post.id} post={post} onDeleted={handlePostDeleted} />
+            <PostCard key={post.id} post={post} onUpdate={loadData} />
           ))}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Create Post Modal */}
       {showCreateModal && (
         <CreatePostModal
           accounts={accounts}
