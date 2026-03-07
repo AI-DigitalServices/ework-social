@@ -68,8 +68,9 @@ model SocialAccount {
   platform     Platform
   accountName  String
   accountId    String
-  accessToken  String
+  accessToken  String?
   refreshToken String?
+  isActive     Boolean   @default(true)
   posts        Post[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -89,6 +90,8 @@ model Post {
   scheduledAt     DateTime?
   publishedAt     DateTime?
   errorMessage    String?
+  externalId      String?
+
   clientId        String?
   client          Client?       @relation(fields: [clientId], references: [id])
   createdAt       DateTime      @default(now())

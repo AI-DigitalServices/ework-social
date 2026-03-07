@@ -7,6 +7,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ResponderModule } from './responder/responder.module';
 import { BillingModule } from './billing/billing.module';
+import { SocialModule } from './social/social.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { BillingModule } from './billing/billing.module';
     AnalyticsModule,
     ResponderModule,
     BillingModule,
+    SocialModule,
   ],
 })
 export class AppModule {}
