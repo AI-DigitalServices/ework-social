@@ -10,7 +10,6 @@ export class SocialService {
     private prisma: PrismaService,
   ) {}
 
-  // Generate Facebook OAuth URL
   getFacebookAuthUrl(workspaceId: string, userId: string) {
     const appId = this.config.get('META_APP_ID');
     const redirectUri = this.config.get('META_REDIRECT_URI');
@@ -34,154 +33,114 @@ export class SocialService {
     };
   }
 
-  // Handle OAuth callback
   async handleFacebookCallback(code: string, state: string) {
     const appId = this.config.get('META_APP_ID');
     const appSecret = this.config.get('META_APP_SECRET');
     const redirectUri = this.config.get('META_REDIRECT_URI');
 
-    // Decode state
+    console.log('--- handleFacebookCallback ---');
+    console.log('appId:', appId);
+    console.log('redirectUri:', redirectUri);
+    console.log('code length:', code?.length);
+
     let workspaceId: string;
     let userId: string;
     try {
       const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
+      console.log('workspaceId:', workspaceId);
+      console.log('userId:', userId);
     } catch {
       throw new BadRequestException('Invalid state parameter');
     }
 
-    // Exchange code for access token
-    const tokenRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
-      params: {
-        client_id: appId,
-        client_secret: appSecret,
-        redirect_uri: redirectUri,
-        code,
-      },
-    });
+    // Step 1: Exchange code for short-lived token
+    console.log('Step 1: Exchanging code for token...');
+    let shortLivedToken: string;
+    try {
+      const tokenRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        params: { client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code },
+      });
+      shortLivedToken = tokenRes.data.access_token;
+      console.log('Short-lived token received:', !!shortLivedToken);
+    } catch (err: any) {
+      console.error('Token exchange error:', err?.response?.data || err?.message);
+      throw new BadRequestException('Token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
 
-    const shortLivedToken = tokenRes.data.access_token;
+    // Step 2: Exchange for long-lived token
+    console.log('Step 2: Getting long-lived token...');
+    let longLivedToken: string;
+    try {
+      const longLivedRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        params: { grant_type: 'fb_exchange_token', client_id: appId, client_secret: appSecret, fb_exchange_token: shortLivedToken },
+      });
+      longLivedToken = longLivedRes.data.access_token;
+      console.log('Long-lived token received:', !!longLivedToken);
+    } catch (err: any) {
+      console.error('Long-lived token error:', err?.response?.data || err?.message);
+      throw new BadRequestException('Long-lived token failed');
+    }
 
-    // Exchange for long-lived token
-    const longLivedRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
-      params: {
-        grant_type: 'fb_exchange_token',
-        client_id: appId,
-        client_secret: appSecret,
-        fb_exchange_token: shortLivedToken,
-      },
-    });
+    // Step 3: Get Facebook Pages
+    console.log('Step 3: Getting Facebook pages...');
+    let pages: any[] = [];
+    try {
+      const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
+        params: { access_token: longLivedToken },
+      });
+      pages = pagesRes.data.data || [];
+      console.log('Pages found:', pages.length);
+    } catch (err: any) {
+      console.error('Pages fetch error:', err?.response?.data || err?.message);
+      throw new BadRequestException('Failed to fetch pages');
+    }
 
-    const longLivedToken = longLivedRes.data.access_token;
-
-    // Get user info
-    const userRes = await axios.get('https://graph.facebook.com/v19.0/me', {
-      params: {
-        access_token: longLivedToken,
-        fields: 'id,name,email',
-      },
-    });
-
-    // Get user's Facebook Pages
-    const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
-      params: { access_token: longLivedToken },
-    });
-
-    const pages = pagesRes.data.data || [];
     const connectedAccounts: any[] = [];
 
     for (const page of pages) {
-      // Save Facebook Page
+      console.log('Processing page:', page.name, page.id);
+
       const fbAccount = await this.prisma.socialAccount.upsert({
-        where: {
-          workspaceId_platform_accountId: {
-            workspaceId,
-            platform: 'FACEBOOK',
-            accountId: page.id,
-          },
-        },
-        update: {
-          accountName: page.name,
-          accessToken: page.access_token,
-          isActive: true,
-        },
-        create: {
-          workspaceId,
-          platform: 'FACEBOOK',
-          accountId: page.id,
-          accountName: page.name,
-          accessToken: page.access_token,
-          isActive: true,
-        },
+        where: { workspaceId_platform_accountId: { workspaceId, platform: 'FACEBOOK', accountId: page.id } },
+        update: { accountName: page.name, accessToken: page.access_token, isActive: true },
+        create: { workspaceId, platform: 'FACEBOOK', accountId: page.id, accountName: page.name, accessToken: page.access_token, isActive: true },
       });
       connectedAccounts.push(fbAccount);
+      console.log('Facebook page saved:', fbAccount.id);
 
-      // Check for connected Instagram Business Account
+      // Check for Instagram
       try {
-        const igRes = await axios.get(
-          `https://graph.facebook.com/v19.0/${page.id}`,
-          {
-            params: {
-              fields: 'instagram_business_account',
-              access_token: page.access_token,
-            },
-          },
-        );
+        const igRes = await axios.get(`https://graph.facebook.com/v19.0/${page.id}`, {
+          params: { fields: 'instagram_business_account', access_token: page.access_token },
+        });
 
         if (igRes.data.instagram_business_account) {
           const igId = igRes.data.instagram_business_account.id;
-
-          // Get Instagram account details
-          const igDetailsRes = await axios.get(
-            `https://graph.facebook.com/v19.0/${igId}`,
-            {
-              params: {
-                fields: 'id,name,username,profile_picture_url,followers_count',
-                access_token: page.access_token,
-              },
-            },
-          );
-
+          const igDetailsRes = await axios.get(`https://graph.facebook.com/v19.0/${igId}`, {
+            params: { fields: 'id,name,username,profile_picture_url', access_token: page.access_token },
+          });
           const igDetails = igDetailsRes.data;
+          console.log('Instagram found:', igDetails.username || igDetails.name);
 
           const igAccount = await this.prisma.socialAccount.upsert({
-            where: {
-              workspaceId_platform_accountId: {
-                workspaceId,
-                platform: 'INSTAGRAM',
-                accountId: igId,
-              },
-            },
-            update: {
-              accountName: igDetails.username || igDetails.name,
-              accessToken: page.access_token,
-              isActive: true,
-            },
-            create: {
-              workspaceId,
-              platform: 'INSTAGRAM',
-              accountId: igId,
-              accountName: igDetails.username || igDetails.name,
-              accessToken: page.access_token,
-              isActive: true,
-            },
+            where: { workspaceId_platform_accountId: { workspaceId, platform: 'INSTAGRAM', accountId: igId } },
+            update: { accountName: igDetails.username || igDetails.name, accessToken: page.access_token, isActive: true },
+            create: { workspaceId, platform: 'INSTAGRAM', accountId: igId, accountName: igDetails.username || igDetails.name, accessToken: page.access_token, isActive: true },
           });
           connectedAccounts.push(igAccount);
+          console.log('Instagram saved:', igAccount.id);
         }
-      } catch (igErr) {
-        console.log(`No Instagram account for page ${page.name}`);
+      } catch (igErr: any) {
+        console.log('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
       }
     }
 
-    return {
-      success: true,
-      connectedAccounts,
-      message: `Connected ${connectedAccounts.length} account(s) successfully`,
-    };
+    console.log('Total connected:', connectedAccounts.length);
+    return { success: true, connectedAccounts, message: `Connected ${connectedAccounts.length} account(s)` };
   }
 
-  // Disconnect a social account
   async disconnectAccount(accountId: string, workspaceId: string) {
     await this.prisma.socialAccount.updateMany({
       where: { id: accountId, workspaceId },
@@ -190,7 +149,6 @@ export class SocialService {
     return { success: true };
   }
 
-  // Get connected accounts
   async getAccounts(workspaceId: string) {
     return this.prisma.socialAccount.findMany({
       where: { workspaceId, isActive: true },
@@ -198,102 +156,49 @@ export class SocialService {
     });
   }
 
-  // Publish post to Facebook
   async publishToFacebook(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: { socialAccount: true },
     });
-
-    if (!post || !post.socialAccount?.accessToken) {
-      throw new BadRequestException('Post or account not found');
-    }
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
     try {
       const res = await axios.post(
         `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/feed`,
-        {
-          message: post.content,
-          access_token: post.socialAccount.accessToken,
-        },
+        { message: post.content, access_token: post.socialAccount.accessToken },
       );
-
-      await this.prisma.post.update({
-        where: { id: postId },
-        data: {
-          status: 'PUBLISHED',
-          externalId: res.data.id,
-        },
-      });
-
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
       return { success: true, postId: res.data.id };
     } catch (err: any) {
-      await this.prisma.post.update({
-        where: { id: postId },
-        data: { status: 'FAILED' },
-      });
-      throw new BadRequestException(
-        err.response?.data?.error?.message || 'Failed to publish post',
-      );
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
+      throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish');
     }
   }
 
-  // Publish post to Instagram
   async publishToInstagram(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: { socialAccount: true },
     });
-
-    if (!post || !post.socialAccount?.accessToken) {
-      throw new BadRequestException('Post or account not found');
-    }
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
     try {
-      // Step 1: Create media container
       const mediaRes = await axios.post(
         `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/media`,
         null,
-        {
-          params: {
-            caption: post.content,
-            media_type: 'TEXT',
-            access_token: post.socialAccount.accessToken,
-          },
-        },
+        { params: { caption: post.content, media_type: 'TEXT', access_token: post.socialAccount.accessToken } },
       );
-
-      const creationId = mediaRes.data.id;
-
-      // Step 2: Publish the container
       const publishRes = await axios.post(
         `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/media_publish`,
         null,
-        {
-          params: {
-            creation_id: creationId,
-            access_token: post.socialAccount.accessToken,
-          },
-        },
+        { params: { creation_id: mediaRes.data.id, access_token: post.socialAccount.accessToken } },
       );
-
-      await this.prisma.post.update({
-        where: { id: postId },
-        data: {
-          status: 'PUBLISHED',
-          externalId: publishRes.data.id,
-        },
-      });
-
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: publishRes.data.id } });
       return { success: true, postId: publishRes.data.id };
     } catch (err: any) {
-      await this.prisma.post.update({
-        where: { id: postId },
-        data: { status: 'FAILED' },
-      });
-      throw new BadRequestException(
-        err.response?.data?.error?.message || 'Failed to publish to Instagram',
-      );
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
+      throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish to Instagram');
     }
   }
 }
