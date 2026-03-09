@@ -22,7 +22,8 @@ const statusConfig: Record<string, { icon: any; color: string; label: string }> 
 
 interface Props {
   post: any;
-  onDeleted: (id: string) => void;
+  onDeleted?: (id: string) => void;
+  onUpdate?: () => void;
 }
 
 export default function PostCard({ post, onDeleted }: Props) {
