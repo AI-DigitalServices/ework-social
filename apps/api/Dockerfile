@@ -4,13 +4,20 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-COPY prisma ./prisma/
+# Copy root workspace files
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 
+# Copy the api app
+COPY apps/api ./apps/api
+COPY prisma ./prisma
+
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-COPY . .
-
+# Build the api
+WORKDIR /app/apps/api
 RUN pnpm run build
 
 EXPOSE 3001
