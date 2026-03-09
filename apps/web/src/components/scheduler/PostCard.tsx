@@ -112,3 +112,4 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
     </div>
   );
 }
+
