@@ -16,6 +16,7 @@ WORKDIR /app/apps/api
 
 RUN npx prisma generate
 
+# Force fresh build - no cache
 RUN pnpm run build
 
 EXPOSE 3001
