@@ -20,12 +20,7 @@ interface Props {
   compact?: boolean;
 }
 
-export default function UpgradePrompt({
-  feature,
-  description,
-  requiredPlan = 'GROWTH',
-  compact = false,
-}: Props) {
+export default function UpgradePrompt({ feature, description, requiredPlan = 'GROWTH', compact = false }: Props) {
   const router = useRouter();
   const colors = planColors[requiredPlan];
   const planName = planNames[requiredPlan];
@@ -52,9 +47,7 @@ export default function UpgradePrompt({
         {planName}+ Plan Required
       </span>
       <h3 className={`text-base font-bold mt-2 mb-1 ${colors.text}`}>{feature}</h3>
-      {description && (
-        <p className="text-sm text-slate-500 mb-4 max-w-xs mx-auto">{description}</p>
-      )}
+      {description && <p className="text-sm text-slate-500 mb-4 max-w-xs mx-auto">{description}</p>}
       <button
         onClick={() => router.push('/dashboard/settings?tab=plan')}
         className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition ${
