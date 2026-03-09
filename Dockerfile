@@ -8,7 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api ./apps/api
 COPY prisma ./prisma
 
-RUN pnpm install --frozen-lockfile --filter @ework-social/api...
+RUN pnpm install --frozen-lockfile --filter api...
 
 WORKDIR /app/apps/api
 RUN pnpm run build
