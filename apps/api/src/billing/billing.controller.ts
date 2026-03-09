@@ -3,11 +3,15 @@ import {
   Headers, Req, UseGuards, Query,
 } from '@nestjs/common';
 import { BillingService } from './billing.service';
+import { PlanGuardService } from '../common/plan-guard.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
 @Controller('billing')
 export class BillingController {
-  constructor(private billingService: BillingService) {}
+  constructor(
+    private billingService: BillingService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   @Post('checkout')
   @UseGuards(JwtGuard)
@@ -47,5 +51,12 @@ export class BillingController {
   @UseGuards(JwtGuard)
   getSubscription(@Query('workspaceId') workspaceId: string) {
     return this.billingService.getSubscription(workspaceId);
+  }
+
+  // Returns current plan, limits & live usage — used by frontend gating
+  @Get('limits')
+  @UseGuards(JwtGuard)
+  getLimits(@Query('workspaceId') workspaceId: string) {
+    return this.planGuard.getWorkspaceLimits(workspaceId);
   }
 }

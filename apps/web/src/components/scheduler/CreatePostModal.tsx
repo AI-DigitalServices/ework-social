@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy } from 'lucide-react';
+import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock } from 'lucide-react';
 import { createPostAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useRouter } from 'next/navigation';
 
 const platformLimits: Record<string, { limit: number; label: string }> = {
   TWITTER:   { limit: 280,   label: 'Twitter/X' },
@@ -41,6 +43,11 @@ interface Props {
 
 export default function CreatePostModal({ accounts, onClose, onCreated }: Props) {
   const { workspace } = useAuthStore();
+  const router = useRouter();
+  const { data: planData } = usePlanLimits();
+  const canUsePerPlatformEditor = planData?.limits?.perPlatformEditorEnabled ?? false;
+  const isAtPostLimit = planData ? planData.usage.postsThisMonth >= planData.limits.maxPostsPerMonth : false;
+
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
     accounts.length > 0 ? [accounts[0].id] : []
   );
@@ -110,7 +117,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const anyEmpty = selectedAccounts.some(a => !(contentMap[a.id] || '').trim());
 
   const handleSubmit = async (status: 'DRAFT' | 'SCHEDULED') => {
-    if (anyOver || anyEmpty) return;
+    if (anyOver || anyEmpty || isAtPostLimit) return;
     setLoading(true);
     try {
       const posts = await Promise.all(
@@ -126,8 +133,9 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
       );
       posts.forEach(post => onCreated(post));
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err?.response?.data?.message || 'Failed to create post');
     } finally {
       setLoading(false);
     }
@@ -141,10 +149,35 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Create Post</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{selectedAccountIds.length} account{selectedAccountIds.length !== 1 ? 's' : ''} selected</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {selectedAccountIds.length} account{selectedAccountIds.length !== 1 ? 's' : ''} selected
+              {planData && (
+                <span className="ml-2 text-slate-400">
+                  · {planData.usage.postsThisMonth}/{planData.limits.maxPostsPerMonth} posts this month
+                </span>
+              )}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition"><X className="w-5 h-5 text-slate-500" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
         </div>
+
+        {/* Post limit warning */}
+        {isAtPostLimit && (
+          <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-red-700">Monthly post limit reached</p>
+              <p className="text-xs text-red-600 mt-0.5">Upgrade your plan to post more this month.</p>
+            </div>
+            <button
+              onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
+              className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
 
         <div className="p-6 space-y-5">
 
@@ -188,33 +221,45 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
             </div>
           </div>
 
-          {/* Sync toggle */}
+          {/* Sync toggle — gated behind Growth+ */}
           {selectedAccounts.length > 1 && (
             <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-slate-700">{syncMode ? '🔗 Synced content' : '✏️ Per-platform editing'}</p>
+                <p className="text-sm font-semibold text-slate-700">
+                  {syncMode ? '🔗 Synced content' : '✏️ Per-platform editing'}
+                </p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {syncMode ? 'All platforms share the same post copy' : 'Customize content for each platform separately'}
+                  {syncMode ? 'All platforms share the same copy' : 'Customize content per platform'}
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  if (!syncMode) {
-                    const newMap: Record<string, string> = {};
-                    selectedAccountIds.forEach(id => { newMap[id] = activeContent; });
-                    setContentMap(newMap);
-                  }
-                  setSyncMode(!syncMode);
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${syncMode ? 'bg-blue-600' : 'bg-slate-300'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${syncMode ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
+              {canUsePerPlatformEditor ? (
+                <button
+                  onClick={() => {
+                    if (!syncMode) {
+                      const newMap: Record<string, string> = {};
+                      selectedAccountIds.forEach(id => { newMap[id] = activeContent; });
+                      setContentMap(newMap);
+                    }
+                    setSyncMode(!syncMode);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${syncMode ? 'bg-blue-600' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${syncMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg text-xs font-semibold hover:bg-violet-200 transition"
+                >
+                  <Lock className="w-3 h-3" />
+                  Growth+ feature
+                </button>
+              )}
             </div>
           )}
 
           {/* Platform tabs */}
-          {selectedAccounts.length > 1 && !syncMode && (
+          {selectedAccounts.length > 1 && !syncMode && canUsePerPlatformEditor && (
             <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
               {selectedAccounts.map(account => {
                 const limit = platformLimits[account.platform]?.limit || 2200;
@@ -239,7 +284,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
           )}
 
           {/* Platform tip */}
-          {!syncMode && platformTips[activePlatform] && (
+          {!syncMode && canUsePerPlatformEditor && platformTips[activePlatform] && (
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
               <PlatformIcon platform={activePlatform} size="sm" />
               <p className="text-xs text-blue-700"><strong>{activePlatform} tip:</strong> {platformTips[activePlatform]}</p>
@@ -250,9 +295,9 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-slate-700">
-                {syncMode ? 'Content' : `Content for ${activeAccount?.accountName}`}
+                {syncMode || !canUsePerPlatformEditor ? 'Content' : `Content for ${activeAccount?.accountName}`}
               </label>
-              {!syncMode && selectedAccounts.length > 1 && (
+              {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
                 <button onClick={copyToAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 font-medium transition">
                   <Copy className="w-3 h-3" /> Copy to all
                 </button>
@@ -263,9 +308,12 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
                 value={activeContent}
                 onChange={e => handleContentChange(e.target.value)}
                 rows={5}
-                placeholder={`Write your ${activePlatform} post here...`}
+                disabled={isAtPostLimit}
+                placeholder={isAtPostLimit ? 'Monthly limit reached — upgrade to post more' : `Write your ${activePlatform} post here...`}
                 className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 text-slate-900 placeholder-slate-400 bg-white resize-none transition ${
-                  activeCount > activeLimit ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 focus:ring-blue-500'
+                  activeCount > activeLimit ? 'border-red-300 focus:ring-red-500' :
+                  isAtPostLimit ? 'border-slate-200 bg-slate-50 cursor-not-allowed' :
+                  'border-slate-200 focus:ring-blue-500'
                 }`}
                 style={{ color: '#0f172a' }}
               />
@@ -277,13 +325,10 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               <div className={`h-full rounded-full transition-all duration-300 ${getBarColor(activeCount, activeLimit)}`}
                 style={{ width: `${Math.min((activeCount / activeLimit) * 100, 100)}%` }} />
             </div>
-            {activeCount > activeLimit && (
-              <p className="text-red-500 text-xs mt-1.5">⚠️ Over {platformLimits[activePlatform]?.label} limit by {(activeCount - activeLimit).toLocaleString()} characters.</p>
-            )}
           </div>
 
-          {/* Platform summary */}
-          {!syncMode && selectedAccounts.length > 1 && (
+          {/* Per-platform summary */}
+          {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">All Platforms</p>
               {selectedAccounts.map(account => {
@@ -371,12 +416,12 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-slate-100">
-          <button onClick={() => handleSubmit('DRAFT')} disabled={loading || anyEmpty || anyOver}
+          <button onClick={() => handleSubmit('DRAFT')} disabled={loading || anyEmpty || anyOver || isAtPostLimit}
             className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50">
             <FileText className="w-4 h-4" /> Save Draft{selectedAccountIds.length > 1 ? 's' : ''}
           </button>
           <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'DRAFT')}
-            disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0}
+            disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
             {loading ? (
               <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>

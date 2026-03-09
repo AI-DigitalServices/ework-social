@@ -1,23 +1,27 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Injectable()
 export class SchedulerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   async getPosts(workspaceId: string) {
     return this.prisma.post.findMany({
       where: { workspaceId },
-      include: {
-        socialAccount: true,
-        client: true,
-      },
+      include: { socialAccount: true, client: true },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async createPost(dto: CreatePostDto) {
+    // Plan gating — check post limit before creating
+    await this.planGuard.checkPostLimit(dto.workspaceId);
+
     return this.prisma.post.create({
       data: {
         workspaceId: dto.workspaceId,
@@ -28,10 +32,7 @@ export class SchedulerService {
         clientId: dto.clientId || null,
         status: dto.status as any,
       },
-      include: {
-        socialAccount: true,
-        client: true,
-      },
+      include: { socialAccount: true, client: true },
     });
   }
 
@@ -40,6 +41,7 @@ export class SchedulerService {
       where: { id },
       data: {
         content: dto.content,
+        mediaUrls: dto.mediaUrls,
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
         status: dto.status as any,
       },
@@ -51,21 +53,9 @@ export class SchedulerService {
     return this.prisma.post.delete({ where: { id } });
   }
 
-  async getSocialAccounts(workspaceId: string) {
+  async getAccounts(workspaceId: string) {
     return this.prisma.socialAccount.findMany({
-      where: { workspaceId },
-    });
-  }
-
-  async createMockSocialAccount(workspaceId: string, platform: string, accountName: string) {
-    return this.prisma.socialAccount.create({
-      data: {
-        workspaceId,
-        platform: platform as any,
-        accountName,
-        accountId: `mock_${Date.now()}`,
-        accessToken: `mock_token_${Date.now()}`,
-      },
+      where: { workspaceId, isActive: true },
     });
   }
 }

@@ -8,11 +8,13 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ResponderModule } from './responder/responder.module';
 import { BillingModule } from './billing/billing.module';
 import { SocialModule } from './social/social.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    CommonModule,
     AuthModule,
     CrmModule,
     SchedulerModule,
