@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import PlatformIcon from '@/components/ui/PlatformIcon';
 import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -190,7 +191,7 @@ export default function SocialAccountsTab() {
                 <div key={platform.id} className={`border rounded-xl p-5 transition-all ${isConnected ? `${colors.border} ${colors.bg}` : 'border-slate-200 bg-white'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-2xl flex-shrink-0">{platform.icon}</span>
+                      <PlatformIcon platform={platform.apiPlatform} size="lg" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-slate-800">{platform.name}</p>
