@@ -30,18 +30,4 @@ export class SchedulerController {
   deletePost(@Param('id') id: string) {
     return this.schedulerService.deletePost(id);
   }
-
-  @Get('accounts')
-  getSocialAccounts(@Query('workspaceId') workspaceId: string) {
-    return this.schedulerService.getSocialAccounts(workspaceId);
-  }
-
-  @Post('accounts/mock')
-  createMockAccount(@Body() body: { workspaceId: string; platform: string; accountName: string }) {
-    return this.schedulerService.createMockSocialAccount(
-      body.workspaceId,
-      body.platform,
-      body.accountName,
-    );
-  }
 }
