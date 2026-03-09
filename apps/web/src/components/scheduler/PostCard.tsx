@@ -26,7 +26,7 @@ interface Props {
   onUpdate?: () => void;
 }
 
-export default function PostCard({ post, onDeleted }: Props) {
+export default function PostCard({ post, onDeleted, onUpdate }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
