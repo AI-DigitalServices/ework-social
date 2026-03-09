@@ -37,7 +37,8 @@ export default function PostCard({ post, onDeleted }: Props) {
     setDeleting(true);
     try {
       await deletePostAction(post.id);
-      onDeleted(post.id);
+      onDeleted?.(post.id);
+        onUpdate?.();
     } catch (err) {
       console.error(err);
     } finally {
