@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Check, Zap, Loader } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
+import PlanUsageMeter from '@/components/billing/PlanUsageMeter';
 
 const plans = [
   {
@@ -156,6 +157,8 @@ export default function PlanTab() {
           </div>
         </div>
       )}
+
+      <PlanUsageMeter />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {plans.map((plan) => {
