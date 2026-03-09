@@ -37,8 +37,8 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
     setDeleting(true);
     try {
       await deletePostAction(post.id);
-      onDeleted?.(post.id);
-        onUpdate?.();
+      if (onDeleted) onDeleted(post.id);
+      if (onUpdate) onUpdate();
     } catch (err) {
       console.error(err);
     } finally {
@@ -48,14 +48,11 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition p-5">
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-lg">{platformIcons[post.socialAccount?.platform] || '📱'}</span>
           <div>
-            <p className="text-sm font-semibold text-slate-800">
-              {post.socialAccount?.accountName}
-            </p>
+            <p className="text-sm font-semibold text-slate-800">{post.socialAccount?.accountName}</p>
             <p className="text-xs text-slate-400">{post.socialAccount?.platform}</p>
           </div>
         </div>
@@ -65,10 +62,7 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
             {status.label}
           </span>
           <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 hover:bg-slate-100 rounded-lg transition"
-            >
+            <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
               <MoreVertical className="w-4 h-4 text-slate-400" />
             </button>
             {showMenu && (
@@ -76,40 +70,30 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
                 <button
                   onClick={() => { handleDelete(); setShowMenu(false); }}
                   className="flex items-center gap-2 px-4 py-2.5 text-red-500 hover:bg-red-50 text-sm w-full"
+                  disabled={deleting}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Content */}
-      <p className="text-slate-700 text-sm leading-relaxed mb-3 line-clamp-3">
-        {post.content}
-      </p>
-
-      {/* Footer */}
+      <p className="text-slate-700 text-sm leading-relaxed mb-3 line-clamp-3">{post.content}</p>
       <div className="flex items-center justify-between pt-3 border-t border-slate-50">
         {post.scheduledAt ? (
           <div className="flex items-center gap-1.5 text-xs text-blue-600">
             <Clock className="w-3.5 h-3.5" />
-            {new Date(post.scheduledAt).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-            })}
+            {new Date(post.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </div>
         ) : (
           <span className="text-xs text-slate-400">No schedule set</span>
         )}
         {post.client && (
-          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-            {post.client.name}
-          </span>
+          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{post.client.name}</span>
         )}
       </div>
     </div>
   );
 }
-
