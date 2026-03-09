@@ -1,5 +1,7 @@
 FROM node:18-alpine
 
+RUN apk add --no-cache openssl
+
 RUN npm install -g pnpm
 
 WORKDIR /app
@@ -11,6 +13,9 @@ COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile --filter api...
 
 WORKDIR /app/apps/api
+
+RUN npx prisma generate
+
 RUN pnpm run build
 
 EXPOSE 3001
