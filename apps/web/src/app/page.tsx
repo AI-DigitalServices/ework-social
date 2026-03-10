@@ -25,7 +25,7 @@ export default function LandingPage() {
         .nav-link { color: #94A3B8; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
         .feature-card { background: #0D1526; border: 1px solid #1E293B; border-radius: 16px; padding: 32px; transition: all 0.3s; }
-        .feature-card:hover { border-color: #2563EB40; transform: translateY(-4px); }
+        .feature-card:hover { border-color: rgba(37,99,235,0.4); transform: translateY(-4px); }
         .pricing-card { background: #0D1526; border: 1px solid #1E293B; border-radius: 20px; padding: 36px; transition: all 0.3s; position: relative; }
         .pricing-card.popular { border-color: #2563EB; background: #0D1A2D; }
         .check-item { display: flex; align-items: center; gap: 10px; color: #94A3B8; font-size: 14px; margin-bottom: 12px; }
@@ -36,7 +36,6 @@ export default function LandingPage() {
         .grid-bg { background-image: linear-gradient(rgba(37,99,235,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.03) 1px, transparent 1px); background-size: 60px 60px; }
       `}</style>
 
-      {/* NAV */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrollY > 50 ? 'rgba(8,12,20,0.95)' : 'transparent', backdropFilter: scrollY > 50 ? 'blur(12px)' : 'none', borderBottom: scrollY > 50 ? '1px solid #1E293B' : 'none', transition: 'all 0.3s', padding: '0 40px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -52,15 +51,14 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* HERO */}
       <section className="grid-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 100, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', filter: 'blur(120px)', background: '#2563EB', opacity: 0.1, top: -100, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }} />
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px', width: '100%', textAlign: 'center' }}>
-          <span style={{ background: '#1E3A5F', color: '#60A5FA', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, display: 'inline-block', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 24 }}>🌍 Built for African Agencies</span>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24 }}>
+          <span style={{ background: '#1E3A5F', color: '#60A5FA', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 100, display: 'inline-block', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: 24 }}>🌍 Built for African Agencies</span>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, marginTop: 16 }}>
             Manage Every Client&apos;s<br /><span style={{ color: '#2563EB' }}>Social Media</span> at Scale
           </h1>
-          <p style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1.7, marginBottom: 40, maxWidth: 600, margin: '0 auto 40px' }}>
+          <p style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1.7, maxWidth: 600, margin: '0 auto 40px' }}>
             The all-in-one platform for digital agencies. Schedule posts, manage clients, track analytics, and automate responses.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
@@ -69,7 +67,6 @@ export default function LandingPage() {
           </div>
           <p style={{ color: '#475569', fontSize: 13 }}>No credit card required · 7-day free trial · Cancel anytime</p>
 
-          {/* Mock Dashboard */}
           <div style={{ marginTop: 64, background: '#0D1526', border: '1px solid #1E293B', borderRadius: 20, overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
             <div style={{ background: '#080C14', borderBottom: '1px solid #1E293B', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
@@ -77,7 +74,7 @@ export default function LandingPage() {
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
               <span style={{ marginLeft: 12, fontSize: 12, color: '#475569' }}>app.eworksocial.com/dashboard</span>
             </div>
-            <div style={{ padding: 24, display: 'grid', gridTemplateColumns: '180px 1fr', gap: 20, textAlign: 'left' }}>
+            <div style={{ padding: 24, display: 'grid', gridTemplateColumns: '180px 1fr', gap: 20, textAlign: 'left' as const }}>
               <div style={{ borderRight: '1px solid #1E293B', paddingRight: 20 }}>
                 {['📊 Dashboard', '📅 Scheduler', '👥 CRM', '📈 Analytics', '🤖 Auto-Responder'].map((item, i) => (
                   <div key={item} style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 4, fontSize: 12, background: i === 0 ? '#1E3A5F' : 'transparent', color: i === 0 ? '#60A5FA' : '#64748B' }}>{item}</div>
@@ -88,7 +85,7 @@ export default function LandingPage() {
                 <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                   {[['24', 'Posts', '#2563EB'], ['12', 'Clients', '#10B981'], ['8', 'Leads', '#F59E0B'], ['6', 'Accounts', '#8B5CF6']].map(([n, l, c]) => (
                     <div key={l} style={{ background: '#080C14', border: '1px solid #1E293B', borderRadius: 10, padding: 12, flex: 1 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: c as string }}>{n}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: c }}>{n}</div>
                       <div style={{ fontSize: 11, color: '#64748B' }}>{l}</div>
                     </div>
                   ))}
@@ -99,7 +96,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TICKER */}
       <div style={{ borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B', padding: '18px 0', overflow: 'hidden', background: '#0A0F1A' }}>
         <div style={{ display: 'flex', overflow: 'hidden' }}>
           <div className="ticker">
@@ -111,7 +107,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* FEATURES */}
       <section id="features" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
           <p className="section-label">Features</p>
@@ -135,7 +130,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PLATFORMS */}
       <section style={{ padding: '80px 40px', background: '#0A0F1A', borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <p className="section-label">Platforms</p>
@@ -152,7 +146,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
       <section id="pricing" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
           <p className="section-label">Pricing</p>
@@ -167,7 +160,7 @@ export default function LandingPage() {
             { name: 'Agency Pro', price: '₦29,000', period: '/month', popular: false, features: ['100 social accounts', 'Unlimited posts', '15 team members', '12-month analytics', 'White-label', 'API access'], cta: 'Get Agency Pro' },
           ].map((plan, i) => (
             <div key={i} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
-              {plan.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#2563EB', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 100, whiteSpace: 'nowrap' }}>MOST POPULAR</div>}
+              {plan.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#2563EB', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 100, whiteSpace: 'nowrap' as const }}>MOST POPULAR</div>}
               <p style={{ fontSize: 14, color: '#64748B', fontWeight: 600, marginBottom: 8 }}>{plan.name}</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                 <span style={{ fontSize: 34, fontWeight: 800, fontFamily: 'Syne, sans-serif' }}>{plan.price}</span>
@@ -180,14 +173,13 @@ export default function LandingPage() {
                   {f}
                 </div>
               ))}
-              <a href="/register" className={plan.popular ? 'btn-primary' : 'btn-outline'} style={{ display: 'block', textAlign: 'center', marginTop: 24, width: '100%' }}>{plan.cta}</a>
+              <a href="/register" className={plan.popular ? 'btn-primary' : 'btn-outline'} style={{ display: 'block', textAlign: 'center' as const, marginTop: 24, width: '100%' }}>{plan.cta}</a>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ padding: '80px 40px', borderTop: '1px solid #1E293B', textAlign: 'center' }}>
+      <section style={{ padding: '80px 40px', borderTop: '1px solid #1E293B', textAlign: 'center' as const }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <div style={{ width: 64, height: 64, background: '#2563EB', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 24px' }}>⚡</div>
           <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 16 }}>Ready to scale your agency?</h2>
@@ -196,7 +188,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer style={{ borderTop: '1px solid #1E293B', padding: '40px', background: '#080C14' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
