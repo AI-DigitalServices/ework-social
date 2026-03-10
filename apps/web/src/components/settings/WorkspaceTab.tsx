@@ -14,7 +14,6 @@ export default function WorkspaceTab() {
       avatar: user.name?.charAt(0)?.toUpperCase() || 'U',
     }
   ] : [];
-  const { workspace } = useAuthStore();
   const [name, setName] = useState(workspace?.name || '');
   const [saved, setSaved] = useState(false);
 
