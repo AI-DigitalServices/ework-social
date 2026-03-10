@@ -3,12 +3,18 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { Save, Users, Crown } from 'lucide-react';
-
-const teamMembers = [
-  { name: 'Test User', email: 'test@eworksocial.com', role: 'Owner', avatar: 'T' },
-];
+import { useAuthStore } from '@/store/auth.store';
 
 export default function WorkspaceTab() {
+  const { user, workspace } = useAuthStore();
+  const teamMembers = user ? [
+    {
+      name: user.name,
+      email: user.email,
+      role: 'Owner',
+      avatar: user.name?.charAt(0)?.toUpperCase() || 'U',
+    }
+  ] : [];
   const { workspace } = useAuthStore();
   const [name, setName] = useState(workspace?.name || '');
   const [saved, setSaved] = useState(false);
