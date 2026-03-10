@@ -1,8 +1,5 @@
 'use client';
-bash
 
-cat /tmp/page_new.tsx
-Output
 
 'use client';
 
