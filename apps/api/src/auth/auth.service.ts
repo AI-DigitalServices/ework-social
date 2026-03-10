@@ -3,18 +3,22 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private email: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -25,12 +29,16 @@ export class AuthService {
     if (existing) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
         email: dto.email,
         password: hashed,
+        verificationToken,
+        verificationExpiry,
         ownedWorkspaces: {
           create: {
             name: dto.workspaceName,
@@ -57,9 +65,20 @@ export class AuthService {
       include: { ownedWorkspaces: true },
     });
 
+    try {
+      await this.email.sendVerificationEmail(user.email, user.name, verificationToken);
+    } catch (err) {
+      console.error('Failed to send verification email:', err);
+    }
+
     const tokens = await this.generateTokens(user.id, user.email);
     return {
-      user: { id: user.id, name: user.name, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isVerified: user.isVerified,
+      },
       workspace: user.ownedWorkspaces[0],
       ...tokens,
     };
@@ -79,10 +98,61 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email);
     return {
-      user: { id: user.id, name: user.name, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isVerified: user.isVerified,
+      },
       workspace: user.ownedWorkspaces[0],
       ...tokens,
     };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { verificationToken: token },
+    });
+
+    if (!user) throw new BadRequestException('Invalid verification token');
+
+    if (user.verificationExpiry && user.verificationExpiry < new Date()) {
+      throw new BadRequestException('Verification link has expired. Please request a new one.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+        verificationExpiry: null,
+      },
+    });
+
+    try {
+      await this.email.sendWelcomeEmail(user.email, user.name);
+    } catch (err) {
+      console.error('Failed to send welcome email:', err);
+    }
+
+    return { message: 'Email verified successfully' };
+  }
+
+  async resendVerification(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isVerified) throw new BadRequestException('Email already verified');
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { verificationToken, verificationExpiry },
+    });
+
+    await this.email.sendVerificationEmail(user.email, user.name, verificationToken);
+    return { message: 'Verification email sent' };
   }
 
   async me(userId: string) {
@@ -97,6 +167,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      isVerified: user.isVerified,
       workspace: user.ownedWorkspaces[0],
     };
   }

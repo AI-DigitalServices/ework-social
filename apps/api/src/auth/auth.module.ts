@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtGuard } from './jwt.guard';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { JwtGuard } from './jwt.guard';
       secret: process.env.JWT_SECRET || 'secret',
       signOptions: { expiresIn: '15m' },
     }),
+    EmailModule,
   ],
   providers: [AuthService, JwtGuard],
   controllers: [AuthController],

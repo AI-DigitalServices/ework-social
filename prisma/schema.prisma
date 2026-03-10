@@ -14,8 +14,10 @@ model User {
   password      String?
   name          String
   avatar        String?
-  isVerified    Boolean   @default(false)
-  createdAt     DateTime  @default(now())
+  isVerified         Boolean   @default(false)
+  verificationToken  String?   @unique
+  verificationExpiry DateTime?
+  createdAt          DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   workspaces    WorkspaceMember[]
   ownedWorkspaces Workspace[]
