@@ -5,6 +5,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  isVerified: boolean;
 }
 
 interface Workspace {
@@ -18,6 +19,7 @@ interface AuthState {
   workspace: Workspace | null;
   token: string | null;
   setAuth: (user: User, workspace: Workspace, token: string, refreshToken?: string) => void;
+  setVerified: () => void;
   logout: () => void;
 }
 
@@ -31,6 +33,10 @@ export const useAuthStore = create<AuthState>()(
         document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
         set({ user, workspace, token });
       },
+      setVerified: () =>
+        set((state) => ({
+          user: state.user ? { ...state.user, isVerified: true } : null,
+        })),
       logout: () => {
         document.cookie = 'auth-token=; path=/; max-age=0';
         set({ user: null, workspace: null, token: null });
