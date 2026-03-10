@@ -28,14 +28,19 @@ export default function LandingPage() {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
 
-    // Auto-detect currency from browser locale
-    const locale = navigator.language || 'en-US';
-    if (locale.includes('NG') || locale === 'en-NG') setCurrency(CURRENCIES[1]);
-    else if (locale.includes('KE')) setCurrency(CURRENCIES[2]);
-    else if (locale.includes('ZA')) setCurrency(CURRENCIES[3]);
-    else if (locale.includes('GH')) setCurrency(CURRENCIES[4]);
-    else if (locale.includes('GB')) setCurrency(CURRENCIES[5]);
-    else if (locale.includes('DE') || locale.includes('FR') || locale.includes('ES')) setCurrency(CURRENCIES[6]);
+    // Auto-detect currency from IP geolocation
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(data => {
+        const country = data.country_code;
+        if (country === 'NG') setCurrency(CURRENCIES[1]);
+        else if (country === 'KE') setCurrency(CURRENCIES[2]);
+        else if (country === 'ZA') setCurrency(CURRENCIES[3]);
+        else if (country === 'GH') setCurrency(CURRENCIES[4]);
+        else if (country === 'GB') setCurrency(CURRENCIES[5]);
+        else if (['DE','FR','ES','IT','NL','BE','AT','PT'].includes(country)) setCurrency(CURRENCIES[6]);
+      })
+      .catch(() => {}); // fallback to USD
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -58,7 +63,7 @@ export default function LandingPage() {
         .btn-primary { background: #2563EB; color: white; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.2s; font-family: 'Inter', sans-serif; }
         .btn-primary:hover { background: #1D4ED8; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,0.35); }
         .btn-outline { background: transparent; color: #CBD5E1; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; border: 1px solid #2A3A52; text-decoration: none; display: inline-block; transition: all 0.2s; font-family: 'Inter', sans-serif; }
-        .btn-outline:hover { border-color: #3B5275; color: #fff; background: #0F1A2B; }
+        .btn-outline:hover { border-color: #10B981; color: #10B981; background: rgba(16,185,129,0.08); box-shadow: 0 0 0 1px #10B981; }
         .nav-link { color: #8BA0BC; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
         .feature-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 16px; padding: 32px; transition: all 0.3s; }
