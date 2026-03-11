@@ -1,7 +1,7 @@
 export const PLAN_LIMITS = {
   FREE: {
-    maxSocialAccounts: 2,
-    maxPostsPerMonth: 15,
+    maxSocialAccounts: 5,
+    maxPostsPerMonth: 50,
     maxTeamMembers: 1,
     maxClients: 3,
     analyticsHistoryDays: 7,
@@ -15,8 +15,8 @@ export const PLAN_LIMITS = {
     twitterEnabled: false,
   },
   STARTER: {
-    maxSocialAccounts: 5,
-    maxPostsPerMonth: 100,
+    maxSocialAccounts: 10,
+    maxPostsPerMonth: 200,
     maxTeamMembers: 1,
     maxClients: 10,
     analyticsHistoryDays: 30,
@@ -30,8 +30,8 @@ export const PLAN_LIMITS = {
     twitterEnabled: false,
   },
   GROWTH: {
-    maxSocialAccounts: 15,
-    maxPostsPerMonth: 500,
+    maxSocialAccounts: 30,
+    maxPostsPerMonth: 2000,
     maxTeamMembers: 5,
     maxClients: 999999,
     analyticsHistoryDays: 180,
@@ -45,8 +45,8 @@ export const PLAN_LIMITS = {
     twitterEnabled: true,
   },
   AGENCY_PRO: {
-    maxSocialAccounts: 50,
-    maxPostsPerMonth: 999999,
+    maxSocialAccounts: 100,
+    maxPostsPerMonth: 10000,
     maxTeamMembers: 15,
     maxClients: 999999,
     analyticsHistoryDays: 365,
