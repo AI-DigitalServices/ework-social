@@ -172,6 +172,37 @@ export class AuthService {
     };
   }
 
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) return { message: 'If that email exists, a reset link has been sent.' };
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpiry },
+    });
+    try {
+      await this.email.sendPasswordResetEmail(user.email, user.name, resetToken);
+    } catch (err) {
+      console.error('Failed to send reset email:', err);
+    }
+    return { message: 'If that email exists, a reset link has been sent.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { resetToken: token } });
+    if (!user) throw new BadRequestException('Invalid or expired reset token.');
+    if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Reset link has expired. Please request a new one.');
+    }
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed, resetToken: null, resetTokenExpiry: null },
+    });
+    return { message: 'Password reset successfully. You can now log in.' };
+  }
+
   async deleteAccount(userId: string) {
     await this.prisma.user.delete({ where: { id: userId } });
     return { message: 'Account deleted successfully' };
