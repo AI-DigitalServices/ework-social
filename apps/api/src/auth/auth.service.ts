@@ -172,6 +172,11 @@ export class AuthService {
     };
   }
 
+  async deleteAccount(userId: string) {
+    await this.prisma.user.delete({ where: { id: userId } });
+    return { message: 'Account deleted successfully' };
+  }
+
   async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
     const accessToken = await this.jwt.signAsync(payload, { expiresIn: '7d' });
