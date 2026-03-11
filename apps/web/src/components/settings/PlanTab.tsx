@@ -1,92 +1,70 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Zap, Loader } from 'lucide-react';
+import { Check, Zap, Loader, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import PlanUsageMeter from '@/components/billing/PlanUsageMeter';
+import { useCurrencyStore, CURRENCY_SYMBOLS, PLAN_PRICES, Currency } from '@/store/currency.store';
+import { useCurrencyDetect } from '@/hooks/useCurrencyDetect';
 
-const plans = [
+const CURRENCIES: Currency[] = ['NGN', 'USD', 'KES', 'ZAR', 'GHS'];
+
+const getPlans = (currency: Currency) => [
   {
     name: 'Free Trial',
-    price: '₦0',
+    price: '0',
+    displayPrice: `${CURRENCY_SYMBOLS[currency]}0`,
     period: '7 days',
     planCode: null,
     color: 'border-slate-200',
-    features: [
-      '3 social accounts',
-      'Facebook + Instagram only',
-      '50 posts/month',
-      '1 workspace',
-      '1 team member',
-      '7-day analytics',
-    ],
+    features: ['3 social accounts', 'Facebook + Instagram only', '50 posts/month', '1 workspace', '1 team member', '7-day analytics'],
   },
   {
     name: 'Starter',
-    price: '₦5,000',
+    price: PLAN_PRICES.starter[currency],
+    displayPrice: PLAN_PRICES.starter[currency],
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_STARTER_PLAN,
     color: 'border-blue-200',
     badge: 'Most Popular',
     badgeColor: 'bg-blue-600',
-    features: [
-      '10 social accounts',
-      '4 platforms',
-      '200 posts/month',
-      'Basic CRM',
-      'Remove watermark',
-      '30-day analytics',
-      'Basic AI captions',
-    ],
+    features: ['10 social accounts', '4 platforms', '200 posts/month', 'Basic CRM', 'Remove watermark', '30-day analytics', 'Basic AI captions'],
   },
   {
     name: 'Growth',
-    price: '₦12,000',
+    price: PLAN_PRICES.growth[currency],
+    displayPrice: PLAN_PRICES.growth[currency],
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_GROWTH_PLAN,
     color: 'border-green-200',
     badge: 'Best Value',
     badgeColor: 'bg-green-600',
-    features: [
-      '30 social accounts',
-      '6 platforms',
-      '2,000 posts/month',
-      'Full CRM + pipeline',
-      '5 team members',
-      'Bulk scheduling',
-      '6-month analytics',
-      'Advanced auto-responder',
-    ],
+    features: ['30 social accounts', '6 platforms', '2,000 posts/month', 'Full CRM + pipeline', '5 team members', 'Bulk scheduling', '6-month analytics', 'Advanced auto-responder'],
   },
   {
     name: 'Agency Pro',
-    price: '₦29,000',
+    price: PLAN_PRICES.agency[currency],
+    displayPrice: PLAN_PRICES.agency[currency],
     period: '/month',
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_AGENCY_PRO_PLAN,
     color: 'border-purple-200',
     badge: 'For Agencies',
     badgeColor: 'bg-purple-600',
-    features: [
-      '100 social accounts',
-      'All platforms (10+)',
-      '10,000 posts/month',
-      'Unlimited clients',
-      '15 team members',
-      'White-label dashboard',
-      '12-month analytics',
-      'Full rules engine',
-      'API access',
-      'Priority support',
-    ],
+    features: ['100 social accounts', 'All platforms (10+)', '10,000 posts/month', 'Unlimited clients', '15 team members', 'White-label dashboard', '12-month analytics', 'Full rules engine', 'API access', 'Priority support'],
   },
 ];
 
 export default function PlanTab() {
+  useCurrencyDetect();
   const { user, workspace } = useAuthStore();
+  const { currency, setCurrency } = useCurrencyStore();
   const [currentPlan, setCurrentPlan] = useState('FREE');
   const [loading, setLoading] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState('');
+  const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+
+  const plans = getPlans(currency);
 
   useEffect(() => {
     if (workspace?.id) loadSubscription();
@@ -96,9 +74,13 @@ export default function PlanTab() {
     try {
       const res = await api.get(`/billing/subscription?workspaceId=${workspace!.id}`);
       if (res.data?.plan) setCurrentPlan(res.data.plan);
-    } catch {
-      // Silently fail - default to FREE
-    }
+    } catch {}
+  };
+
+  const handleCurrencyChange = (c: Currency) => {
+    setCurrency(c);
+    localStorage.setItem('ework_currency', c);
+    setShowCurrencyMenu(false);
   };
 
   const handleUpgrade = async (planCode: string, planName: string) => {
@@ -109,14 +91,11 @@ export default function PlanTab() {
         priceId: planCode,
         workspaceId: workspace!.id,
         userId: user!.id,
+        currency,
       });
-      if (res.data?.url) {
-        window.location.href = res.data.url;
-      }
+      if (res.data?.url) window.location.href = res.data.url;
     } catch (err: any) {
-      setCheckoutError(
-        err.response?.data?.message || 'Checkout failed. Please try again.'
-      );
+      setCheckoutError(err.response?.data?.message || 'Checkout failed. Please try again.');
     } finally {
       setLoading(null);
     }
@@ -132,10 +111,32 @@ export default function PlanTab() {
 
   return (
     <div>
-      {checkoutError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
-          {checkoutError}
+      {/* Currency selector */}
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-slate-500">Prices shown in your local currency</p>
+        <div className="relative">
+          <button
+            onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+          >
+            {CURRENCY_SYMBOLS[currency]} {currency}
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          </button>
+          {showCurrencyMenu && (
+            <div className="absolute right-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-10 overflow-hidden">
+              {CURRENCIES.map(c => (
+                <button key={c} onClick={() => handleCurrencyChange(c)}
+                  className={`w-full px-4 py-2.5 text-sm text-left hover:bg-slate-50 transition flex items-center gap-2 ${currency === c ? 'text-blue-600 font-semibold bg-blue-50' : 'text-slate-700'}`}>
+                  {CURRENCY_SYMBOLS[c]} {c}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
+
+      {checkoutError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">{checkoutError}</div>
       )}
 
       {currentPlan === 'FREE' && (
@@ -160,35 +161,25 @@ export default function PlanTab() {
 
       <PlanUsageMeter />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {plans.map((plan) => {
           const isCurrent = isCurrentPlan(plan.name);
           const isLoadingThis = loading === plan.name;
-
           return (
-            <div
-              key={plan.name}
-              className={`relative bg-white rounded-xl p-6 border-2 shadow-sm ${
-                isCurrent ? 'border-blue-500' : plan.color
-              }`}
-            >
+            <div key={plan.name} className={`relative bg-white rounded-xl p-6 border-2 shadow-sm ${isCurrent ? 'border-blue-500' : plan.color}`}>
               {plan.badge && (
                 <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 ${plan.badgeColor} text-white text-xs font-bold rounded-full whitespace-nowrap`}>
                   {plan.badge}
                 </span>
               )}
               {isCurrent && (
-                <span className="absolute -top-3 right-4 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
-                  Current
-                </span>
+                <span className="absolute -top-3 right-4 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Current</span>
               )}
-
               <h3 className="font-bold text-slate-800 text-lg">{plan.name}</h3>
               <div className="flex items-baseline gap-1 my-3">
-                <span className="text-3xl font-bold text-slate-800">{plan.price}</span>
+                <span className="text-3xl font-bold text-slate-800">{plan.displayPrice}</span>
                 <span className="text-slate-500 text-sm">{plan.period}</span>
               </div>
-
               <ul className="space-y-2 mb-6">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm text-slate-600">
@@ -197,38 +188,29 @@ export default function PlanTab() {
                   </li>
                 ))}
               </ul>
-
               <button
-                onClick={() => {
-                  if (plan.planCode && !isCurrent && !isLoadingThis) {
-                    handleUpgrade(plan.planCode, plan.name);
-                  }
-                }}
+                onClick={() => { if (plan.planCode && !isCurrent && !isLoadingThis) handleUpgrade(plan.planCode, plan.name); }}
                 disabled={isCurrent || !plan.planCode || isLoadingThis}
                 className={`w-full py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
-                  isCurrent
-                    ? 'bg-slate-100 text-slate-400 cursor-default'
-                    : !plan.planCode
-                    ? 'bg-slate-100 text-slate-400 cursor-default'
-                    : isLoadingThis
-                    ? 'bg-blue-400 text-white cursor-wait'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  isCurrent ? 'bg-slate-100 text-slate-400 cursor-default'
+                  : !plan.planCode ? 'bg-slate-100 text-slate-400 cursor-default'
+                  : isLoadingThis ? 'bg-blue-400 text-white cursor-wait'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {isLoadingThis ? (
-                  <><Loader className="w-4 h-4 animate-spin" /> Redirecting...</>
-                ) : isCurrent ? (
-                  'Current Plan'
-                ) : !plan.planCode ? (
-                  'Free Trial'
-                ) : (
-                  `Upgrade to ${plan.name}`
-                )}
+                {isLoadingThis ? <><Loader className="w-4 h-4 animate-spin" /> Redirecting...</>
+                  : isCurrent ? 'Current Plan'
+                  : !plan.planCode ? 'Free Trial'
+                  : `Upgrade to ${plan.name}`}
               </button>
             </div>
           );
         })}
       </div>
+
+      <p className="text-xs text-slate-400 mt-6 text-center">
+        * Non-NGN prices are indicative. Paystack charges in NGN. All plans auto-renew monthly. Cancel anytime.
+      </p>
     </div>
   );
 }
