@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
       <Sidebar />
       <Header />
-      <main className="ml-64 min-h-screen" style={{ paddingTop: showBanner ? '96px' : '64px' }}>
+      <main className="lg:ml-64 min-h-screen" style={{ paddingTop: showBanner ? '96px' : '64px' }}>
         <div className="p-8">{children}</div>
       </main>
     </div>
