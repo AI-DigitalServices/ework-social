@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtGuard } from './jwt.guard';
 import { EmailModule } from '../email/email.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { EmailModule } from '../email/email.module';
       signOptions: { expiresIn: '15m' },
     }),
     EmailModule,
+    NotificationsModule,
   ],
   providers: [AuthService, JwtGuard],
   controllers: [AuthController],

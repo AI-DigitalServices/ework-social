@@ -8,6 +8,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ResponderModule } from './responder/responder.module';
 import { BillingModule } from './billing/billing.module';
 import { SocialModule } from './social/social.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { CommonModule } from './common/common.module';
     ResponderModule,
     BillingModule,
     SocialModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
