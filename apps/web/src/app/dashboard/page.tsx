@@ -91,20 +91,21 @@ export default function DashboardPage() {
           </p>
           <div className="space-y-3 text-sm">
             {[
-              { label: 'Connect social account', done: (stats?.socialAccounts ?? 0) > 0 },
-              { label: 'Schedule your first post', done: (stats?.totalPosts ?? 0) > 0 },
-              { label: 'Add your first client', done: (stats?.totalClients ?? 0) > 0 },
+              { label: 'Connect social account', done: (stats?.socialAccounts ?? 0) > 0, href: '/dashboard/settings?tab=social' },
+              { label: 'Schedule your first post', done: (stats?.totalPosts ?? 0) > 0, href: '/dashboard/scheduler' },
+              { label: 'Add your first client', done: (stats?.totalClients ?? 0) > 0, href: '/dashboard/crm' },
             ].map((step, i) => (
-              <div key={step.label} className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              <a key={step.label} href={step.href} className="flex items-center gap-3 group/step hover:opacity-80 transition-opacity no-underline">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                   step.done ? 'bg-green-400 text-white' : 'bg-white/20'
                 }`}>
                   {step.done ? '✓' : i + 1}
                 </div>
-                <span className={step.done ? 'line-through text-blue-200' : 'text-blue-100'}>
+                <span className={`flex-1 ${step.done ? 'line-through text-blue-200' : 'text-blue-100'}`}>
                   {step.label}
                 </span>
-              </div>
+                {!step.done && <span className="text-blue-200 text-xs opacity-0 group-hover/step:opacity-100 transition-opacity">→</span>}
+              </a>
             ))}
           </div>
         </div>
