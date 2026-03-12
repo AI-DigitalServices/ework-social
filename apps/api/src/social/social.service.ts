@@ -201,4 +201,103 @@ export class SocialService {
       throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish to Instagram');
     }
   }
+
+  getLinkedInAuthUrl(workspaceId: string, userId: string) {
+    const clientId = this.config.get('LINKEDIN_CLIENT_ID');
+    const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
+    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const scopes = ['openid', 'profile', 'email', 'w_member_social'].join(' ');
+    return {
+      url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
+    };
+  }
+
+  async handleLinkedInCallback(code: string, state: string) {
+    const clientId = this.config.get('LINKEDIN_CLIENT_ID');
+    const clientSecret = this.config.get('LINKEDIN_CLIENT_SECRET');
+    const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
+
+    let workspaceId: string;
+    let userId: string;
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      workspaceId = decoded.workspaceId;
+      userId = decoded.userId;
+    } catch {
+      throw new BadRequestException('Invalid state parameter');
+    }
+
+    // Exchange code for access token
+    let accessToken: string;
+    try {
+      const tokenRes = await axios.post(
+        'https://www.linkedin.com/oauth/v2/accessToken',
+        new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: redirectUri,
+          client_id: clientId,
+          client_secret: clientSecret,
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      accessToken = tokenRes.data.access_token;
+    } catch (err: any) {
+      throw new BadRequestException('LinkedIn token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
+
+    // Get profile info
+    let profile: any;
+    try {
+      const profileRes = await axios.get('https://api.linkedin.com/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      profile = profileRes.data;
+    } catch (err: any) {
+      throw new BadRequestException('Failed to fetch LinkedIn profile');
+    }
+
+    const accountId = profile.sub;
+    const accountName = profile.name || `${profile.given_name} ${profile.family_name}`;
+
+    const account = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId } },
+      update: { accountName, accessToken, isActive: true },
+      create: { workspaceId, platform: 'LINKEDIN', accountId, accountName, accessToken, isActive: true },
+    });
+
+    return { success: true, connectedAccounts: [account], message: 'LinkedIn connected successfully' };
+  }
+
+  async publishToLinkedIn(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
+
+    try {
+      const res = await axios.post(
+        'https://api.linkedin.com/v2/ugcPosts',
+        {
+          author: `urn:li:person:${post.socialAccount.accountId}`,
+          lifecycleState: 'PUBLISHED',
+          specificContent: {
+            'com.linkedin.ugc.ShareContent': {
+              shareCommentary: { text: post.content },
+              shareMediaCategory: 'NONE',
+            },
+          },
+          visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
+        },
+        { headers: { Authorization: `Bearer ${post.socialAccount.accessToken}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
+      );
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
+      return { success: true, postId: res.data.id };
+    } catch (err: any) {
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
+      throw new BadRequestException(err.response?.data?.message || 'Failed to publish to LinkedIn');
+    }
+  }
+
 }

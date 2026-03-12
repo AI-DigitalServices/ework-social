@@ -57,15 +57,38 @@ export class SocialController {
     return this.socialService.disconnectAccount(id, body.workspaceId);
   }
 
+  @Get('linkedin/auth-url')
+  @UseGuards(JwtGuard)
+  getLinkedInAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.socialService.getLinkedInAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('linkedin/callback')
+  async linkedInCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    try {
+      await this.socialService.handleLinkedInCallback(code, state);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+    } catch (err) {
+      console.error('LinkedIn OAuth error:', err);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+    }
+  }
+
   @Post('publish/:postId')
   @UseGuards(JwtGuard)
   async publishPost(
     @Param('postId') postId: string,
     @Body() body: { platform: string },
   ) {
-    if (body.platform === 'INSTAGRAM') {
-      return this.socialService.publishToInstagram(postId);
-    }
+    if (body.platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
+    if (body.platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
     return this.socialService.publishToFacebook(postId);
   }
 }
