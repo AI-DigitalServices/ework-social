@@ -1,27 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import { useTrialStatus } from '@/hooks/useTrialStatus';
+import Link from 'next/link';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, token } = useAuthStore();
   const router = useRouter();
-  const { token, user } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const trialStatus = useTrialStatus();
+  const [showVerifyBanner, setShowVerifyBanner] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    if (mounted && !token) router.push('/login');
-  }, [mounted, token, router]);
-
-  if (!mounted || !token) return null;
-
-  const showBanner = user && !user.isVerified && !bannerDismissed;
+    if (!token) { router.push('/login'); return; }
+    if (user && !user.isVerified) setShowVerifyBanner(true);
+  }, [token, user]);
 
   const handleResend = async () => {
     setResending(true);
@@ -31,59 +29,70 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         headers: { Authorization: `Bearer ${token}` },
       });
       setResent(true);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setResending(false);
-    }
+    } catch {}
+    setResending(false);
   };
+
+  // Calculate banner count for padding
+  const bannerCount = [
+    showVerifyBanner,
+    trialStatus?.trialActive && trialStatus.trialDaysLeft <= 3,
+    trialStatus?.expired,
+  ].filter(Boolean).length;
+
+  const topPadding = 64 + (bannerCount * 44);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {showBanner && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: 'linear-gradient(90deg, #92400e, #b45309)',
-          borderBottom: '1px solid #d97706',
-          padding: '10px 24px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-        }}>
-          <span style={{ fontSize: 16 }}>⚠️</span>
-          <span style={{ color: '#fef3c7', fontSize: 14, fontWeight: 500 }}>
-            Please verify your email address to unlock all features.
-            Check your inbox at <strong>{user.email}</strong>
-          </span>
-          {!resent ? (
-            <button
-              onClick={handleResend}
-              disabled={resending}
-              style={{
-                background: 'rgba(255,255,255,0.2)', color: '#fef3c7',
-                border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6,
-                padding: '4px 12px', fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', marginLeft: 8,
-              }}
-            >
-              {resending ? 'Sending...' : 'Resend Email'}
+      <Sidebar />
+
+      {/* Email verification banner */}
+      {showVerifyBanner && (
+        <div className="fixed top-16 left-0 lg:left-64 right-0 z-30 bg-amber-500 text-white px-4 py-2.5 flex items-center justify-between gap-4" style={{ height: 44 }}>
+          <p className="text-sm font-medium truncate">
+            ⚠️ Please verify your email address to unlock all features. Check your inbox at <strong>{user?.email}</strong>
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={handleResend} disabled={resending || resent}
+              className="bg-white text-amber-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-amber-50 transition disabled:opacity-60">
+              {resent ? 'Sent!' : resending ? 'Sending...' : 'Resend Email'}
             </button>
-          ) : (
-            <span style={{ color: '#86efac', fontSize: 13, fontWeight: 600, marginLeft: 8 }}>
-              ✓ Email sent!
-            </span>
-          )}
-          <button
-            onClick={() => setBannerDismissed(true)}
-            style={{
-              background: 'transparent', border: 'none', color: '#fcd34d',
-              cursor: 'pointer', fontSize: 18, marginLeft: 8, lineHeight: 1,
-            }}
-          >×</button>
+            <button onClick={() => setShowVerifyBanner(false)} className="text-white/80 hover:text-white text-lg leading-none">×</button>
+          </div>
         </div>
       )}
-      <Sidebar />
+
+      {/* Trial expiring soon banner */}
+      {trialStatus?.trialActive && trialStatus.trialDaysLeft <= 3 && (
+        <div className="fixed left-0 lg:left-64 right-0 z-30 bg-orange-500 text-white px-4 py-2.5 flex items-center justify-between gap-4"
+          style={{ top: showVerifyBanner ? 104 : 64, height: 44 }}>
+          <p className="text-sm font-medium">
+            ⏳ Your free trial expires in <strong>{trialStatus.trialDaysLeft} day{trialStatus.trialDaysLeft !== 1 ? 's' : ''}</strong> — upgrade to keep access!
+          </p>
+          <Link href="/dashboard/settings?tab=plan"
+            className="bg-white text-orange-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-orange-50 transition shrink-0">
+            Upgrade Now
+          </Link>
+        </div>
+      )}
+
+      {/* Trial expired banner */}
+      {trialStatus?.expired && (
+        <div className="fixed left-0 lg:left-64 right-0 z-30 bg-red-600 text-white px-4 py-2.5 flex items-center justify-between gap-4"
+          style={{ top: showVerifyBanner ? 104 : 64, height: 44 }}>
+          <p className="text-sm font-medium">
+            🔒 Your free trial has ended. Upgrade to continue using eWork Social.
+          </p>
+          <Link href="/dashboard/settings?tab=plan"
+            className="bg-white text-red-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-50 transition shrink-0">
+            Upgrade Now
+          </Link>
+        </div>
+      )}
+
       <Header />
-      <main className="lg:ml-64 min-h-screen" style={{ paddingTop: showBanner ? '96px' : '64px' }}>
-        <div className="p-8">{children}</div>
+      <main className="lg:ml-64 min-h-screen" style={{ paddingTop: topPadding }}>
+        {children}
       </main>
     </div>
   );

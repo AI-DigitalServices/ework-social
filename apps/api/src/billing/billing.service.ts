@@ -150,6 +150,63 @@ export class BillingService {
     return this.prisma.subscription.findFirst({ where: { workspaceId } });
   }
 
+  async getTrialStatus(workspaceId: string) {
+    const sub = await this.prisma.subscription.findFirst({ where: { workspaceId } });
+    if (!sub) return { plan: 'FREE', trialActive: false, trialDaysLeft: 0, expired: true };
+
+    const now = new Date();
+    const trialEndsAt = sub.trialEndsAt;
+    const isActive = sub.status === 'ACTIVE' && sub.plan !== 'FREE';
+
+    // Paid plan - no trial concerns
+    if (isActive) return { plan: sub.plan, trialActive: false, trialDaysLeft: 0, expired: false };
+
+    // Check trial
+    if (trialEndsAt) {
+      const msLeft = trialEndsAt.getTime() - now.getTime();
+      const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+      if (daysLeft > 0) {
+        return { plan: 'FREE', trialActive: true, trialDaysLeft: daysLeft, expired: false };
+      } else {
+        // Trial expired - enforce downgrade
+        await this.prisma.subscription.update({
+          where: { id: sub.id },
+          data: { plan: 'FREE', status: 'CANCELLED' },
+        });
+        return { plan: 'FREE', trialActive: false, trialDaysLeft: 0, expired: true };
+      }
+    }
+    return { plan: 'FREE', trialActive: false, trialDaysLeft: 0, expired: true };
+  }
+
+  async checkAndEnforceTrialExpiry(workspaceId: string) {
+    const status = await this.getTrialStatus(workspaceId);
+    if (status.expired) {
+      // Create expiry notification
+      const workspace = await this.prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { ownerId: true },
+      });
+      if (workspace) {
+        const existing = await this.prisma.notification.findFirst({
+          where: { userId: workspace.ownerId, type: 'trial_expired' },
+        });
+        if (!existing) {
+          await this.prisma.notification.create({
+            data: {
+              userId: workspace.ownerId,
+              type: 'trial_expired',
+              title: '⏰ Your free trial has ended',
+              message: 'Upgrade to a paid plan to continue using eWork Social.',
+              link: '/dashboard/settings?tab=plan',
+            },
+          });
+        }
+      }
+    }
+    return status;
+  }
+
   async createPortalSession(workspaceId: string) {
     return { url: `${this.config.get('FRONTEND_URL')}/dashboard/settings?tab=plan` };
   }

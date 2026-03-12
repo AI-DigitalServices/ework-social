@@ -59,4 +59,10 @@ export class BillingController {
   getLimits(@Query('workspaceId') workspaceId: string) {
     return this.planGuard.getWorkspaceLimits(workspaceId);
   }
+
+  @Get('trial-status')
+  @UseGuards(JwtGuard)
+  getTrialStatus(@Query('workspaceId') workspaceId: string) {
+    return this.billingService.checkAndEnforceTrialExpiry(workspaceId);
+  }
 }
