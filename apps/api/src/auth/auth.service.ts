@@ -216,7 +216,23 @@ export class AuthService {
   }
 
   async deleteAccount(userId: string) {
+    // Find all workspaces owned by user
+    const workspaces = await this.prisma.workspace.findMany({
+      where: { ownerId: userId },
+      select: { id: true },
+    });
+    const workspaceIds = workspaces.map((w) => w.id);
+
+    // Delete all related data in correct order
+    await this.prisma.notification.deleteMany({ where: { userId } });
+    await this.prisma.post.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
+    await this.prisma.socialAccount.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
+    await this.prisma.client.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
+    await this.prisma.subscription.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
+    await this.prisma.workspaceMember.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
+    await this.prisma.workspace.deleteMany({ where: { ownerId: userId } });
     await this.prisma.user.delete({ where: { id: userId } });
+
     return { message: 'Account deleted successfully' };
   }
 
