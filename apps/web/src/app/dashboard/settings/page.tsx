@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+export const dynamic = 'force-dynamic';
+mport { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import SocialAccountsTab from '@/components/settings/SocialAccountsTab';

@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/auth.store';
 const platforms = [
   { id: 'facebook', name: 'Facebook', description: 'Pages, posts, analytics & auto-responder', icon: '📘', phase: 1, apiPlatform: 'FACEBOOK' },
   { id: 'instagram', name: 'Instagram', description: 'Feed, Reels, Stories & DM auto-responder', icon: '📸', phase: 1, apiPlatform: 'INSTAGRAM' },
-  { id: 'linkedin', name: 'LinkedIn', description: 'Company pages & personal profiles', icon: '💼', phase: 2, apiPlatform: 'LINKEDIN' },
+  { id: 'linkedin', name: 'LinkedIn', description: 'Company pages & personal profiles', icon: '💼', phase: 1, apiPlatform: 'LINKEDIN' },
   { id: 'twitter', name: 'Twitter / X', description: 'Tweets, threads & analytics', icon: '🐦', phase: 2, apiPlatform: 'TWITTER' },
   { id: 'tiktok', name: 'TikTok', description: 'Video posts & analytics', icon: '🎵', phase: 2, apiPlatform: 'TIKTOK' },
   { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 3, apiPlatform: 'YOUTUBE' },
@@ -101,10 +101,11 @@ export default function SocialAccountsTab() {
 
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
-    if (platformId !== 'facebook' && platformId !== 'instagram') return;
+    if (!['facebook', 'instagram', 'linkedin'].includes(platformId)) return;
     try {
+      const authUrlEndpoint = platformId === 'linkedin' ? 'linkedin/auth-url' : 'facebook/auth-url';
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/social/facebook/auth-url?workspaceId=${workspace.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/social/${authUrlEndpoint}?workspaceId=${workspace.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.ok) {
