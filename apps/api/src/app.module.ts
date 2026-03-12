@@ -3,12 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { CrmModule } from './crm/crm.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ResponderModule } from './responder/responder.module';
 import { BillingModule } from './billing/billing.module';
 import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -18,12 +20,14 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     AuthModule,
     CrmModule,
+    ScheduleModule.forRoot(),
     SchedulerModule,
     AnalyticsModule,
     ResponderModule,
     BillingModule,
     SocialModule,
     NotificationsModule,
+    OnboardingModule,
   ],
 })
 export class AppModule {}
