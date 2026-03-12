@@ -1,7 +1,7 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-mport { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import SocialAccountsTab from '@/components/settings/SocialAccountsTab';
@@ -18,7 +18,7 @@ const tabs = [
   { id: 'plan', label: 'Plan & Billing', icon: CreditCard },
 ];
 
-export default function SettingsPage() {
+function SettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { workspace } = useAuthStore();
@@ -117,5 +117,13 @@ export default function SettingsPage() {
         {activeTab === 'plan' && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-slate-400">Loading...</div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }
