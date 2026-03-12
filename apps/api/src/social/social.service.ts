@@ -21,9 +21,6 @@ export class SocialService {
       'pages_show_list',
       'instagram_basic',
       'instagram_content_publish',
-      'instagram_manage_insights',
-      'instagram_manage_comments',
-      'pages_messaging',
       'public_profile',
       'email',
     ].join(',');
