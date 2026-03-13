@@ -43,6 +43,9 @@ export class NotificationsService {
   }
 
   async createWelcomeNotifications(userId: string) {
+    // Only create welcome notifications once
+    const existing = await this.prisma.notification.count({ where: { userId } });
+    if (existing > 0) return;
     const notifications = [
       {
         type: 'welcome',

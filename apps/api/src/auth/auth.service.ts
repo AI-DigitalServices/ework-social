@@ -74,11 +74,6 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
-    try {
-      await this.notifications.createWelcomeNotifications(user.id);
-    } catch (err) {
-      console.error('Failed to create welcome notifications:', err);
-    }
     return {
       user: {
         id: user.id,
@@ -104,11 +99,6 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const tokens = await this.generateTokens(user.id, user.email);
-    try {
-      await this.notifications.createWelcomeNotifications(user.id);
-    } catch (err) {
-      console.error('Failed to create welcome notifications:', err);
-    }
     return {
       user: {
         id: user.id,
