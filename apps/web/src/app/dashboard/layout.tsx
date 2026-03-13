@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, token } = useAuthStore();
+  const [hasHydrated, setHasHydrated] = useState(false);
   const router = useRouter();
   const trialStatus = useTrialStatus();
   const [showVerifyBanner, setShowVerifyBanner] = useState(false);
@@ -17,9 +18,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [resent, setResent] = useState(false);
 
   useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     if (!token) { router.push('/login'); return; }
     if (user && !user.isVerified) setShowVerifyBanner(true);
-  }, [token, user]);
+  }, [hasHydrated, token, user, router]);
 
   const handleResend = async () => {
     setResending(true);
@@ -41,6 +47,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ].filter(Boolean).length;
 
   const topPadding = 64 + (bannerCount * 44);
+
+  if (!hasHydrated) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!token) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
