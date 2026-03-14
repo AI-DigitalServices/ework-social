@@ -67,8 +67,9 @@ export class SchedulerService {
   }
 
   // Runs every minute — processes due scheduled posts
-  @Cron('* * * * *')
+  @Cron('*/2 * * * *')
   async processScheduledPosts() {
+    this.logger.log('Cron tick — checking scheduled posts...');
     const now = new Date();
     const duePosts = await this.prisma.post.findMany({
       where: {
