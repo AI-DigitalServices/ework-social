@@ -266,6 +266,32 @@ export class SocialService {
     return { success: true, connectedAccounts: [account], message: 'LinkedIn connected successfully' };
   }
 
+  async uploadImageToLinkedIn(imageUrl: string, accessToken: string, personUrn: string): Promise<string> {
+    // Step 1: Register upload
+    const registerRes = await axios.post(
+      'https://api.linkedin.com/v2/assets?action=registerUpload',
+      {
+        registerUploadRequest: {
+          recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+          owner: personUrn,
+          serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }],
+        },
+      },
+      { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
+    );
+
+    const uploadUrl = registerRes.data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
+    const asset = registerRes.data.value.asset;
+
+    // Step 2: Download image from Supabase and upload to LinkedIn
+    const imgRes = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    await axios.put(uploadUrl, imgRes.data, {
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'image/jpeg' },
+    });
+
+    return asset;
+  }
+
   async publishToLinkedIn(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
@@ -274,20 +300,39 @@ export class SocialService {
     if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
     try {
+      const personUrn = `urn:li:person:${post.socialAccount.accountId}`;
+      const token = post.socialAccount.accessToken;
+
+      // Upload images if any
+      let shareMediaCategory = 'NONE';
+      let media: any[] = [];
+      if (post.mediaUrls && post.mediaUrls.length > 0) {
+        shareMediaCategory = 'IMAGE';
+        for (const imageUrl of post.mediaUrls) {
+          try {
+            const asset = await this.uploadImageToLinkedIn(imageUrl, token, personUrn);
+            media.push({ status: 'READY', media: asset });
+          } catch (err: any) {
+            this.logger.error('Failed to upload image to LinkedIn', err?.message);
+          }
+        }
+      }
+
       const res = await axios.post(
         'https://api.linkedin.com/v2/ugcPosts',
         {
-          author: `urn:li:person:${post.socialAccount.accountId}`,
+          author: personUrn,
           lifecycleState: 'PUBLISHED',
           specificContent: {
             'com.linkedin.ugc.ShareContent': {
               shareCommentary: { text: post.content },
-              shareMediaCategory: 'NONE',
+              shareMediaCategory: media.length > 0 ? 'IMAGE' : 'NONE',
+              ...(media.length > 0 && { media }),
             },
           },
           visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
         },
-        { headers: { Authorization: `Bearer ${post.socialAccount.accessToken}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
       );
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
       return { success: true, postId: res.data.id };
