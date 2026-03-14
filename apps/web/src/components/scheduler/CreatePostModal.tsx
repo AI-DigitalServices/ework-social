@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock } from 'lucide-react';
+import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film } from 'lucide-react';
 import { createPostAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { uploadMedia } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 const platformLimits: Record<string, { limit: number; label: string }> = {
@@ -57,6 +58,8 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const [loading, setLoading] = useState(false);
   const [showBestTimes, setShowBestTimes] = useState(false);
   const [syncMode, setSyncMode] = useState(true);
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const selectedAccounts = accounts.filter(a => selectedAccountIds.includes(a.id));
   const activeAccount = accounts.find(a => a.id === activeTab) || selectedAccounts[0];
@@ -89,6 +92,23 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     selectedAccountIds.forEach(id => { newMap[id] = activeContent; });
     setContentMap(newMap);
   };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const urls = await Promise.all(files.map(f => uploadMedia(f, workspace!.id)));
+      setMediaUrls(prev => [...prev, ...urls]);
+    } catch (err: any) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const removeMedia = (url: string) => setMediaUrls(prev => prev.filter(u => u !== url));
 
   const applyBestTime = (time: string) => {
     const now = new Date();
@@ -126,6 +146,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
             workspaceId: workspace!.id,
             socialAccountId: accountId,
             content: contentMap[accountId] || '',
+            mediaUrls,
             scheduledAt: scheduledAt || undefined,
             status,
           })
