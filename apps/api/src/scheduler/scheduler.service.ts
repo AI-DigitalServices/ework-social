@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SocialService } from '../social/social.service';
 
 @Injectable()
 export class SchedulerService {
@@ -13,6 +14,7 @@ export class SchedulerService {
     private prisma: PrismaService,
     private planGuard: PlanGuardService,
     private notifications: NotificationsService,
+    private socialService: SocialService,
   ) {}
 
   async getPosts(workspaceId: string) {
@@ -85,11 +87,20 @@ export class SchedulerService {
 
     for (const post of duePosts) {
       try {
-        // Mark as published
-        await this.prisma.post.update({
-          where: { id: post.id },
-          data: { status: 'PUBLISHED', publishedAt: now },
-        });
+        // Actually publish to platform
+        const platform = post.socialAccount?.platform;
+        if (platform === 'LINKEDIN') {
+          await this.socialService.publishToLinkedIn(post.id);
+        } else if (platform === 'INSTAGRAM') {
+          await this.socialService.publishToInstagram(post.id);
+        } else if (platform === 'FACEBOOK') {
+          await this.socialService.publishToFacebook(post.id);
+        } else {
+          await this.prisma.post.update({
+            where: { id: post.id },
+            data: { status: 'PUBLISHED', publishedAt: now },
+          });
+        }
 
         // Notify workspace owner
         const ownerId = post.workspace?.ownerId;

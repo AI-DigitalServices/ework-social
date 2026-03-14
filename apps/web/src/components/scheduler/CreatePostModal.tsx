@@ -402,6 +402,39 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
             </div>
           )}
 
+          {/* Media Upload */}
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">Media (optional)</label>
+            <div className="space-y-3">
+              {mediaUrls.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {mediaUrls.map((url, i) => (
+                    <div key={i} className="relative group">
+                      {url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                        <div className="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+                          <Film className="w-8 h-8 text-slate-400" />
+                        </div>
+                      ) : (
+                        <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
+                      )}
+                      <button onClick={() => removeMedia(url)} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
+                {uploading ? (
+                  <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
+                ) : (
+                  <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add images or videos</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
+                )}
+              </label>
+            </div>
+          </div>
+
           {/* Schedule */}
           <div>
             <div className="flex items-center justify-between mb-2">
