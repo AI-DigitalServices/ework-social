@@ -18,7 +18,7 @@ export class EmailService {
     if (!this.resend) return;
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: 'Verify your eWork Social account',
@@ -50,7 +50,7 @@ export class EmailService {
     if (!this.resend) return;
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: 'Reset your eWork Social password',
@@ -83,7 +83,7 @@ export class EmailService {
   async sendWelcomeEmail(email: string, name: string) {
     if (!this.resend) return;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: 'Your account is verified — welcome to eWork Social!',
@@ -109,7 +109,7 @@ export class EmailService {
     if (!this.resend) return;
     const dashboardUrl = `${process.env.FRONTEND_URL}/dashboard/settings?tab=social`;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'Bernard from eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: `${name}, have you connected your social accounts yet?`,
@@ -142,7 +142,7 @@ export class EmailService {
     if (!this.resend) return;
     const upgradeUrl = `${process.env.FRONTEND_URL}/dashboard/settings?tab=plan`;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'Bernard from eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: `⏰ 2 days left on your eWork Social trial, ${name}`,
@@ -175,7 +175,7 @@ export class EmailService {
     if (!this.resend) return;
     const upgradeUrl = `${process.env.FRONTEND_URL}/dashboard/settings?tab=plan`;
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'Bernard from eWork Social <noreply@eworksocial.com>',
         to: email,
         subject: `Your eWork Social trial has ended, ${name}`,
@@ -213,7 +213,7 @@ export class EmailService {
     workspaceName: string;
   }) {
     try {
-      await this.resend.emails.send({
+      await this.resend!.emails.send({
         from: 'eWork Social <noreply@eworksocial.com>',
         to: data.to,
         subject: data.subject,

@@ -94,7 +94,7 @@ export class AutomationService {
           to: client.email,
           subject,
           body,
-          replyTo: rule.replyTo,
+          replyTo: rule.replyTo ?? undefined,
           workspaceName: workspace?.name || 'eWork Social',
         });
 
