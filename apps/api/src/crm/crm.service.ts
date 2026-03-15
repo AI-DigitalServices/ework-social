@@ -7,7 +7,10 @@ import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
 export class CrmService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private automation: AutomationService,
+  ) {}
 
   async getClients(workspaceId: string) {
     return this.prisma.client.findMany({
