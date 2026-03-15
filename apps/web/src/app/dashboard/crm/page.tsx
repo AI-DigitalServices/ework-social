@@ -110,6 +110,15 @@ export default function CrmPage() {
           <List className="w-4 h-4" />
           List
         </button>
+        <button
+          onClick={() => setView('automation')}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
+            view === 'automation' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Zap className="w-4 h-4" />
+          Automations
+        </button>
       </div>
 
       {/* Content */}
