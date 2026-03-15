@@ -37,6 +37,7 @@ model Workspace {
   clients     Client[]
   posts       Post[]
   socialAccounts SocialAccount[]
+  automationRules AutomationRule[]
   subscription Subscription?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -211,4 +212,18 @@ model Notification {
   link      String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AutomationRule {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  name        String
+  triggerStage LeadStage
+  subject     String
+  body        String
+  replyTo     String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }

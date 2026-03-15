@@ -7,12 +7,16 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
+import { AutomationService } from './automation.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
 @Controller('crm')
 @UseGuards(JwtGuard)
 export class CrmController {
-  constructor(private crmService: CrmService) {}
+  constructor(
+    private crmService: CrmService,
+    private automationService: AutomationService,
+  ) {}
 
   @Get('clients')
   getClients(@Query('workspaceId') workspaceId: string) {
@@ -57,5 +61,29 @@ export class CrmController {
   @Get('pipeline/:workspaceId')
   getPipelineStats(@Param('workspaceId') workspaceId: string) {
     return this.crmService.getPipelineStats(workspaceId);
+  }
+
+  @Get('automations/:workspaceId')
+  @UseGuards(JwtGuard)
+  getAutomations(@Param('workspaceId') workspaceId: string) {
+    return this.automationService.getRules(workspaceId);
+  }
+
+  @Post('automations')
+  @UseGuards(JwtGuard)
+  createAutomation(@Body() body: any) {
+    return this.automationService.createRule(body.workspaceId, body);
+  }
+
+  @Patch('automations/:id')
+  @UseGuards(JwtGuard)
+  updateAutomation(@Param('id') id: string, @Body() body: any) {
+    return this.automationService.updateRule(id, body);
+  }
+
+  @Delete('automations/:id')
+  @UseGuards(JwtGuard)
+  deleteAutomation(@Param('id') id: string) {
+    return this.automationService.deleteRule(id);
   }
 }

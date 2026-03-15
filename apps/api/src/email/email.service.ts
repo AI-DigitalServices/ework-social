@@ -204,4 +204,36 @@ export class EmailService {
     }
   }
 
+
+  async sendAutomationEmail(data: {
+    to: string;
+    subject: string;
+    body: string;
+    replyTo?: string;
+    workspaceName: string;
+  }) {
+    try {
+      await this.resend.emails.send({
+        from: 'eWork Social <noreply@eworksocial.com>',
+        to: data.to,
+        subject: data.subject,
+        replyTo: data.replyTo,
+        html: `
+          <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+            <div style="margin-bottom: 32px;">
+              <span style="font-size: 20px; font-weight: 700; color: #0f172a;">${data.workspaceName}</span>
+              <span style="font-size: 12px; color: #94a3b8; margin-left: 8px;">via eWork Social</span>
+            </div>
+            <div style="color: #334155; font-size: 15px; line-height: 1.8; white-space: pre-wrap;">${data.body}</div>
+            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #94a3b8; font-size: 12px;">Sent via eWork Social · eworksocial.com</p>
+            </div>
+          </div>
+        `,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send automation email', err);
+    }
+  }
+
 }

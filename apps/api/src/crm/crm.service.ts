@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AutomationService } from './automation.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -46,10 +47,17 @@ export class CrmService {
   }
 
   async updateStage(id: string, stage: string) {
-    return this.prisma.client.update({
+    const client = await this.prisma.client.update({
       where: { id },
       data: { stage: stage as any },
     });
+    // Trigger automation emails for this stage
+    try {
+      await this.automation.triggerStageAutomation(client.workspaceId, id, stage);
+    } catch (err) {
+      console.error('Automation trigger failed:', err);
+    }
+    return client;
   }
 
   async deleteClient(id: string) {
