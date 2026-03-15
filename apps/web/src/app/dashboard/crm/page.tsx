@@ -6,7 +6,8 @@ import { getClientsAction } from '@/actions/crm.actions';
 import PipelineBoard from '@/components/crm/PipelineBoard';
 import AddClientModal from '@/components/crm/AddClientModal';
 import ClientDetail from '@/components/crm/ClientDetail';
-import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List } from 'lucide-react';
+import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List, Zap } from 'lucide-react';
+import AutomationTab from '@/components/crm/AutomationTab';
 
 export default function CrmPage() {
   const { workspace } = useAuthStore();
@@ -14,7 +15,7 @@ export default function CrmPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [view, setView] = useState<'pipeline' | 'list'>('pipeline');
+  const [view, setView] = useState<'pipeline' | 'list' | 'automation'>('pipeline');
 
   useEffect(() => {
     if (workspace?.id) loadClients();
@@ -126,6 +127,8 @@ export default function CrmPage() {
             Add Your First Client
           </button>
         </div>
+      ) : view === 'automation' ? (
+        <AutomationTab />
       ) : view === 'pipeline' ? (
         <PipelineBoard
           clients={clients}
