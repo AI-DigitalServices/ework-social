@@ -60,21 +60,21 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
         lg:translate-x-0
       `}>
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-slate-700">
+        <div className="px-6 py-6 border-b border-slate-700">
           <Link href="/" className="flex items-center gap-2 no-underline">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="text-white font-bold text-lg">eWork Social</span>
           </Link>
-          <div className="mt-3 px-3 py-2 bg-slate-800 rounded-lg">
-            <p className="text-slate-400 text-xs">Workspace</p>
+          <div className="mt-3 px-3 py-2.5 bg-slate-800 rounded-lg">
+            <p className="text-slate-400 text-xs mb-0.5">Workspace</p>
             <p className="text-white text-sm font-medium truncate">{workspace?.name}</p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
