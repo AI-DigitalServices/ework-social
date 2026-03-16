@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, Clock, CheckCircle, AlertCircle, FileText, MoreVertical, RefreshCw, Copy, Edit2, X, Save, Image } from 'lucide-react';
-import { deletePostAction, updatePostAction, createPostAction } from '@/actions/scheduler.actions';
+import { Trash2, Clock, CheckCircle, AlertCircle, FileText, MoreVertical, RefreshCw, Copy, Edit2, X, Save, Send } from 'lucide-react';
+import { deletePostAction, updatePostAction, createPostAction, retryPostAction, publishNowAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 
 const platformIcons: Record<string, string> = {
@@ -49,10 +49,22 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
   const handleRetry = async () => {
     setRetrying(true);
     try {
-      await updatePostAction(post.id, { status: 'SCHEDULED' });
+      await retryPostAction(post.id);
       if (onUpdate) onUpdate();
     } catch (err) { console.error(err); }
     finally { setRetrying(false); }
+  };
+
+  const [publishingNow, setPublishingNow] = useState(false);
+  const handlePublishNow = async () => {
+    setPublishingNow(true);
+    try {
+      await publishNowAction(post.id);
+      if (onUpdate) onUpdate();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to publish');
+    }
+    finally { setPublishingNow(false); }
   };
 
   const handleDuplicate = async () => {
@@ -113,6 +125,12 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-slate-200 rounded-xl shadow-lg z-10 overflow-hidden min-w-[140px]">
+                {(post.status === 'DRAFT' || post.status === 'SCHEDULED') && (
+                  <button onClick={() => { handlePublishNow(); setShowMenu(false); }} disabled={publishingNow}
+                    className="flex items-center gap-2 px-4 py-2.5 text-green-600 hover:bg-green-50 text-sm w-full">
+                    <Send className="w-4 h-4" /> {publishingNow ? 'Publishing...' : 'Publish Now'}
+                  </button>
+                )}
                 <button onClick={() => { setEditing(true); setShowMenu(false); }}
                   className="flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-50 text-sm w-full">
                   <Edit2 className="w-4 h-4" /> Edit

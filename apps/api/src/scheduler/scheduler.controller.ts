@@ -30,4 +30,19 @@ export class SchedulerController {
   deletePost(@Param('id') id: string) {
     return this.schedulerService.deletePost(id);
   }
+
+  @Post('posts/:id/retry')
+  retryPost(@Param('id') id: string) {
+    return this.schedulerService.retryPost(id);
+  }
+
+  @Post('posts/:id/publish-now')
+  publishNow(@Param('id') id: string) {
+    return this.schedulerService.publishNow(id);
+  }
+
+  @Get('posts/stats')
+  getStats(@Query('workspaceId') workspaceId: string) {
+    return this.schedulerService.getStats(workspaceId);
+  }
 }

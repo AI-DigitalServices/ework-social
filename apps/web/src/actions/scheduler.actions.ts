@@ -20,6 +20,16 @@ export async function deletePostAction(id: string) {
   return res.data;
 }
 
+export async function retryPostAction(postId: string) {
+  const res = await api.post(`/scheduler/posts/${postId}/retry`);
+  return res.data;
+}
+
+export async function publishNowAction(postId: string) {
+  const res = await api.post(`/scheduler/posts/${postId}/publish-now`);
+  return res.data;
+}
+
 // Now pulls REAL connected accounts from social module
 export async function getSocialAccountsAction(workspaceId: string) {
   const res = await api.get(`/social/accounts?workspaceId=${workspaceId}`);

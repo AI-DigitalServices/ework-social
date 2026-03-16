@@ -144,4 +144,29 @@ export class SchedulerService {
     });
   }
 
+
+  async publishNow(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post) throw new Error('Post not found');
+    const platform = post.socialAccount?.platform;
+    if (platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
+    if (platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
+    if (platform === 'FACEBOOK') return this.socialService.publishToFacebook(postId);
+    throw new Error('Unsupported platform');
+  }
+
+  async getStats(workspaceId: string) {
+    const [total, scheduled, published, failed, drafts] = await Promise.all([
+      this.prisma.post.count({ where: { workspaceId } }),
+      this.prisma.post.count({ where: { workspaceId, status: 'SCHEDULED' } }),
+      this.prisma.post.count({ where: { workspaceId, status: 'PUBLISHED' } }),
+      this.prisma.post.count({ where: { workspaceId, status: 'FAILED' } }),
+      this.prisma.post.count({ where: { workspaceId, status: 'DRAFT' } }),
+    ]);
+    return { total, scheduled, published, failed, drafts };
+  }
+
 }
