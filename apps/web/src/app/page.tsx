@@ -1,4 +1,24 @@
 'use client';
+import { useState } from 'react';
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: '1px solid #1A2840' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
+      >
+        <span style={{ color: '#E8F0FA', fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>{question}</span>
+        <span style={{ color: '#4A6080', fontSize: 20, flexShrink: 0, transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'rotate(0deg)' }}>+</span>
+      </button>
+      {open && (
+        <p style={{ color: '#6B8299', fontSize: 15, lineHeight: 1.8, paddingBottom: 22, marginTop: -8 }}>{answer}</p>
+      )}
+    </div>
+  );
+}
+
 
 import { useEffect, useState } from 'react';
 
@@ -358,6 +378,116 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* TESTIMONIALS */}
+      <section style={{ padding: '100px 48px', background: '#070B12', borderTop: '1px solid #1A2840' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <span className="section-label">Early Feedback</span>
+            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF', marginBottom: 16 }}>
+              What agencies are saying
+            </h2>
+            <p style={{ color: '#6B8299', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
+              Real feedback from our beta users and early community members.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {[
+              {
+                quote: "This is exactly what agencies need. The CRM + scheduler combo in one tool is a game changer for managing multiple clients.",
+                name: "Agency Owner",
+                title: "Digital Marketing Agency, Lagos",
+                initials: "AO",
+                color: "#2563EB",
+              },
+              {
+                quote: "Finally a tool built with African agencies in mind. The Naira pricing alone makes it a no-brainer compared to foreign tools.",
+                name: "Social Media Manager",
+                title: "Creative Agency, Abuja",
+                initials: "SM",
+                color: "#7C3AED",
+              },
+              {
+                quote: "The automated pipeline follow-up emails save me hours every week. I set it once and it keeps my leads warm automatically.",
+                name: "Freelance Strategist",
+                title: "Digital Consultant, Accra",
+                initials: "FS",
+                color: "#059669",
+              },
+            ].map((t, i) => (
+              <div key={i} style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 20, padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[...Array(5)].map((_, j) => (
+                    <span key={j} style={{ color: '#F59E0B', fontSize: 16 }}>★</span>
+                  ))}
+                </div>
+                <p style={{ color: '#8FA8C0', fontSize: 15, lineHeight: 1.75, fontStyle: 'italic', flex: 1 }}>"{t.quote}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 42, height: 42, background: t.color, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{t.initials}</div>
+                  <div>
+                    <p style={{ color: '#E8F0FA', fontWeight: 600, fontSize: 14 }}>{t.name}</p>
+                    <p style={{ color: '#4A6080', fontSize: 12 }}>{t.title}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', color: '#2A3A52', fontSize: 13, marginTop: 40 }}>
+            🔒 Beta users — names anonymized for privacy
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{ padding: '100px 48px', borderTop: '1px solid #1A2840' }}>
+        <div style={{ maxWidth: 780, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <span className="section-label">FAQ</span>
+            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF', marginBottom: 16 }}>
+              Frequently asked questions
+            </h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[
+              {
+                q: "What social media platforms does eWork Social support?",
+                a: "Currently LinkedIn, Facebook and Instagram are fully supported. Twitter/X, TikTok, YouTube and WhatsApp are coming in Phase 2. We're expanding fast based on user demand.",
+              },
+              {
+                q: "Can I manage multiple clients from one account?",
+                a: "Yes! eWork Social is built specifically for agencies managing multiple clients. Each workspace supports multiple social accounts, clients, and team members depending on your plan.",
+              },
+              {
+                q: "How does the 7-day free trial work?",
+                a: "You get full access to all Pro features for 7 days — no credit card required. After 7 days, you choose a plan or stay on the free tier with limited features.",
+              },
+              {
+                q: "Can I invite my team members?",
+                a: "Absolutely! You can invite team members with specific roles (Admin, Editor, Viewer). They'll receive an email invite and get access to your workspace dashboard.",
+              },
+              {
+                q: "What payment methods are accepted?",
+                a: "We use Paystack for payments, supporting cards, bank transfers and USSD across Nigeria, Ghana, Kenya, South Africa and more. Pricing is displayed in your local currency.",
+              },
+              {
+                q: "What is the CRM pipeline automation?",
+                a: "When a lead moves to a new stage in your pipeline (e.g. Lead → Proposal), eWork Social automatically sends a personalized email to that contact. You write the template once, we handle the rest.",
+              },
+              {
+                q: "Can I cancel my subscription anytime?",
+                a: "Yes, you can cancel at any time from your Settings page. You'll retain access until the end of your billing period with no hidden fees.",
+              },
+              {
+                q: "Is my data secure?",
+                a: "Yes. We use industry-standard encryption, secure JWT authentication, and your data is stored on enterprise-grade infrastructure. You can delete your account and all data at any time.",
+              },
+            ].map((item, i) => (
+              <FaqItem key={i} question={item.q} answer={item.a} />
+            ))}
           </div>
         </div>
       </section>
