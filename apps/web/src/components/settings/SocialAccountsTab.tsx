@@ -101,9 +101,13 @@ export default function SocialAccountsTab() {
 
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
-    if (!['facebook', 'instagram', 'linkedin'].includes(platformId)) return;
+    if (!['facebook', 'instagram', 'linkedin', 'tiktok', 'youtube'].includes(platformId)) return;
     try {
-      const authUrlEndpoint = platformId === 'linkedin' ? 'linkedin/auth-url' : 'facebook/auth-url';
+      const authUrlEndpoint = 
+        platformId === 'linkedin' ? 'linkedin/auth-url' :
+        platformId === 'tiktok' ? 'tiktok/auth-url' :
+        platformId === 'youtube' ? 'youtube/auth-url' :
+        'facebook/auth-url';
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/social/${authUrlEndpoint}?workspaceId=${workspace.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
