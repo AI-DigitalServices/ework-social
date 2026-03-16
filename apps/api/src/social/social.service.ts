@@ -344,4 +344,136 @@ export class SocialService {
     }
   }
 
+
+  getYouTubeAuthUrl(workspaceId: string, userId: string) {
+    const clientId = this.config.get('YOUTUBE_CLIENT_ID');
+    const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');
+    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const scopes = [
+      'https://www.googleapis.com/auth/youtube.upload',
+      'https://www.googleapis.com/auth/youtube.readonly',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ].join(' ');
+    return {
+      url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code&access_type=offline&prompt=consent`,
+    };
+  }
+
+  async handleYouTubeCallback(code: string, state: string) {
+    const clientId = this.config.get('YOUTUBE_CLIENT_ID');
+    const clientSecret = this.config.get('YOUTUBE_CLIENT_SECRET');
+    const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');
+
+    let workspaceId: string;
+    let userId: string;
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      workspaceId = decoded.workspaceId;
+      userId = decoded.userId;
+    } catch {
+      throw new BadRequestException('Invalid state parameter');
+    }
+
+    // Exchange code for tokens
+    let accessToken: string;
+    let refreshToken: string;
+    try {
+      const tokenRes = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      accessToken = tokenRes.data.access_token;
+      refreshToken = tokenRes.data.refresh_token;
+    } catch (err: any) {
+      throw new BadRequestException('YouTube token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
+
+    // Get channel info
+    let channelName = 'YouTube Channel';
+    let channelId = userId;
+    try {
+      const channelRes = await axios.get(
+        'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const channel = channelRes.data.items?.[0];
+      if (channel) {
+        channelName = channel.snippet.title;
+        channelId = channel.id;
+      }
+    } catch (err) {
+      this.logger.error('Failed to fetch YouTube channel', err);
+    }
+
+    const account = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'YOUTUBE', accountId: channelId } },
+      update: { accountName: channelName, accessToken, refreshToken, isActive: true },
+      create: { workspaceId, platform: 'YOUTUBE', accountId: channelId, accountName: channelName, accessToken, refreshToken, isActive: true },
+    });
+
+    return { success: true, connectedAccounts: [account], message: 'YouTube connected successfully' };
+  }
+
+  async publishToYouTube(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
+
+    const videoUrl = post.mediaUrls?.find((url: string) => url.match(/\.(mp4|mov|avi|webm)$/i));
+    if (!videoUrl) throw new BadRequestException('YouTube posts require a video file');
+
+    try {
+      // Download video from Supabase
+      const videoRes = await axios.get(videoUrl, { responseType: 'stream' });
+
+      // Upload to YouTube
+      const uploadRes = await axios.post(
+        'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+        {
+          snippet: {
+            title: post.content.slice(0, 100),
+            description: post.content,
+            categoryId: '22',
+          },
+          status: { privacyStatus: 'public' },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${post.socialAccount.accessToken}`,
+            'Content-Type': 'application/json',
+            'X-Upload-Content-Type': 'video/mp4',
+          },
+        }
+      );
+
+      const uploadUrl = uploadRes.headers.location;
+      const finalRes = await axios.put(uploadUrl, videoRes.data, {
+        headers: {
+          Authorization: `Bearer ${post.socialAccount.accessToken}`,
+          'Content-Type': 'video/mp4',
+        },
+      });
+
+      const videoId = finalRes.data.id;
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', externalId: videoId },
+      });
+      return { success: true, videoId, url: `https://youtube.com/watch?v=${videoId}` };
+    } catch (err: any) {
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
+      throw new BadRequestException(err?.response?.data?.error?.message || 'Failed to publish to YouTube');
+    }
+  }
+
 }

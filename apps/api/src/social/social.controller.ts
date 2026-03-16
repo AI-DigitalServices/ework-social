@@ -90,7 +90,33 @@ export class SocialController {
     if (body.platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
     if (body.platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
     if (body.platform === 'TIKTOK') return this.socialService.publishToTikTok(postId);
+    if (body.platform === 'YOUTUBE') return this.socialService.publishToYouTube(postId);
     return this.socialService.publishToFacebook(postId);
+  }
+
+
+  @Get('youtube/auth-url')
+  @UseGuards(JwtGuard)
+  getYouTubeAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.socialService.getYouTubeAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('youtube/callback')
+  async youtubeCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    try {
+      await this.socialService.handleYouTubeCallback(code, state);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+    } catch (err) {
+      console.error('YouTube OAuth error:', err);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+    }
   }
 
   @Get('tiktok/auth-url')

@@ -11,7 +11,7 @@ const platforms = [
   { id: 'linkedin', name: 'LinkedIn', description: 'Company pages & personal profiles', icon: '💼', phase: 1, apiPlatform: 'LINKEDIN' },
   { id: 'twitter', name: 'Twitter / X', description: 'Tweets, threads & analytics', icon: '🐦', phase: 2, apiPlatform: 'TWITTER' },
   { id: 'tiktok', name: 'TikTok', description: 'Video posts & analytics', icon: '🎵', phase: 1, apiPlatform: 'TIKTOK' },
-  { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 3, apiPlatform: 'YOUTUBE' },
+  { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE' },
   { id: 'pinterest', name: 'Pinterest', description: 'Pins, boards & analytics', icon: '📌', phase: 3, apiPlatform: 'PINTEREST' },
   { id: 'threads', name: 'Threads', description: 'Posts & engagement', icon: '🧵', phase: 3, apiPlatform: 'THREADS' },
   { id: 'whatsapp', name: 'WhatsApp Business', description: 'Broadcasts & auto-responder', icon: '💬', phase: 3, apiPlatform: 'WHATSAPP' },
