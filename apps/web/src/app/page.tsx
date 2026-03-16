@@ -20,7 +20,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 }
 
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$', flag: '🇺🇸', label: 'USD', rates: { starter: 5, growth: 12, pro: 29 } },
