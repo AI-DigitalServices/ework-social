@@ -107,7 +107,17 @@ export class WorkspaceService {
 
     const owner = { ...workspace.owner, role: 'OWNER', isOwner: true };
     const members = workspace.members.map(m => ({ ...m.user, role: m.role, isOwner: false, memberId: m.id }));
-    return [owner, ...members];
+    
+    // Get pending invites
+    const pendingInvites = await this.prisma.workspaceInvite.findMany({
+      where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } },
+    });
+    const pending = pendingInvites.map(i => ({
+      id: i.id, name: i.email.split('@')[0], email: i.email,
+      role: i.role, isOwner: false, isPending: true, inviteToken: i.token,
+    }));
+    
+    return [owner, ...members, ...pending];
   }
 
   async removeMember(workspaceId: string, userId: string, requesterId: string) {
