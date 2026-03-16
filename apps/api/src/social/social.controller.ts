@@ -89,6 +89,31 @@ export class SocialController {
   ) {
     if (body.platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
     if (body.platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
+    if (body.platform === 'TIKTOK') return this.socialService.publishToTikTok(postId);
     return this.socialService.publishToFacebook(postId);
+  }
+
+  @Get('tiktok/auth-url')
+  @UseGuards(JwtGuard)
+  getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('tiktok/callback')
+  async tiktokCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    try {
+      await this.socialService.handleTikTokCallback(code, state);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+    } catch (err) {
+      console.error('TikTok OAuth error:', err);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+    }
   }
 }
