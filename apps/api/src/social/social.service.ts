@@ -476,4 +476,97 @@ export class SocialService {
     }
   }
 
+
+  getTikTokAuthUrl(workspaceId: string, userId: string) {
+    const clientKey = this.config.get('TIKTOK_CLIENT_KEY');
+    const redirectUri = this.config.get('TIKTOK_REDIRECT_URI');
+    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const scopes = 'user.info.basic,video.publish,video.upload';
+    return {
+      url: `https://www.tiktok.com/v2/auth/authorize?client_key=${clientKey}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code`,
+    };
+  }
+
+  async handleTikTokCallback(code: string, state: string) {
+    const clientKey = this.config.get('TIKTOK_CLIENT_KEY');
+    const clientSecret = this.config.get('TIKTOK_CLIENT_SECRET');
+    const redirectUri = this.config.get('TIKTOK_REDIRECT_URI');
+    let workspaceId: string;
+    let userId: string;
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      workspaceId = decoded.workspaceId;
+      userId = decoded.userId;
+    } catch {
+      throw new BadRequestException('Invalid state parameter');
+    }
+    let accessToken: string;
+    let openId: string;
+    try {
+      const tokenRes = await axios.post(
+        'https://open.tiktokapis.com/v2/oauth/token/',
+        new URLSearchParams({
+          client_key: clientKey,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      accessToken = tokenRes.data.access_token;
+      openId = tokenRes.data.open_id;
+    } catch (err: any) {
+      throw new BadRequestException('TikTok token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
+    let displayName = 'TikTok User';
+    try {
+      const userRes = await axios.get(
+        'https://open.tiktokapis.com/v2/user/info/?fields=display_name',
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      displayName = userRes.data?.data?.user?.display_name || displayName;
+    } catch (err) {
+      this.logger.error('Failed to fetch TikTok user info', err);
+    }
+    const account = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'TIKTOK', accountId: openId } },
+      update: { accountName: displayName, accessToken, isActive: true },
+      create: { workspaceId, platform: 'TIKTOK', accountId: openId, accountName: displayName, accessToken, isActive: true },
+    });
+    return { success: true, connectedAccounts: [account], message: 'TikTok connected successfully' };
+  }
+
+  async publishToTikTok(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
+    const videoUrl = post.mediaUrls?.find((url: string) => url.match(/\.(mp4|mov|avi|webm)$/i));
+    if (!videoUrl) throw new BadRequestException('TikTok posts require a video file');
+    try {
+      const initRes = await axios.post(
+        'https://open.tiktokapis.com/v2/post/publish/video/init/',
+        {
+          post_info: {
+            title: post.content.slice(0, 150),
+            privacy_level: 'PUBLIC_TO_EVERYONE',
+            disable_duet: false,
+            disable_comment: false,
+            disable_stitch: false,
+          },
+          source_info: { source: 'URL', video_url: videoUrl },
+        },
+        { headers: { Authorization: `Bearer ${post.socialAccount.accessToken}`, 'Content-Type': 'application/json' } }
+      );
+      const publishId = initRes.data?.data?.publish_id;
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: publishId } });
+      return { success: true, publishId };
+    } catch (err: any) {
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
+      throw new BadRequestException(err?.response?.data?.error?.message || 'Failed to publish to TikTok');
+    }
+  }
+
 }
