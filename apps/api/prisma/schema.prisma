@@ -23,6 +23,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   workspaces    WorkspaceMember[]
   ownedWorkspaces  Workspace[]
+  sentInvites      WorkspaceInvite[]
   notifications    Notification[]
 }
 
@@ -38,6 +39,7 @@ model Workspace {
   posts       Post[]
   socialAccounts SocialAccount[]
   automationRules AutomationRule[]
+  invites         WorkspaceInvite[]
   subscription Subscription?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -226,4 +228,18 @@ model AutomationRule {
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model WorkspaceInvite {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  email       String
+  role        Role      @default(EDITOR)
+  token       String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  createdAt   DateTime  @default(now())
 }

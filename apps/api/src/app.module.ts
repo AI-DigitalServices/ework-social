@@ -11,6 +11,7 @@ import { BillingModule } from './billing/billing.module';
 import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { CommonModule } from './common/common.module';
     SocialModule,
     NotificationsModule,
     OnboardingModule,
+    WorkspaceModule,
   ],
 })
 export class AppModule {}

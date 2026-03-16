@@ -236,4 +236,39 @@ export class EmailService {
     }
   }
 
+
+  async sendInviteEmail(to: string, inviterName: string, workspaceName: string, acceptUrl: string) {
+    try {
+      await this.resend!.emails.send({
+        from: 'eWork Social <noreply@eworksocial.com>',
+        to,
+        subject: `${inviterName} invited you to join ${workspaceName} on eWork Social`,
+        html: `
+          <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+            <div style="margin-bottom: 32px;">
+              <div style="width: 40px; height: 40px; background: #2563EB; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <span style="color: white; font-size: 20px;">⚡</span>
+              </div>
+              <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0;">You're invited!</h1>
+            </div>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+              <strong>${inviterName}</strong> has invited you to join <strong>${workspaceName}</strong> on eWork Social — the social media management platform built for African agencies.
+            </p>
+            <div style="margin: 32px 0;">
+              <a href="${acceptUrl}" style="display: inline-block; background: #2563EB; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                Accept Invitation →
+              </a>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px;">This invite expires in 7 days. If you don't have an account, you'll be asked to create one.</p>
+            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #94a3b8; font-size: 12px;">eWork Social · eworksocial.com</p>
+            </div>
+          </div>
+        `,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send invite email', err);
+    }
+  }
+
 }
