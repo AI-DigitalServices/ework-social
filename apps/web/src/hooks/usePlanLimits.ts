@@ -18,6 +18,7 @@ export interface PlanUsage {
     autoResponder: string;
     allowedPlatforms: string[];
     twitterEnabled: boolean;
+    automationEnabled: boolean;
   };
   usage: {
     socialAccounts: number;

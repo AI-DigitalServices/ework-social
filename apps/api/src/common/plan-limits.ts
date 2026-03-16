@@ -13,6 +13,7 @@ export const PLAN_LIMITS = {
     autoResponder: 'none' as const,
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM'],
     twitterEnabled: false,
+    automationEnabled: false,
   },
   STARTER: {
     maxSocialAccounts: 10,
@@ -28,6 +29,7 @@ export const PLAN_LIMITS = {
     autoResponder: 'basic' as const,
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN'],
     twitterEnabled: false,
+    automationEnabled: false,
   },
   GROWTH: {
     maxSocialAccounts: 30,
@@ -43,6 +45,7 @@ export const PLAN_LIMITS = {
     autoResponder: 'advanced' as const,
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK'],
     twitterEnabled: true,
+    automationEnabled: true,
   },
   AGENCY_PRO: {
     maxSocialAccounts: 100,
@@ -58,6 +61,7 @@ export const PLAN_LIMITS = {
     autoResponder: 'full' as const,
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE'],
     twitterEnabled: true,
+    automationEnabled: true,
   },
 } as const;
 

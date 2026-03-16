@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { Plus, Trash2, Mail, ToggleLeft, ToggleRight, Zap, Edit2, X, Save } from 'lucide-react';
 import api from '@/lib/api';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 const STAGES = [
   { value: 'LEAD', label: 'Lead', color: 'bg-slate-100 text-slate-600' },
@@ -34,6 +35,8 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
 
 export default function AutomationTab() {
   const { workspace } = useAuthStore();
+  const { data: planData } = usePlanLimits();
+  const canUseAutomation = planData?.limits?.automationEnabled ?? false;
   const [rules, setRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -107,6 +110,21 @@ export default function AutomationTab() {
   };
 
   const stageConfig = (stage: string) => STAGES.find(s => s.value === stage);
+
+  if (!canUseAutomation) return (
+    <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
+      <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Zap className="w-8 h-8 text-violet-400" />
+      </div>
+      <h3 className="text-lg font-bold text-slate-800 mb-2">Pipeline Automation</h3>
+      <p className="text-slate-500 text-sm mb-2">Automatically send emails when leads change stages.</p>
+      <p className="text-violet-600 font-semibold text-sm mb-6">Available on Growth & Agency Pro plans</p>
+      <a href="/dashboard/settings?tab=plan"
+        className="px-6 py-3 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700 transition inline-block">
+        Upgrade to unlock →
+      </a>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
