@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards, Req, ForbiddenException } from '@nestjs/com
 import { AdminService } from './admin.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
-const ADMIN_EMAILS = ['admin@eworksocial.com', 'oshapibernard@gmail.com', 'aiservices.agent@gmail.com'];
+const ADMIN_EMAILS = ['admin@eworksocial.com', 'eworksocial@gmail.com', 'aiservices.agent@gmail.com'];
 
 @Controller('admin')
 @UseGuards(JwtGuard)

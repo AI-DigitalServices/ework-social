@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Users, TrendingUp, DollarSign, BarChart3, CheckCircle, AlertCircle, RefreshCw, Globe, Crown } from 'lucide-react';
 
-const ADMIN_EMAILS = ['admin@eworksocial.com', 'oshapibernard@gmail.com', 'aiservices.agent@gmail.com'];
+const ADMIN_EMAILS = ['admin@eworksocial.com', 'eworksocial@gmail.com', 'aiservices.agent@gmail.com'];
 
 export default function AdminPage() {
   const { user, token } = useAuthStore();
