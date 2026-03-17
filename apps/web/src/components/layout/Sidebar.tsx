@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
-  MessageSquareReply, Settings, LogOut, Zap, X, Menu, Gift,
+  MessageSquareReply, Settings, LogOut, Zap, X, Menu,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -15,7 +15,6 @@ const navItems = [
   { label: 'CRM', href: '/dashboard/crm', icon: Users },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { label: 'Auto-Responder', href: '/dashboard/responder', icon: MessageSquareReply },
-  { label: 'Referrals', href: '/dashboard/referral', icon: Gift },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

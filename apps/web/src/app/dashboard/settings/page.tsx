@@ -8,14 +8,17 @@ import SocialAccountsTab from '@/components/settings/SocialAccountsTab';
 import ProfileTab from '@/components/settings/ProfileTab';
 import WorkspaceTab from '@/components/settings/WorkspaceTab';
 import PlanTab from '@/components/settings/PlanTab';
-import { Share2, User, Building2, CreditCard, CheckCircle } from 'lucide-react';
+import { Share2, User, Building2, CreditCard, CheckCircle, Gift } from 'lucide-react';
 import api from '@/lib/api';
+import ReferralTab from '@/components/settings/ReferralTab';
 
 const tabs = [
   { id: 'social', label: 'Social Accounts', icon: Share2 },
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'workspace', label: 'Workspace', icon: Building2 },
   { id: 'plan', label: 'Plan & Billing', icon: CreditCard },
+  { id: 'referral', label: 'Referrals 🎁', icon: Gift },
+  { id: 'referral', label: 'Referrals', icon: Gift },
 ];
 
 function SettingsContent() {
@@ -115,6 +118,8 @@ function SettingsContent() {
         {activeTab === 'profile' && <ProfileTab />}
         {activeTab === 'workspace' && <WorkspaceTab />}
         {activeTab === 'plan' && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
+        {activeTab === 'referral' && <ReferralTab />}
+        {activeTab === 'referral' && <ReferralTab />}
       </div>
     </div>
   );
