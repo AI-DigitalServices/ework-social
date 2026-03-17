@@ -15,11 +15,18 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
+  const [hasHydrated, setHasHydrated] = useState(false);
+
   useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     if (!token) { router.push('/login'); return; }
     if (user && !ADMIN_EMAILS.includes(user.email)) { router.push('/dashboard'); return; }
-    loadKpi();
-  }, [token, user]);
+    if (user && ADMIN_EMAILS.includes(user.email)) loadKpi();
+  }, [hasHydrated, token, user]);
 
   const loadKpi = async () => {
     setLoading(true);
