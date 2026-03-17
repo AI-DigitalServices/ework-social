@@ -18,7 +18,6 @@ const tabs = [
   { id: 'workspace', label: 'Workspace', icon: Building2 },
   { id: 'plan', label: 'Plan & Billing', icon: CreditCard },
   { id: 'referral', label: 'Referrals 🎁', icon: Gift },
-  { id: 'referral', label: 'Referrals', icon: Gift },
 ];
 
 function SettingsContent() {
@@ -118,7 +117,6 @@ function SettingsContent() {
         {activeTab === 'profile' && <ProfileTab />}
         {activeTab === 'workspace' && <WorkspaceTab />}
         {activeTab === 'plan' && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
-        {activeTab === 'referral' && <ReferralTab />}
         {activeTab === 'referral' && <ReferralTab />}
       </div>
     </div>
