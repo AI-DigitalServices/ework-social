@@ -31,8 +31,11 @@ export default function AdminPage() {
   const loadKpi = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/kpi');
-      setData(res.data);
+      const [kpiRes, refRes] = await Promise.all([
+        api.get('/admin/kpi'),
+        api.get('/admin/referrals'),
+      ]);
+      setData({ ...kpiRes.data, referrals: refRes.data });
       setLastRefresh(new Date());
     } catch (err) {
       console.error(err);
@@ -194,6 +197,42 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+
+        {/* Referral Program */}
+        <div style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 16, padding: 24, marginTop: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3 style={{ color: '#F0F6FF', fontSize: 16, fontWeight: 700 }}>Referral Program</h3>
+            <span style={{ color: '#4A6080', fontSize: 13 }}>{data.referrals?.length || 0} active referrers</span>
+          </div>
+          {data.referrals?.length === 0 ? (
+            <p style={{ color: '#4A6080', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>No referrals yet — share your referral links!</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1A2840' }}>
+                  {['Referrer', 'Code', 'Total', 'Paying'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#4A6080', fontSize: 11, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.referrals?.map((r: any) => (
+                  <tr key={r.id} style={{ borderBottom: '1px solid #0F1E2E' }}>
+                    <td style={{ padding: '12px', color: '#E8F0FA', fontSize: 14 }}>{r.name}</td>
+                    <td style={{ padding: '12px' }}>
+                      <code style={{ background: '#1A2840', padding: '3px 8px', borderRadius: 6, color: '#4D8FE8', fontSize: 12 }}>{r.referralCode}</code>
+                    </td>
+                    <td style={{ padding: '12px', color: '#6B8299', fontSize: 14 }}>{r.totalReferrals}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{ color: '#10B981', fontWeight: 600, fontSize: 14 }}>{r.payingReferrals}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
       </div>
     </div>
   );

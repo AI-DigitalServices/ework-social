@@ -24,6 +24,10 @@ model User {
   workspaces    WorkspaceMember[]
   ownedWorkspaces  Workspace[]
   sentInvites      WorkspaceInvite[]
+  referralCode     String?   @unique
+  referredById     String?
+  referredBy       User?     @relation(name: "UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]    @relation(name: "UserReferrals")
   notifications    Notification[]
 }
 

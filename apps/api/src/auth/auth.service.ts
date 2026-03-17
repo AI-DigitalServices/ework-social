@@ -23,7 +23,7 @@ export class AuthService {
     private notifications: NotificationsService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto & { referralCode?: string }) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
