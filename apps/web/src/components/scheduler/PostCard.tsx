@@ -174,7 +174,18 @@ export default function PostCard({ post, onDeleted, onUpdate }: Props) {
           {post.mediaUrls?.length > 0 && (
             <div className="flex gap-2 mb-3">
               {post.mediaUrls.slice(0,3).map((url: string, i: number) => (
-                <img key={i} src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-100" />
+                url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                  <div key={i} className="relative w-16 h-16 bg-slate-900 rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden">
+                    <video src={url} className="w-full h-full object-cover" muted playsInline />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                        <span style={{fontSize:8, marginLeft:1}}>▶</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <img key={i} src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-100" />
+                )
               ))}
               {post.mediaUrls.length > 3 && (
                 <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-500 font-medium">
