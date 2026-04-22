@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
 export class SocialService {
@@ -11,6 +12,30 @@ export class SocialService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {}
+
+  // Encrypt token before saving to database
+  private encryptToken(token: string): string {
+    const key = Buffer.from(this.config.get<string>('ENCRYPTION_KEY')!, 'hex');
+    const iv = randomBytes(16);
+    const cipher = createCipheriv('aes-256-cbc', key, iv);
+    const encrypted = cipher.update(token, 'utf8', 'hex') + cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
+  }
+
+  // Decrypt token after reading from database
+  private decryptToken(encryptedToken: string): string {
+    try {
+      const [ivHex, encrypted] = encryptedToken.split(':');
+      if (!ivHex || !encrypted) return encryptedToken; // return as-is if not encrypted format
+      const key = Buffer.from(this.config.get<string>('ENCRYPTION_KEY')!, 'hex');
+      const iv = Buffer.from(ivHex, 'hex');
+      const decipher = createDecipheriv('aes-256-cbc', key, iv);
+      return decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
+    } catch {
+      // If decryption fails, return original (handles legacy unencrypted tokens)
+      return encryptedToken;
+    }
+  }
 
   getFacebookAuthUrl(workspaceId: string, userId: string) {
     const appId = this.config.get('META_APP_ID');
@@ -103,8 +128,8 @@ export class SocialService {
 
       const fbAccount = await this.prisma.socialAccount.upsert({
         where: { workspaceId_platform_accountId: { workspaceId, platform: 'FACEBOOK', accountId: page.id } },
-        update: { accountName: page.name, accessToken: page.access_token, isActive: true },
-        create: { workspaceId, platform: 'FACEBOOK', accountId: page.id, accountName: page.name, accessToken: page.access_token, isActive: true },
+        update: { accountName: page.name, accessToken: this.encryptToken(page.access_token), isActive: true },
+        create: { workspaceId, platform: 'FACEBOOK', accountId: page.id, accountName: page.name, accessToken: this.encryptToken(page.access_token), isActive: true },
       });
       connectedAccounts.push(fbAccount);
       console.log('Facebook page saved:', fbAccount.id);
@@ -125,8 +150,8 @@ export class SocialService {
 
           const igAccount = await this.prisma.socialAccount.upsert({
             where: { workspaceId_platform_accountId: { workspaceId, platform: 'INSTAGRAM', accountId: igId } },
-            update: { accountName: igDetails.username || igDetails.name, accessToken: page.access_token, isActive: true },
-            create: { workspaceId, platform: 'INSTAGRAM', accountId: igId, accountName: igDetails.username || igDetails.name, accessToken: page.access_token, isActive: true },
+            update: { accountName: igDetails.username || igDetails.name, accessToken: this.encryptToken(page.access_token), isActive: true },
+            create: { workspaceId, platform: 'INSTAGRAM', accountId: igId, accountName: igDetails.username || igDetails.name, accessToken: this.encryptToken(page.access_token), isActive: true },
           });
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
@@ -163,9 +188,10 @@ export class SocialService {
     if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
     try {
+      const accessToken = this.decryptToken(post.socialAccount.accessToken);
       const res = await axios.post(
         `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/feed`,
-        { message: post.content, access_token: post.socialAccount.accessToken },
+        { message: post.content, access_token: accessToken },
       );
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
       return { success: true, postId: res.data.id };
@@ -196,7 +222,7 @@ export class SocialService {
     try {
       const imageUrl = post.mediaUrls[0];
       const accountId = post.socialAccount.accountId;
-      const accessToken = post.socialAccount.accessToken;
+      const accessToken = this.decryptToken(post.socialAccount.accessToken);
 
       // Step 1: Create media container with image
       const mediaRes = await axios.post(
@@ -304,8 +330,8 @@ export class SocialService {
 
     const account = await this.prisma.socialAccount.upsert({
       where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId } },
-      update: { accountName, accessToken, isActive: true },
-      create: { workspaceId, platform: 'LINKEDIN', accountId, accountName, accessToken, isActive: true },
+      update: { accountName, accessToken: this.encryptToken(accessToken), isActive: true },
+      create: { workspaceId, platform: 'LINKEDIN', accountId, accountName, accessToken: this.encryptToken(accessToken), isActive: true },
     });
 
     return { success: true, connectedAccounts: [account], message: 'LinkedIn connected successfully' };
@@ -346,7 +372,7 @@ export class SocialService {
 
     try {
       const personUrn = `urn:li:person:${post.socialAccount.accountId}`;
-      const token = post.socialAccount.accessToken;
+      const token = this.decryptToken(post.socialAccount.accessToken);
 
       // Upload images if any
       let shareMediaCategory = 'NONE';
