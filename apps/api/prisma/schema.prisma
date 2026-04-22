@@ -67,7 +67,7 @@ model Subscription {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
   plan        Plan      @default(FREE)
   status      SubStatus @default(ACTIVE)
-  stripeId    String?
+  paystackRef String?
   trialEndsAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

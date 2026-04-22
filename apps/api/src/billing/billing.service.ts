@@ -83,13 +83,13 @@ export class BillingService {
         update: {
           plan: plan as any,
           status: 'ACTIVE',
-          stripeId: data.reference,
+          paystackRef: data.reference,
         },
         create: {
           workspaceId,
           plan: plan as any,
           status: 'ACTIVE',
-          stripeId: data.reference,
+          paystackRef: data.reference,
         },
       });
 
@@ -140,8 +140,8 @@ export class BillingService {
 
     await this.prisma.subscription.upsert({
       where: { workspaceId },
-      update: { plan: plan as any, status: 'ACTIVE', stripeId: data.reference },
-      create: { workspaceId, plan: plan as any, status: 'ACTIVE', stripeId: data.reference },
+      update: { plan: plan as any, status: 'ACTIVE', paystackRef: data.reference },
+      create: { workspaceId, plan: plan as any, status: 'ACTIVE', paystackRef: data.reference },
     });
   }
 
