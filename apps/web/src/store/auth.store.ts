@@ -18,6 +18,7 @@ interface AuthState {
   user: User | null;
   workspace: Workspace | null;
   token: string | null;
+  refreshToken: string | null;
   setAuth: (user: User, workspace: Workspace, token: string, refreshToken?: string) => void;
   setVerified: () => void;
   logout: () => void;
@@ -29,9 +30,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       workspace: null,
       token: null,
+      refreshToken: null,
       setAuth: (user, workspace, token, refreshToken?) => {
-        document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        set({ user, workspace, token });
+        document.cookie = `auth-token=${token}; path=/; max-age=${15 * 60}`;
+        set({ user, workspace, token, refreshToken: refreshToken || null });
       },
       setVerified: () =>
         set((state) => ({
@@ -39,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
         })),
       logout: () => {
         document.cookie = 'auth-token=; path=/; max-age=0';
-        set({ user: null, workspace: null, token: null });
+        set({ user: null, workspace: null, token: null, refreshToken: null });
       },
     }),
     {

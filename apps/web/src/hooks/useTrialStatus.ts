@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import api from '@/lib/api';
 
 interface TrialStatus {
   plan: string;
@@ -10,18 +11,15 @@ interface TrialStatus {
 }
 
 export function useTrialStatus() {
-  const { workspace, token } = useAuthStore();
+  const { workspace } = useAuthStore();
   const [status, setStatus] = useState<TrialStatus | null>(null);
 
   useEffect(() => {
-    if (!workspace?.id || !token) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/billing/trial-status?workspaceId=${workspace.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(setStatus)
+    if (!workspace?.id) return;
+    api.get(`/billing/trial-status?workspaceId=${workspace.id}`)
+      .then(res => setStatus(res.data))
       .catch(console.error);
-  }, [workspace?.id, token]);
+  }, [workspace?.id]);
 
   return status;
 }
