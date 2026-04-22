@@ -484,11 +484,46 @@ export class SocialService {
 
     const account = await this.prisma.socialAccount.upsert({
       where: { workspaceId_platform_accountId: { workspaceId, platform: 'YOUTUBE', accountId: channelId } },
-      update: { accountName: channelName, accessToken, refreshToken, isActive: true },
-      create: { workspaceId, platform: 'YOUTUBE', accountId: channelId, accountName: channelName, accessToken, refreshToken, isActive: true },
+      update: { accountName: channelName, accessToken: this.encryptToken(accessToken), refreshToken: this.encryptToken(refreshToken), isActive: true },
+      create: { workspaceId, platform: 'YOUTUBE', accountId: channelId, accountName: channelName, accessToken: this.encryptToken(accessToken), refreshToken: this.encryptToken(refreshToken), isActive: true },
     });
 
     return { success: true, connectedAccounts: [account], message: 'YouTube connected successfully' };
+  }
+
+  // Refresh YouTube access token using stored refresh token
+  private async refreshYouTubeToken(accountId: string): Promise<string> {
+    const account = await this.prisma.socialAccount.findUnique({
+      where: { id: accountId },
+    });
+    if (!account?.refreshToken) throw new BadRequestException('No refresh token available for YouTube account');
+
+    const decryptedRefreshToken = this.decryptToken(account.refreshToken);
+
+    try {
+      const tokenRes = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        new URLSearchParams({
+          client_id: this.config.get('YOUTUBE_CLIENT_ID')!,
+          client_secret: this.config.get('YOUTUBE_CLIENT_SECRET')!,
+          refresh_token: decryptedRefreshToken,
+          grant_type: 'refresh_token',
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      );
+
+      const newAccessToken = tokenRes.data.access_token;
+
+      // Save the new encrypted access token
+      await this.prisma.socialAccount.update({
+        where: { id: accountId },
+        data: { accessToken: this.encryptToken(newAccessToken) },
+      });
+
+      return newAccessToken;
+    } catch (err: any) {
+      throw new BadRequestException('Failed to refresh YouTube token: ' + JSON.stringify(err?.response?.data));
+    }
   }
 
   async publishToYouTube(postId: string) {
@@ -502,6 +537,15 @@ export class SocialService {
     if (!videoUrl) throw new BadRequestException('YouTube posts require a video file');
 
     try {
+      // Always refresh YouTube token before publishing — expires in 1 hour
+      let accessToken: string;
+      try {
+        accessToken = await this.refreshYouTubeToken(post.socialAccount.id);
+      } catch {
+        // Fall back to decrypting stored token if refresh fails
+        accessToken = this.decryptToken(post.socialAccount.accessToken);
+      }
+
       // Download video from Supabase
       const videoRes = await axios.get(videoUrl, { responseType: 'stream' });
 
@@ -518,7 +562,7 @@ export class SocialService {
         },
         {
           headers: {
-            Authorization: `Bearer ${post.socialAccount.accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             'X-Upload-Content-Type': 'video/mp4',
           },
@@ -528,7 +572,7 @@ export class SocialService {
       const uploadUrl = uploadRes.headers.location;
       const finalRes = await axios.put(uploadUrl, videoRes.data, {
         headers: {
-          Authorization: `Bearer ${post.socialAccount.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'video/mp4',
         },
       });
