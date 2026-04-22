@@ -66,7 +66,7 @@ export class SchedulerService {
     });
   }
 
-  // Runs every minute — processes due scheduled posts
+  // Runs every 2 minutes — processes due scheduled posts
   @Cron('*/2 * * * *')
   async processScheduledPosts() {
     this.logger.log('Cron tick — checking scheduled posts...');
@@ -75,6 +75,16 @@ export class SchedulerService {
       where: {
         status: 'SCHEDULED',
         scheduledAt: { lte: now },
+        workspace: {
+          subscription: {
+            OR: [
+              // Active paid plan
+              { status: 'ACTIVE', plan: { not: 'FREE' } },
+              // Trial still active — trialEndsAt is in the future
+              { status: 'TRIALING', trialEndsAt: { gt: now } },
+            ],
+          },
+        },
       },
       include: {
         socialAccount: true,
