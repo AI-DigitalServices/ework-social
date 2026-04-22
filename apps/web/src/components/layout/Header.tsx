@@ -5,6 +5,7 @@ import { Bell, Settings, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import api from '@/lib/api';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -13,6 +14,7 @@ const pageTitles: Record<string, string> = {
   '/dashboard/analytics': 'Analytics',
   '/dashboard/responder': 'Auto-Responder',
   '/dashboard/settings': 'Settings',
+  '/dashboard/referral': 'Referral Program',
 };
 
 interface Notification {
@@ -40,14 +42,10 @@ export default function Header() {
   const fetchNotifications = async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n: Notification) => !n.read).length);
-      }
+      const res = await api.get('/notifications');
+      const data = res.data;
+      setNotifications(data);
+      setUnreadCount(data.filter((n: Notification) => !n.read).length);
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
@@ -70,22 +68,24 @@ export default function Header() {
 
   const handleMarkAllRead = async () => {
     if (!token) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/mark-all-read`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
+    try {
+      await api.patch('/notifications/mark-all-read');
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all read', err);
+    }
   };
 
   const handleNotificationClick = async (n: Notification) => {
     if (!n.read && token) {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/${n.id}/read`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      try {
+        await api.patch(`/notifications/${n.id}/read`);
+        setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (err) {
+        console.error('Failed to mark notification read', err);
+      }
     }
     if (n.link) { router.push(n.link); setShowNotifications(false); }
   };
@@ -126,15 +126,21 @@ export default function Header() {
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <span className="font-semibold text-slate-800 text-sm">
-                  Notifications {unreadCount > 0 && <span className="ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
+                  Notifications {unreadCount > 0 && (
+                    <span className="ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                  )}
                 </span>
                 {unreadCount > 0 && (
-                  <button onClick={handleMarkAllRead} className="text-xs text-blue-600 cursor-pointer hover:underline">Mark all read</button>
+                  <button onClick={handleMarkAllRead} className="text-xs text-blue-600 cursor-pointer hover:underline">
+                    Mark all read
+                  </button>
                 )}
               </div>
               <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-slate-400 text-sm">No notifications yet</div>
+                  <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                    No notifications yet
+                  </div>
                 ) : (
                   notifications.map(n => (
                     <div
@@ -143,7 +149,9 @@ export default function Header() {
                       className={`px-4 py-3 cursor-pointer transition ${n.read ? 'hover:bg-slate-50' : 'bg-blue-50 hover:bg-blue-100'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium ${n.read ? 'text-slate-700' : 'text-slate-900'}`}>{n.title}</p>
+                        <p className={`text-sm font-medium ${n.read ? 'text-slate-700' : 'text-slate-900'}`}>
+                          {n.title}
+                        </p>
                         {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />}
                       </div>
                       <p className="text-xs text-slate-400 mt-0.5">{n.message}</p>
