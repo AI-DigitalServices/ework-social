@@ -180,24 +180,67 @@ export class SocialService {
       where: { id: postId },
       include: { socialAccount: true },
     });
-    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
+    if (!post || !post.socialAccount?.accessToken) {
+      throw new BadRequestException('Post or account not found');
+    }
+
+    // Instagram requires at least one image — text-only posts are not supported
+    if (!post.mediaUrls || post.mediaUrls.length === 0) {
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage: 'Instagram requires at least one image. Text-only posts are not supported.' },
+      });
+      throw new BadRequestException('Instagram requires at least one image. Text-only posts are not supported.');
+    }
 
     try {
+      const imageUrl = post.mediaUrls[0];
+      const accountId = post.socialAccount.accountId;
+      const accessToken = post.socialAccount.accessToken;
+
+      // Step 1: Create media container with image
       const mediaRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/media`,
+        `https://graph.facebook.com/v19.0/${accountId}/media`,
         null,
-        { params: { caption: post.content, media_type: 'TEXT', access_token: post.socialAccount.accessToken } },
+        {
+          params: {
+            caption: post.content,
+            media_type: 'IMAGE',
+            image_url: imageUrl,
+            access_token: accessToken,
+          },
+        },
       );
+
+      const creationId = mediaRes.data.id;
+      if (!creationId) {
+        throw new Error('No creation ID returned from Instagram');
+      }
+
+      // Step 2: Publish the media container
       const publishRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/media_publish`,
+        `https://graph.facebook.com/v19.0/${accountId}/media_publish`,
         null,
-        { params: { creation_id: mediaRes.data.id, access_token: post.socialAccount.accessToken } },
+        {
+          params: {
+            creation_id: creationId,
+            access_token: accessToken,
+          },
+        },
       );
-      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: publishRes.data.id } });
+
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', externalId: publishRes.data.id },
+      });
       return { success: true, postId: publishRes.data.id };
     } catch (err: any) {
-      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
-      throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish to Instagram');
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to publish to Instagram';
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage },
+      });
+      throw new BadRequestException(errorMessage);
     }
   }
 

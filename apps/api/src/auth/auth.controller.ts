@@ -19,6 +19,12 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshAccessToken(body.refreshToken);
+  }
+
   @Get('me')
   @UseGuards(JwtGuard)
   me(@Request() req: any) {

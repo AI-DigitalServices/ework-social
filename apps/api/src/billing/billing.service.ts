@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import * as crypto from 'crypto';
 import axios from 'axios';
 
 @Injectable()
@@ -99,25 +100,32 @@ export class BillingService {
     }
   }
 
-  async handleWebhook(payload: any, signature: string) {
-    const crypto = require('crypto');
-    const secret = this.config.get('PAYSTACK_SECRET_KEY');
+  async handleWebhook(rawBody: Buffer, signature: string) {
+    const secret = this.config.get<string>('PAYSTACK_SECRET_KEY')!;
+
+    // Use the raw Buffer directly — never JSON.stringify
     const hash = crypto
       .createHmac('sha512', secret)
-      .update(JSON.stringify(payload))
+      .update(rawBody)
       .digest('hex');
 
     if (hash !== signature) {
       throw new BadRequestException('Invalid webhook signature');
     }
 
+    // Parse the body after verification
+    const payload = JSON.parse(rawBody.toString('utf8'));
     const { event, data } = payload;
+
     switch (event) {
       case 'charge.success':
         await this.handlePaymentSuccess(data);
         break;
       case 'subscription.disable':
         await this.handleSubscriptionDisabled(data);
+        break;
+      case 'invoice.payment_failed':
+        await this.handlePaymentFailed(data);
         break;
     }
     return { received: true };
@@ -146,6 +154,15 @@ export class BillingService {
     });
   }
 
+  private async handlePaymentFailed(data: any) {
+    const workspaceId = data.metadata?.workspaceId;
+    if (!workspaceId) return;
+    await this.prisma.subscription.updateMany({
+      where: { workspaceId },
+      data: { status: 'PAST_DUE' as any },
+    });
+  }
+
   async getSubscription(workspaceId: string) {
     return this.prisma.subscription.findFirst({ where: { workspaceId } });
   }
@@ -158,17 +175,14 @@ export class BillingService {
     const trialEndsAt = sub.trialEndsAt;
     const isActive = sub.status === 'ACTIVE' && sub.plan !== 'FREE';
 
-    // Paid plan - no trial concerns
     if (isActive) return { plan: sub.plan, trialActive: false, trialDaysLeft: 0, expired: false };
 
-    // Check trial
     if (trialEndsAt) {
       const msLeft = trialEndsAt.getTime() - now.getTime();
       const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
       if (daysLeft > 0) {
         return { plan: 'FREE', trialActive: true, trialDaysLeft: daysLeft, expired: false };
       } else {
-        // Trial expired - enforce downgrade
         await this.prisma.subscription.update({
           where: { id: sub.id },
           data: { plan: 'FREE', status: 'CANCELLED' },
@@ -182,7 +196,6 @@ export class BillingService {
   async checkAndEnforceTrialExpiry(workspaceId: string) {
     const status = await this.getTrialStatus(workspaceId);
     if (status.expired) {
-      // Create expiry notification
       const workspace = await this.prisma.workspace.findUnique({
         where: { id: workspaceId },
         select: { ownerId: true },

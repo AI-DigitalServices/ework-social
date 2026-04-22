@@ -35,7 +35,8 @@ export class BillingController {
     @Req() req: any,
     @Headers('x-paystack-signature') signature: string,
   ) {
-    return this.billingService.handleWebhook(req.body, signature);
+    const rawBody = req.rawBody as Buffer;
+    return this.billingService.handleWebhook(rawBody, signature);
   }
 
   @Get('verify')
@@ -53,7 +54,6 @@ export class BillingController {
     return this.billingService.getSubscription(workspaceId);
   }
 
-  // Returns current plan, limits & live usage — used by frontend gating
   @Get('limits')
   @UseGuards(JwtGuard)
   getLimits(@Query('workspaceId') workspaceId: string) {
