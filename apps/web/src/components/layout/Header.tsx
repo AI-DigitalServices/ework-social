@@ -102,6 +102,19 @@ export default function Header() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  const getNotificationIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      post_published: '✅',
+      post_failed: '❌',
+      trial_expired: '⏰',
+      trial_expiring: '⚠️',
+      team_invite: '👥',
+      payment_success: '💳',
+      payment_failed: '🚨',
+    };
+    return icons[type] || '🔔';
+  };
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 fixed top-0 left-0 lg:left-64 right-0 z-40">
       <div className="pl-12 lg:pl-0">
@@ -122,46 +135,70 @@ export default function Header() {
               </span>
             )}
           </button>
+
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <span className="font-semibold text-slate-800 text-sm">
-                  Notifications {unreadCount > 0 && (
-                    <span className="ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="ml-2 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
+                      {unreadCount} new
+                    </span>
                   )}
                 </span>
                 {unreadCount > 0 && (
-                  <button onClick={handleMarkAllRead} className="text-xs text-blue-600 cursor-pointer hover:underline">
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
                     Mark all read
                   </button>
                 )}
               </div>
+
               <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                    No notifications yet
+                  <div className="px-4 py-8 text-center">
+                    <p className="text-2xl mb-2">🔔</p>
+                    <p className="text-slate-400 text-sm">No notifications yet</p>
+                    <p className="text-slate-300 text-xs mt-1">We'll notify you when posts publish</p>
                   </div>
                 ) : (
                   notifications.map(n => (
                     <div
                       key={n.id}
                       onClick={() => handleNotificationClick(n)}
-                      className={`px-4 py-3 cursor-pointer transition ${n.read ? 'hover:bg-slate-50' : 'bg-blue-50 hover:bg-blue-100'}`}
+                      className={`px-4 py-3 cursor-pointer transition ${
+                        n.read ? 'hover:bg-slate-50' : 'bg-blue-50 hover:bg-blue-100'
+                      }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium ${n.read ? 'text-slate-700' : 'text-slate-900'}`}>
-                          {n.title}
-                        </p>
-                        {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />}
+                      <div className="flex items-start gap-3">
+                        <span className="text-base flex-shrink-0 mt-0.5">
+                          {getNotificationIcon(n.type)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className={`text-sm font-medium leading-snug ${
+                              n.read ? 'text-slate-700' : 'text-slate-900'
+                            }`}>
+                              {n.title}
+                            </p>
+                            {!n.read && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5 leading-snug">{n.message}</p>
+                          <p className="text-xs text-slate-300 mt-1">{timeAgo(n.createdAt)}</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{n.message}</p>
-                      <p className="text-xs text-slate-300 mt-1">{timeAgo(n.createdAt)}</p>
                     </div>
                   ))
                 )}
               </div>
-              <div className="px-4 py-3 border-t border-slate-100 text-center">
-                <span className="text-xs text-slate-400">Showing last 20 notifications</span>
+
+              <div className="px-4 py-2.5 border-t border-slate-100 text-center bg-slate-50">
+                <span className="text-xs text-slate-400">Last 20 notifications</span>
               </div>
             </div>
           )}
@@ -173,29 +210,45 @@ export default function Header() {
             onClick={() => { setShowAvatar(!showAvatar); setShowNotifications(false); }}
             className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 transition"
           >
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
-            <span className="hidden md:block text-sm font-medium text-slate-700">{user?.name?.split(' ')[0]}</span>
+            <span className="hidden md:block text-sm font-medium text-slate-700">
+              {user?.name?.split(' ')[0]}
+            </span>
           </button>
+
           {showAvatar && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100">
                 <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
                 <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                {!user?.isVerified && (
+                  <span className="inline-block mt-1 text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
+                    ⚠️ Unverified
+                  </span>
+                )}
               </div>
               <div className="py-1">
-                <Link href="/dashboard/settings" onClick={() => setShowAvatar(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition">
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setShowAvatar(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                >
                   <Settings className="w-4 h-4 text-slate-400" /> Settings
                 </Link>
-                <Link href="/dashboard/settings?tab=profile" onClick={() => setShowAvatar(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition">
+                <Link
+                  href="/dashboard/settings?tab=profile"
+                  onClick={() => setShowAvatar(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                >
                   <User className="w-4 h-4 text-slate-400" /> My Profile
                 </Link>
                 <div className="border-t border-slate-100 mt-1 pt-1">
-                  <button onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full text-left">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full text-left"
+                  >
                     <LogOut className="w-4 h-4" /> Logout
                   </button>
                 </div>
