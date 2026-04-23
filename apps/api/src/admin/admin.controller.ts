@@ -13,15 +13,39 @@ export class AdminController {
     private referralService: ReferralService,
   ) {}
 
+  private checkAdmin(req: any) {
+    if (!ADMIN_EMAILS.includes(req.user.email)) {
+      throw new ForbiddenException('Admin access only');
+    }
+  }
+
   @Get('kpi')
   async getKpi(@Req() req: any) {
-    if (!ADMIN_EMAILS.includes(req.user.email)) throw new ForbiddenException('Admin access only');
+    this.checkAdmin(req);
     return this.adminService.getKpiStats();
+  }
+
+  @Get('failed-posts')
+  async getFailedPosts(@Req() req: any) {
+    this.checkAdmin(req);
+    return this.adminService.getFailedPosts();
+  }
+
+  @Get('subscriptions')
+  async getSubscriptions(@Req() req: any) {
+    this.checkAdmin(req);
+    return this.adminService.getActiveSubscriptions();
+  }
+
+  @Get('health')
+  async getHealth(@Req() req: any) {
+    this.checkAdmin(req);
+    return this.adminService.getSystemHealth();
   }
 
   @Get('referrals')
   async getAllReferrals(@Req() req: any) {
-    if (!ADMIN_EMAILS.includes(req.user.email)) throw new ForbiddenException('Admin access only');
+    this.checkAdmin(req);
     return this.referralService.getAllReferralStats();
   }
 
