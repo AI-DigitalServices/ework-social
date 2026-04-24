@@ -9,6 +9,7 @@ const platforms = [
   { id: 'facebook', name: 'Facebook', description: 'Pages, posts, analytics & auto-responder', icon: '📘', phase: 1, apiPlatform: 'FACEBOOK' },
   { id: 'instagram', name: 'Instagram', description: 'Feed, Reels, Stories & DM auto-responder', icon: '📸', phase: 1, apiPlatform: 'INSTAGRAM' },
   { id: 'linkedin', name: 'LinkedIn', description: 'Company pages & personal profiles', icon: '💼', phase: 1, apiPlatform: 'LINKEDIN' },
+  { id: 'bluesky', name: 'Bluesky', description: 'Posts, threads & growing global audience', icon: '🦋', phase: 1, apiPlatform: 'BLUESKY' },
   { id: 'twitter', name: 'Twitter / X', description: 'Tweets, threads & analytics', icon: '🐦', phase: 2, apiPlatform: 'TWITTER' },
   { id: 'tiktok', name: 'TikTok', description: 'Video posts & analytics', icon: '🎵', phase: 1, apiPlatform: 'TIKTOK' },
   { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE' },
@@ -26,6 +27,7 @@ const platformColors: Record<string, { border: string; bg: string; text: string;
   TWITTER:   { border: 'border-slate-300', bg: 'bg-slate-50', text: 'text-slate-800', badge: 'bg-slate-100 text-slate-800' },
   TIKTOK:    { border: 'border-slate-300', bg: 'bg-slate-50', text: 'text-slate-900', badge: 'bg-slate-100 text-slate-900' },
   YOUTUBE:   { border: 'border-red-200',   bg: 'bg-red-50',   text: 'text-red-600',   badge: 'bg-red-100 text-red-600' },
+  BLUESKY:   { border: 'border-sky-200',   bg: 'bg-sky-50',   text: 'text-sky-700',   badge: 'bg-sky-100 text-sky-700' },
   default:   { border: 'border-slate-200', bg: 'bg-slate-50', text: 'text-slate-700', badge: 'bg-slate-100 text-slate-700' },
 };
 

@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
+import { BskyAgent, RichText } from '@atproto/api';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
@@ -679,6 +680,65 @@ export class SocialService {
     } catch (err: any) {
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
       throw new BadRequestException(err?.response?.data?.error?.message || 'Failed to publish to TikTok');
+    }
+  }
+
+
+  async connectBluesky(workspaceId: string, identifier: string, appPassword: string) {
+    try {
+      const agent = new BskyAgent({ service: 'https://bsky.social' });
+      await agent.login({ identifier, password: appPassword });
+      const profile = agent.session;
+      if (!profile) throw new Error('Login failed');
+      const account = await this.prisma.socialAccount.upsert({
+        where: { workspaceId_platform_accountId: { workspaceId, platform: 'BLUESKY', accountId: profile.did } },
+        update: { accountName: profile.handle, accessToken: this.encryptToken(appPassword), refreshToken: this.encryptToken(identifier), isActive: true },
+        create: { workspaceId, platform: 'BLUESKY', accountId: profile.did, accountName: profile.handle, accessToken: this.encryptToken(appPassword), refreshToken: this.encryptToken(identifier), isActive: true },
+      });
+      return { success: true, connectedAccounts: [account], message: `Connected @${profile.handle} on Bluesky` };
+    } catch (err: any) {
+      throw new Error('Bluesky login failed: ' + (err?.message || 'Invalid credentials'));
+    }
+  }
+
+  async publishToBluesky(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post || !post.socialAccount?.accessToken) throw new Error('Post or account not found');
+    try {
+      const appPassword = this.decryptToken(post.socialAccount.accessToken);
+      const identifier = this.decryptToken(post.socialAccount.refreshToken!);
+      const agent = new BskyAgent({ service: 'https://bsky.social' });
+      await agent.login({ identifier, password: appPassword });
+      const rt = new RichText({ text: post.content });
+      await rt.detectFacets(agent);
+      const postData: any = { text: rt.text, facets: rt.facets, createdAt: new Date().toISOString() };
+      if (post.mediaUrls && post.mediaUrls.length > 0) {
+        const images = [];
+        for (const imageUrl of post.mediaUrls.slice(0, 4)) {
+          try {
+            const imgRes = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(imgRes.data);
+            const mimeType = imageUrl.match(/\.png$/i) ? 'image/png' : 'image/jpeg';
+            const { data: blob } = await agent.uploadBlob(buffer, { encoding: mimeType });
+            images.push({ image: blob.blob, alt: post.content.slice(0, 100) });
+          } catch (imgErr) {
+            this.logger.error('Failed to upload image to Bluesky', imgErr);
+          }
+        }
+        if (images.length > 0) {
+          postData.embed = { $type: 'app.bsky.embed.images', images };
+        }
+      }
+      const response = await agent.post(postData);
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: response.uri } });
+      return { success: true, postId: response.uri };
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to publish to Bluesky';
+      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED', errorMessage } });
+      throw new Error(errorMessage);
     }
   }
 

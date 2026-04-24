@@ -16,7 +16,6 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
-import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -42,7 +41,6 @@ import { AiModule } from './ai/ai.module';
     OnboardingModule,
     WorkspaceModule,
     AdminModule,
-    AiModule,
   ],
   providers: [
     {

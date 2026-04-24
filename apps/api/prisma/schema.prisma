@@ -173,6 +173,7 @@ enum Platform {
   LINKEDIN
   TIKTOK
   YOUTUBE
+  BLUESKY
 }
 
 enum PostStatus {

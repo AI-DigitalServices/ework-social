@@ -91,7 +91,14 @@ export class SocialController {
     if (body.platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
     if (body.platform === 'TIKTOK') return this.socialService.publishToTikTok(postId);
     if (body.platform === 'YOUTUBE') return this.socialService.publishToYouTube(postId);
+    if (body.platform === 'BLUESKY') return this.socialService.publishToBluesky(postId);
     return this.socialService.publishToFacebook(postId);
+  }
+
+  @Post('bluesky/connect')
+  @UseGuards(JwtGuard)
+  connectBluesky(@Body() body: { workspaceId: string; identifier: string; appPassword: string }) {
+    return this.socialService.connectBluesky(body.workspaceId, body.identifier, body.appPassword);
   }
 
 
