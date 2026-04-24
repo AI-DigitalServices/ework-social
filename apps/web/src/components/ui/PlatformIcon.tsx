@@ -16,6 +16,7 @@ const platformConfig: Record<string, { label: string; bg: string; text: string; 
   WHATSAPP:  { label: 'W',  bg: 'bg-[#25D366]', text: 'text-white', ring: 'ring-green-200' },
   TELEGRAM:  { label: '✈',  bg: 'bg-[#2AABEE]', text: 'text-white', ring: 'ring-sky-200' },
   REDDIT:    { label: 'r/', bg: 'bg-[#FF4500]', text: 'text-white', ring: 'ring-orange-200' },
+  BLUESKY:   { label: '🦋', bg: 'bg-[#0085FF]', text: 'text-white', ring: 'ring-sky-200' },
 };
 
 const sizes = {
