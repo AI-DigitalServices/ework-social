@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
+import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
 
 const platforms = [
   { id: 'facebook', name: 'Facebook', description: 'Pages, posts, analytics & auto-responder', icon: '📘', phase: 1, apiPlatform: 'FACEBOOK' },
@@ -55,6 +56,7 @@ export default function SocialAccountsTab() {
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [showBlueskyModal, setShowBlueskyModal] = useState(false);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -103,6 +105,7 @@ export default function SocialAccountsTab() {
 
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
+    if (platformId === 'bluesky') { setShowBlueskyModal(true); return; }
     if (!['facebook', 'instagram', 'linkedin', 'tiktok', 'youtube'].includes(platformId)) return;
     try {
       const authUrlEndpoint = 
@@ -247,5 +250,11 @@ export default function SocialAccountsTab() {
         </div>
       </div>
     </div>
+    {showBlueskyModal && (
+        <BlueskyConnectModal
+          onClose={() => setShowBlueskyModal(false)}
+          onConnected={() => { loadAccounts(); showToast('success', '🦋 Bluesky connected successfully!'); }}
+        />
+      )}
   );
 }
