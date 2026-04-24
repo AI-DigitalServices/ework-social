@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film } from 'lucide-react';
+import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles } from 'lucide-react';
+import AiCaptionDrawer from '@/components/scheduler/AiCaptionDrawer';
 import { createPostAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
@@ -60,6 +61,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const [syncMode, setSyncMode] = useState(true);
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [showAiDrawer, setShowAiDrawer] = useState(false);
 
   const selectedAccounts = accounts.filter(a => selectedAccountIds.includes(a.id));
   const activeAccount = accounts.find(a => a.id === activeTab) || selectedAccounts[0];
@@ -318,11 +320,19 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               <label className="text-sm font-medium text-slate-700">
                 {syncMode || !canUsePerPlatformEditor ? 'Content' : `Content for ${activeAccount?.accountName}`}
               </label>
-              {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
-                <button onClick={copyToAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 font-medium transition">
-                  <Copy className="w-3 h-3" /> Copy to all
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAiDrawer(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-xs font-semibold hover:opacity-90 transition"
+                >
+                  <Sparkles className="w-3 h-3" /> AI Write
                 </button>
-              )}
+                {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
+                  <button onClick={copyToAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 font-medium transition">
+                    <Copy className="w-3 h-3" /> Copy to all
+                  </button>
+                )}
+              </div>
             </div>
             <div className="relative">
               <textarea
@@ -487,6 +497,14 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
           </button>
         </div>
       </div>
+      {showAiDrawer && (
+        <AiCaptionDrawer
+          platform={activePlatform}
+          currentContent={activeContent}
+          onApply={(caption) => handleContentChange(caption)}
+          onClose={() => setShowAiDrawer(false)}
+        />
+      )}
     </div>
   );
 }

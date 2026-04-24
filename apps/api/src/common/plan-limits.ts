@@ -14,6 +14,10 @@ export const PLAN_LIMITS = {
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM'],
     twitterEnabled: false,
     automationEnabled: false,
+    aiCaptionsPerMonth: 0,
+    aiHashtagsEnabled: false,
+    aiRewriteEnabled: false,
+    aiCrmInsightsEnabled: false,
   },
   STARTER: {
     maxSocialAccounts: 10,
@@ -30,6 +34,10 @@ export const PLAN_LIMITS = {
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN'],
     twitterEnabled: false,
     automationEnabled: false,
+    aiCaptionsPerMonth: 5,
+    aiHashtagsEnabled: false,
+    aiRewriteEnabled: false,
+    aiCrmInsightsEnabled: false,
   },
   GROWTH: {
     maxSocialAccounts: 30,
@@ -46,6 +54,10 @@ export const PLAN_LIMITS = {
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK'],
     twitterEnabled: true,
     automationEnabled: true,
+    aiCaptionsPerMonth: 50,
+    aiHashtagsEnabled: true,
+    aiRewriteEnabled: true,
+    aiCrmInsightsEnabled: false,
   },
   AGENCY_PRO: {
     maxSocialAccounts: 100,
@@ -62,6 +74,10 @@ export const PLAN_LIMITS = {
     allowedPlatforms: ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE'],
     twitterEnabled: true,
     automationEnabled: true,
+    aiCaptionsPerMonth: 999999,
+    aiHashtagsEnabled: true,
+    aiRewriteEnabled: true,
+    aiCrmInsightsEnabled: true,
   },
 } as const;
 
