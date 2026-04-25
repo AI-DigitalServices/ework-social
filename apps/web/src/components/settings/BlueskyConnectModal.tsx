@@ -63,7 +63,7 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
               <li>Click &quot;App Passwords&quot; → &quot;Add App Password&quot;</li>
               <li>Name it &quot;eWork Social&quot; and copy the password</li>
             </ol>
-            
+            <a
               href="https://bsky.app/settings/app-passwords"
               target="_blank"
               rel="noopener noreferrer"
