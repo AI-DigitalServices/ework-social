@@ -40,8 +40,6 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🦋</span>
@@ -56,27 +54,24 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
         </div>
 
         <div className="p-5 space-y-4">
-
-          {/* Info box */}
           <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
             <p className="text-sm text-sky-800 font-medium mb-1">How to get an App Password:</p>
             <ol className="text-xs text-sky-700 space-y-1 list-decimal list-inside">
-              <li>Go to Bluesky Settings → Privacy & Security</li>
-              <li>Click "App Passwords" → "Add App Password"</li>
-              <li>Name it "eWork Social" and copy the password</li>
+              <li>Go to Bluesky Settings then Privacy and Security</li>
+              <li>Click App Passwords then Add App Password</li>
+              <li>Name it eWork Social and copy the password</li>
             </ol>
             
-              href="https://bsky.app/settings/app-passwords"
+              <a href="https://bsky.app/settings/app-passwords"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 mt-3 text-xs text-sky-600 font-semibold hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
-              Open Bluesky App Passwords →
+              Open Bluesky App Passwords
             </a>
           </div>
 
-          {/* Handle input */}
           <div>
             <label className="text-sm font-medium text-slate-700 mb-1.5 block">
               Bluesky Handle
@@ -90,7 +85,6 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
             />
           </div>
 
-          {/* App Password input */}
           <div>
             <label className="text-sm font-medium text-slate-700 mb-1.5 block">
               App Password
@@ -104,6 +98,7 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 placeholder-slate-400 text-sm pr-12"
               />
               <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
@@ -111,26 +106,26 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-1.5">
-              Your app password is encrypted and stored securely. We never store your main password.
+              Your app password is encrypted and stored securely.
             </p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-1">
             <button
+              type="button"
               onClick={onClose}
               className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleConnect}
               disabled={loading || !identifier.trim() || !appPassword.trim()}
               className="flex-1 py-3 bg-sky-500 text-white rounded-xl text-sm font-semibold hover:bg-sky-600 transition disabled:opacity-50"
