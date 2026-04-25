@@ -22,6 +22,7 @@ export interface PlanUsage {
     aiCaptionsPerMonth: number;
     aiHashtagsEnabled: boolean;
     aiRewriteEnabled: boolean;
+    aiCrmInsightsEnabled: boolean;
   };
   usage: {
     socialAccounts: number;
