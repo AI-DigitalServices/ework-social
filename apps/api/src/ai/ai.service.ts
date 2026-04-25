@@ -111,7 +111,7 @@ Return ONLY the 3 captions, nothing else.`;
 
     try {
       const message = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }],
       });
@@ -155,7 +155,7 @@ Requirements:
 
     try {
       const message = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 300,
         messages: [{ role: 'user', content: prompt }],
       });
@@ -198,7 +198,7 @@ Requirements:
 
     try {
       const message = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       });
@@ -260,7 +260,7 @@ Requirements:
 
     try {
       const message = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       });
