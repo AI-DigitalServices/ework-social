@@ -274,7 +274,7 @@ export default function LandingPage() {
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, letterSpacing: '-1px', marginBottom: 16, color: '#F0F6FF' }}>Post everywhere at once</h2>
           <p style={{ color: '#6B8299', fontSize: 16, marginBottom: 52, fontWeight: 400 }}>Connect all your social accounts and manage them from one place</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center' }}>
-            {[['📘', 'Facebook', 'Live', '#10B981', '#064E3B'], ['📸', 'Instagram', 'Live', '#10B981', '#064E3B'], ['💼', 'LinkedIn', 'Coming Soon', '#6B8299', '#1A2840'], ['𝕏', 'Twitter / X', 'Growth+', '#3B82F6', '#1E3A5F'], ['🎵', 'TikTok', 'Coming Soon', '#6B8299', '#1A2840'], ['▶️', 'YouTube', 'Coming Soon', '#6B8299', '#1A2840'], ['📌', 'Pinterest', 'Coming Soon', '#6B8299', '#1A2840'], ['💬', 'WhatsApp', 'Coming Soon', '#6B8299', '#1A2840']].map(([icon, name, status, textColor, bgColor], i) => (
+            {[['💼', 'LinkedIn', 'Live', '#10B981', '#064E3B'], ['🎵', 'TikTok', 'Live', '#10B981', '#064E3B'], ['🦋', 'Bluesky', 'Live', '#10B981', '#064E3B'], ['▶️', 'YouTube', 'Beta', '#F59E0B', '#451A03'], ['𝕏', 'Twitter / X', 'Growth+', '#3B82F6', '#1E3A5F'], ['📘', 'Facebook', 'Pending', '#F97316', '#431407'], ['📸', 'Instagram', 'Pending', '#F97316', '#431407'], ['📌', 'Pinterest', 'Coming Soon', '#6B8299', '#1A2840'], ['💬', 'WhatsApp', 'Coming Soon', '#6B8299', '#1A2840']].map(([icon, name, status, textColor, bgColor], i) => (
               <div key={i} className="platform-pill">
                 <span style={{ fontSize: 18 }}>{icon}</span>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{name}</span>
@@ -455,7 +455,7 @@ export default function LandingPage() {
             {[
               {
                 q: "What social media platforms does eWork Social support?",
-                a: "Currently LinkedIn, Facebook and Instagram are fully supported. Twitter/X, TikTok, YouTube and WhatsApp are coming in Phase 2. We're expanding fast based on user demand.",
+                a: "LinkedIn, TikTok, and Bluesky are fully live. YouTube is in beta. Facebook and Instagram are pending Meta app review — coming very soon. Twitter/X is available on Growth plan and above.",
               },
               {
                 q: "Can I manage multiple clients from one account?",
