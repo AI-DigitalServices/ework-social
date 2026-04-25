@@ -27,6 +27,16 @@ import { AiModule } from './ai/ai.module';
         ttl: 60000,
         limit: 100,
       },
+      {
+        name: 'auth',
+        ttl: 60000,
+        limit: 8,
+      },
+      {
+        name: 'ai',
+        ttl: 60000,
+        limit: 20,
+      },
     ]),
     PrismaModule,
     CommonModule,

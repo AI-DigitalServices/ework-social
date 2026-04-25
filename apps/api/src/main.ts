@@ -15,6 +15,8 @@ async function bootstrap() {
     rawBody: true,
   });
 
+  // Trust Cloudflare and Railway proxy headers for real IP rate limiting
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors({
