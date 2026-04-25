@@ -19,6 +19,9 @@ export interface PlanUsage {
     allowedPlatforms: string[];
     twitterEnabled: boolean;
     automationEnabled: boolean;
+    aiCaptionsPerMonth: number;
+    aiHashtagsEnabled: boolean;
+    aiRewriteEnabled: boolean;
   };
   usage: {
     socialAccounts: number;
