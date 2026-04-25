@@ -249,12 +249,12 @@ export default function SocialAccountsTab() {
           <p className="text-xs text-amber-700 mt-1">Only accounts added as testers can connect right now. Go to <strong>developers.facebook.com → Your App → Roles → Testers</strong> to add test accounts.</p>
         </div>
       </div>
-    </div>
-    {showBlueskyModal && (
+      {showBlueskyModal && (
         <BlueskyConnectModal
           onClose={() => setShowBlueskyModal(false)}
           onConnected={() => { loadAccounts(); showToast('success', '🦋 Bluesky connected successfully!'); }}
         />
       )}
+    </div>
   );
 }
