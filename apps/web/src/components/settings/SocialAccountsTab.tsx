@@ -91,7 +91,7 @@ export default function SocialAccountsTab() {
     const success = params.get('success');
     const error = params.get('error');
     if (success === 'connected') {
-      showToast('success', '✅ Facebook & Instagram accounts connected successfully!');
+      showToast('success', '✅ Account connected successfully!');
       loadAccounts();
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
     } else if (error === 'cancelled') {
