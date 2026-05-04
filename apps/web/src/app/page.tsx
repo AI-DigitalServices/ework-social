@@ -519,7 +519,7 @@ export default function LandingPage() {
             <a href="/login" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Sign In</a>
           </div>
           <p style={{ color: '#2A3A52', fontSize: 13, fontWeight: 500 }}>© 2026 eWork Social · Built for agencies, everywhere.</p>
-          <p style={{ color: '#2A3A52', fontSize: 12, marginTop: 6 }}>eWork Social is a product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: pending · Lagos, Nigeria</p>
+          <p style={{ color: '#2A3A52', fontSize: 12, marginTop: 6, textAlign: 'center' }}>eWork Social is a product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</p>
         </div>
       </footer>
     </div>

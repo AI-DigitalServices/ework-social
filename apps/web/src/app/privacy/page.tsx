@@ -60,7 +60,7 @@ export default function PrivacyPage() {
         ))}
 
         <div style={{ borderTop: '1px solid #1A2840', paddingTop: 32, marginTop: 48, textAlign: 'center' }}>
-          <p style={{ color: '#2A3A52', fontSize: 13 }}>© 2026 eWork Social · A product of Jben Logistics · Lagos, Nigeria · <a href="/terms">Terms of Service</a> · <a href="/">Home</a></p>
+          <p style={{ color: '#2A3A52', fontSize: 13 }}>© 2026 eWork Social · A product of Jben Logistics (RC: 1940369) · Lagos, Nigeria · <a href="/terms">Terms of Service</a> · <a href="/">Home</a></p>
         </div>
       </div>
     </div>

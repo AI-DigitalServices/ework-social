@@ -42,7 +42,7 @@ export default function TermsPage() {
           },
           {
             title: '8. Intellectual Property',
-            content: `eWork Social and its original content, features, and functionality are owned by AI Digital Services and are protected by copyright, trademark, and other intellectual property laws. You retain ownership of all content you create and publish through our platform.`
+            content: `eWork Social and its original content, features, and functionality are owned by Jben Logistics (RC: 1940369) and are protected by copyright, trademark, and other intellectual property laws. You retain ownership of all content you create and publish through our platform.`
           },
           {
             title: '9. Limitation of Liability',
@@ -68,7 +68,7 @@ export default function TermsPage() {
         ))}
 
         <div style={{ borderTop: '1px solid #1A2840', paddingTop: 32, marginTop: 48, textAlign: 'center' }}>
-          <p style={{ color: '#2A3A52', fontSize: 13 }}>© 2026 eWork Social · A product of Jben Logistics · Lagos, Nigeria · <a href="/privacy">Privacy Policy</a> · <a href="/">Home</a></p>
+          <p style={{ color: '#2A3A52', fontSize: 13 }}>© 2026 eWork Social · A product of Jben Logistics (RC: 1940369) · Lagos, Nigeria · <a href="/privacy">Privacy Policy</a> · <a href="/">Home</a></p>
         </div>
       </div>
     </div>
