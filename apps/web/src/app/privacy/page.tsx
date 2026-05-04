@@ -64,5 +64,14 @@ export default function PrivacyPage() {
         </div>
       </div>
     </div>
+        <div style={{ borderTop: '1px solid #1A2840', marginTop: 64, paddingTop: 32, textAlign: 'center' }}>
+          <p style={{ color: '#2A3A52', fontSize: 13 }}>© 2026 eWork Social · A product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · Lagos, Nigeria</p>
+          <p style={{ color: '#2A3A52', fontSize: 12, marginTop: 8 }}>
+            <a href="/terms" style={{ color: '#3B82F6', marginRight: 16 }}>Terms of Service</a>
+            <a href="/" style={{ color: '#3B82F6' }}>Home</a>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
