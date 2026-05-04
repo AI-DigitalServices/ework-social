@@ -507,19 +507,23 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #1A2840', padding: '44px 48px', background: '#070B12' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>⚡</div>
-            <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px' }}>eWork Social</span>
+      <footer style={{ borderTop: '1px solid #1A2840', padding: '44px 48px 32px', background: '#070B12' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>⚡</div>
+              <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px' }}>eWork Social</span>
+            </div>
+            <div style={{ display: 'flex', gap: 28 }}>
+              <a href="/privacy" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>
+              <a href="/terms" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Terms of Service</a>
+              <a href="/login" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Sign In</a>
+            </div>
+            <p style={{ color: '#2A3A52', fontSize: 13, fontWeight: 500 }}>© 2026 eWork Social · Built for agencies, everywhere.</p>
           </div>
-          <div style={{ display: 'flex', gap: 28 }}>
-            <a href="/privacy" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>
-            <a href="/terms" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Terms of Service</a>
-            <a href="/login" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Sign In</a>
+          <div style={{ borderTop: '1px solid #111827', paddingTop: 16, textAlign: 'center' }}>
+            <p style={{ color: '#2A3A52', fontSize: 12 }}>eWork Social is a product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</p>
           </div>
-          <p style={{ color: '#2A3A52', fontSize: 13, fontWeight: 500 }}>© 2026 eWork Social · Built for agencies, everywhere.</p>
-          <p style={{ color: '#2A3A52', fontSize: 12, marginTop: 6, textAlign: 'center' }}>eWork Social is a product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</p>
         </div>
       </footer>
     </div>
