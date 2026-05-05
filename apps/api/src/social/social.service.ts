@@ -44,13 +44,12 @@ export class SocialService {
     const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
 
     const scopes = [
+      'public_profile',
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
       'instagram_basic',
       'instagram_content_publish',
-      'instagram_manage_comments',
-      'public_profile',
     ].join(',');
 
     return {
