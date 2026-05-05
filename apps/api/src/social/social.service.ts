@@ -116,6 +116,7 @@ export class SocialService {
       });
       pages = pagesRes.data.data || [];
       console.log('Pages found:', pages.length);
+      console.log('Pages raw response:', JSON.stringify(pagesRes.data));
     } catch (err: any) {
       console.error('Pages fetch error:', err?.response?.data || err?.message);
       throw new BadRequestException('Failed to fetch pages');
