@@ -126,6 +126,10 @@ export class SocialService {
     for (const page of pages) {
       console.log('Processing page:', page.name, page.id);
 
+      // Delete inactive record first to prevent isActive=false blocking
+      await this.prisma.socialAccount.deleteMany({
+        where: { workspaceId, platform: 'FACEBOOK', accountId: page.id, isActive: false },
+      });
       const fbAccount = await this.prisma.socialAccount.upsert({
         where: { workspaceId_platform_accountId: { workspaceId, platform: 'FACEBOOK', accountId: page.id } },
         update: { accountName: page.name, accessToken: this.encryptToken(page.access_token), isActive: true },
