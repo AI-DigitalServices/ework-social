@@ -92,6 +92,7 @@ export class SocialController {
     if (body.platform === 'TIKTOK') return this.socialService.publishToTikTok(postId);
     if (body.platform === 'YOUTUBE') return this.socialService.publishToYouTube(postId);
     if (body.platform === 'BLUESKY') return this.socialService.publishToBluesky(postId);
+    if (body.platform === 'THREADS') return this.socialService.publishToThreads(postId);
     return this.socialService.publishToFacebook(postId);
   }
 
@@ -130,6 +131,30 @@ export class SocialController {
   @UseGuards(JwtGuard)
   getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('threads/auth-url')
+  @UseGuards(JwtGuard)
+  getThreadsAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.socialService.getThreadsAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('threads/callback')
+  async threadsCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    try {
+      await this.socialService.handleThreadsCallback(code, state);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+    } catch (err) {
+      console.error('Threads OAuth error:', err);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+    }
   }
 
   @Get('tiktok/callback')

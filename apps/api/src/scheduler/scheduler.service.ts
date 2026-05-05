@@ -108,6 +108,8 @@ export class SchedulerService {
           await this.socialService.publishToFacebook(post.id);
         } else if (platform === 'BLUESKY') {
           await this.socialService.publishToBluesky(post.id);
+        } else if (platform === 'THREADS') {
+          await this.socialService.publishToThreads(post.id);
         } else {
           await this.prisma.post.update({
             where: { id: post.id },

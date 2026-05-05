@@ -15,7 +15,7 @@ const platforms = [
   { id: 'tiktok', name: 'TikTok', description: 'Video posts & analytics', icon: '🎵', phase: 1, apiPlatform: 'TIKTOK' },
   { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE' },
   { id: 'pinterest', name: 'Pinterest', description: 'Pins, boards & analytics', icon: '📌', phase: 3, apiPlatform: 'PINTEREST' },
-  { id: 'threads', name: 'Threads', description: 'Posts & engagement', icon: '🧵', phase: 3, apiPlatform: 'THREADS' },
+  { id: 'threads', name: 'Threads', description: 'Posts, replies & growing Meta audience', icon: '🧵', phase: 1, apiPlatform: 'THREADS' },
   { id: 'whatsapp', name: 'WhatsApp Business', description: 'Broadcasts & auto-responder', icon: '💬', phase: 3, apiPlatform: 'WHATSAPP' },
   { id: 'telegram', name: 'Telegram', description: 'Channel posts & bot auto-responder', icon: '✈️', phase: 4, apiPlatform: 'TELEGRAM' },
   { id: 'reddit', name: 'Reddit', description: 'Subreddit posts & community management', icon: '🤖', phase: 4, apiPlatform: 'REDDIT' },
@@ -29,6 +29,7 @@ const platformColors: Record<string, { border: string; bg: string; text: string;
   TIKTOK:    { border: 'border-slate-300', bg: 'bg-slate-50', text: 'text-slate-900', badge: 'bg-slate-100 text-slate-900' },
   YOUTUBE:   { border: 'border-red-200',   bg: 'bg-red-50',   text: 'text-red-600',   badge: 'bg-red-100 text-red-600' },
   BLUESKY:   { border: 'border-sky-200',   bg: 'bg-sky-50',   text: 'text-sky-700',   badge: 'bg-sky-100 text-sky-700' },
+  THREADS:   { border: 'border-slate-300',  bg: 'bg-slate-50',  text: 'text-slate-800',  badge: 'bg-slate-100 text-slate-800' },
   default:   { border: 'border-slate-200', bg: 'bg-slate-50', text: 'text-slate-700', badge: 'bg-slate-100 text-slate-700' },
 };
 
@@ -106,7 +107,7 @@ export default function SocialAccountsTab() {
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
     if (platformId === 'bluesky') { setShowBlueskyModal(true); return; }
-    if (!['facebook', 'instagram', 'linkedin', 'tiktok', 'youtube'].includes(platformId)) return;
+    if (!['facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'threads'].includes(platformId)) return;
     try {
       const authUrlEndpoint = 
         platformId === 'linkedin' ? 'linkedin/auth-url' :

@@ -745,4 +745,141 @@ export class SocialService {
     }
   }
 
+
+  getThreadsAuthUrl(workspaceId: string, userId: string) {
+    const appId = this.config.get('META_APP_ID');
+    const redirectUri = this.config.get('THREADS_REDIRECT_URI') || 
+      this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
+    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const scopes = ['threads_basic', 'threads_content_publish'].join(',');
+    return {
+      url: `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&state=${state}&response_type=code`,
+    };
+  }
+
+  async handleThreadsCallback(code: string, state: string) {
+    const appId = this.config.get('META_APP_ID');
+    const appSecret = this.config.get('META_APP_SECRET');
+    const redirectUri = this.config.get('THREADS_REDIRECT_URI') ||
+      this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
+
+    let workspaceId: string;
+    let userId: string;
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      workspaceId = decoded.workspaceId;
+      userId = decoded.userId;
+    } catch {
+      throw new BadRequestException('Invalid state parameter');
+    }
+
+    // Exchange code for access token
+    let accessToken: string;
+    let threadUserId: string;
+    try {
+      const tokenRes = await axios.post(
+        'https://graph.threads.net/oauth/access_token',
+        new URLSearchParams({
+          client_id: appId,
+          client_secret: appSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      accessToken = tokenRes.data.access_token;
+      threadUserId = tokenRes.data.user_id;
+    } catch (err: any) {
+      throw new BadRequestException('Threads token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
+
+    // Get long-lived token
+    let longLivedToken: string;
+    try {
+      const llRes = await axios.get('https://graph.threads.net/access_token', {
+        params: {
+          grant_type: 'th_exchange_token',
+          client_secret: appSecret,
+          access_token: accessToken,
+        },
+      });
+      longLivedToken = llRes.data.access_token;
+    } catch {
+      longLivedToken = accessToken;
+    }
+
+    // Get profile info
+    let username = 'Threads User';
+    try {
+      const profileRes = await axios.get(`https://graph.threads.net/v1.0/${threadUserId}`, {
+        params: { fields: 'id,username,name', access_token: longLivedToken },
+      });
+      username = profileRes.data.username || profileRes.data.name || username;
+    } catch (err) {
+      this.logger.error('Failed to fetch Threads profile', err);
+    }
+
+    const account = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'THREADS', accountId: threadUserId } },
+      update: { accountName: username, accessToken: this.encryptToken(longLivedToken), isActive: true },
+      create: { workspaceId, platform: 'THREADS', accountId: threadUserId, accountName: username, accessToken: this.encryptToken(longLivedToken), isActive: true },
+    });
+
+    return { success: true, connectedAccounts: [account], message: `Connected @${username} on Threads` };
+  }
+
+  async publishToThreads(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
+
+    try {
+      const accessToken = this.decryptToken(post.socialAccount.accessToken);
+      const userId = post.socialAccount.accountId;
+
+      // Step 1: Create media container
+      const params: any = {
+        media_type: 'TEXT',
+        text: post.content,
+        access_token: accessToken,
+      };
+
+      if (post.mediaUrls && post.mediaUrls.length > 0) {
+        params.media_type = 'IMAGE';
+        params.image_url = post.mediaUrls[0];
+      }
+
+      const containerRes = await axios.post(
+        `https://graph.threads.net/v1.0/${userId}/threads`,
+        null,
+        { params }
+      );
+
+      const creationId = containerRes.data.id;
+
+      // Step 2: Publish container
+      const publishRes = await axios.post(
+        `https://graph.threads.net/v1.0/${userId}/threads_publish`,
+        null,
+        { params: { creation_id: creationId, access_token: accessToken } }
+      );
+
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', externalId: publishRes.data.id },
+      });
+
+      return { success: true, postId: publishRes.data.id };
+    } catch (err: any) {
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage: err?.response?.data?.error?.message || 'Failed to publish to Threads' },
+      });
+      throw new BadRequestException(err?.response?.data?.error?.message || 'Failed to publish to Threads');
+    }
+  }
+
 }
