@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
+import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
 
 const platforms = [
@@ -68,14 +69,8 @@ export default function SocialAccountsTab() {
     if (!workspace?.id || !token) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/social/accounts?workspaceId=${workspace.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setAccounts(data);
-      }
+      const res = await api.get(`/social/accounts?workspaceId=${workspace.id}`);
+      setAccounts(res.data);
     } catch (err) {
       console.error('Failed to load accounts:', err);
     } finally {
@@ -93,8 +88,9 @@ export default function SocialAccountsTab() {
     const error = params.get('error');
     if (success === 'connected') {
       showToast('success', '✅ Account connected successfully!');
-      loadAccounts();
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
+      // Small delay to ensure token is ready before reloading
+      setTimeout(() => loadAccounts(), 500);
     } else if (error === 'cancelled') {
       showToast('error', 'Connection was cancelled.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
