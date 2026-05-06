@@ -117,6 +117,26 @@ export class SocialService {
       pages = pagesRes.data.data || [];
       console.log('Pages found:', pages.length);
       console.log('Pages raw response:', JSON.stringify(pagesRes.data));
+
+      // Debug: check what the token can actually access
+      try {
+        const debugRes = await axios.get('https://graph.facebook.com/v19.0/me', {
+          params: { fields: 'id,name,accounts', access_token: longLivedToken },
+        });
+        console.log('ME response:', JSON.stringify(debugRes.data));
+        
+        // Try direct accounts call with different fields
+        const acctRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
+          params: { 
+            fields: 'id,name,access_token,category',
+            access_token: longLivedToken,
+            limit: 100,
+          },
+        });
+        console.log('Accounts with fields:', JSON.stringify(acctRes.data));
+      } catch (dbgErr: any) {
+        console.log('Debug error:', JSON.stringify(dbgErr?.response?.data));
+      }
     } catch (err: any) {
       console.error('Pages fetch error:', err?.response?.data || err?.message);
       throw new BadRequestException('Failed to fetch pages');
