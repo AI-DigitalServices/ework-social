@@ -193,6 +193,7 @@ export class SocialService {
     }
 
     return { success: true, connectedAccounts, message: `Connected ${connectedAccounts.length} account(s)` };
+  }
 
   async disconnectAccount(accountId: string, workspaceId: string) {
     await this.prisma.socialAccount.updateMany({

@@ -41,6 +41,7 @@ export class SocialController {
       const errorCode = err?.message === 'no_pages_found' ? 'no_pages' : 'failed';
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=${errorCode}`);
     }
+  }
 
   @Get('accounts')
   @UseGuards(JwtGuard)
