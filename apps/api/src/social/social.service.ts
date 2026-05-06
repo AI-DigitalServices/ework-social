@@ -187,8 +187,12 @@ export class SocialService {
     }
 
     console.log('Total connected:', connectedAccounts.length);
+
+    if (connectedAccounts.length === 0) {
+      throw new BadRequestException('no_pages_found');
+    }
+
     return { success: true, connectedAccounts, message: `Connected ${connectedAccounts.length} account(s)` };
-  }
 
   async disconnectAccount(accountId: string, workspaceId: string) {
     await this.prisma.socialAccount.updateMany({
@@ -771,6 +775,14 @@ export class SocialService {
     const appId = this.config.get('META_APP_ID');
     const redirectUri = this.config.get('THREADS_REDIRECT_URI') || 
       this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
+
+    if (!appId) {
+      throw new BadRequestException('META_APP_ID is not configured. Please add it to Railway environment variables.');
+    }
+    if (!redirectUri) {
+      throw new BadRequestException('THREADS_REDIRECT_URI is not configured. Please add it to Railway environment variables.');
+    }
+
     const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
     const scopes = ['threads_basic', 'threads_content_publish'].join(',');
     return {

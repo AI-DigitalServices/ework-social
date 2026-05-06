@@ -36,11 +36,11 @@ export class SocialController {
     try {
       await this.socialService.handleFacebookCallback(code, state);
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('OAuth error:', err);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+      const errorCode = err?.message === 'no_pages_found' ? 'no_pages' : 'failed';
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=${errorCode}`);
     }
-  }
 
   @Get('accounts')
   @UseGuards(JwtGuard)

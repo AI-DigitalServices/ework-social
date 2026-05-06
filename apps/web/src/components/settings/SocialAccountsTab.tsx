@@ -89,10 +89,12 @@ export default function SocialAccountsTab() {
     if (success === 'connected') {
       showToast('success', '✅ Account connected successfully!');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
-      // Small delay to ensure token is ready before reloading
-      setTimeout(() => loadAccounts(), 500);
+      setTimeout(() => loadAccounts(), 2000);
     } else if (error === 'cancelled') {
       showToast('error', 'Connection was cancelled.');
+      window.history.replaceState({}, '', window.location.pathname + '?tab=social');
+    } else if (error === 'no_pages') {
+      showToast('error', '⚠️ No Facebook Pages found. Your account must be admin of at least one Facebook Page.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
     } else if (error === 'failed') {
       showToast('error', '❌ Connection failed. Please try again.');
