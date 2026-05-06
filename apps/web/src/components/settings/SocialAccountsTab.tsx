@@ -109,6 +109,7 @@ export default function SocialAccountsTab() {
         platformId === 'linkedin' ? 'linkedin/auth-url' :
         platformId === 'tiktok' ? 'tiktok/auth-url' :
         platformId === 'youtube' ? 'youtube/auth-url' :
+        platformId === 'threads' ? 'threads/auth-url' :
         'facebook/auth-url';
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/social/${authUrlEndpoint}?workspaceId=${workspace.id}`,
