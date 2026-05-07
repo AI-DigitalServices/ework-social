@@ -175,4 +175,13 @@ export class SocialController {
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
     }
   }
+
+  @Post('facebook/data-deletion')
+  async facebookDataDeletion(@Body() body: any, @Res() res: Response) {
+    const confirmationCode = `del_${Date.now()}`;
+    return res.json({
+      url: `https://app.eworksocial.com/privacy?deletion=${confirmationCode}`,
+      confirmation_code: confirmationCode,
+    });
+  }
 }
