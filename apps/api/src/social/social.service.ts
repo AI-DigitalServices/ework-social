@@ -793,7 +793,7 @@ export class SocialService {
 
 
   getThreadsAuthUrl(workspaceId: string, userId: string) {
-    const appId = this.config.get('META_APP_ID');
+    const appId = this.config.get('THREADS_APP_ID') || this.config.get('META_APP_ID');
     const redirectUri = this.config.get('THREADS_REDIRECT_URI') || 
       this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
 
