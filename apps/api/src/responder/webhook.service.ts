@@ -10,6 +10,8 @@ export class WebhookService {
 
   async processWebhookEvent(body: any) {
     const { object, entry } = body;
+    console.log(`[WEBHOOK DEBUG] processWebhookEvent called — object: ${object}, entries: ${entry?.length}`);
+    this.logger.log(`Webhook received — object: ${object}, entries: ${entry?.length}`);
 
     if (object === 'page') {
       for (const pageEntry of entry) {
@@ -37,9 +39,11 @@ export class WebhookService {
 
     if (object === 'instagram') {
       for (const igEntry of entry) {
+        this.logger.log(`Instagram entry id: ${igEntry.id}`);
         // Handle Instagram comments
         if (igEntry.changes) {
           for (const change of igEntry.changes) {
+            this.logger.log(`Instagram change field: ${change.field}`);
             if (change.field === 'comments') {
               await this.handleInstagramComment(igEntry.id, change.value);
             }
@@ -176,10 +180,21 @@ export class WebhookService {
       const commentText = commentData.text || '';
       const fromName = commentData.from?.username || 'there';
 
+      this.logger.log(`Instagram comment — accountId: ${igAccountId}, text: "${commentText}"`);
+
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
-      if (!account) return;
+
+      if (!account) {
+        this.logger.warn(`No INSTAGRAM account found for id: ${igAccountId} — checking all IG accounts...`);
+        const allIg = await this.prisma.socialAccount.findMany({
+          where: { platform: 'INSTAGRAM' },
+          select: { accountId: true, accountName: true, isActive: true },
+        });
+        this.logger.warn(`All IG accounts in DB: ${JSON.stringify(allIg)}`);
+        return;
+      }
 
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {

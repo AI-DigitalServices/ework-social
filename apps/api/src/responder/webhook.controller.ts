@@ -59,6 +59,7 @@ export class WebhookController {
     }
 
     // Log body for debugging
+    console.log(`[WEBHOOK DEBUG] Controller hit — body keys: ${Object.keys(body || {}).join(',')}`);
     this.logger.log(`Webhook body: ${JSON.stringify(body).substring(0, 500)}`);
 
     // Respond immediately — process async
