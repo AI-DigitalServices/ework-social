@@ -50,7 +50,6 @@ export class SocialService {
       'pages_manage_posts',
       'instagram_basic',
       'instagram_content_publish',
-      'instagram_manage_comments',
       'business_management',
     ].join(',');
 
