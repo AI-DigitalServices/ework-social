@@ -58,6 +58,9 @@ export class WebhookController {
       }
     }
 
+    // Log body for debugging
+    this.logger.log(`Webhook body: ${JSON.stringify(body).substring(0, 500)}`);
+
     // Respond immediately — process async
     res.status(200).send('EVENT_RECEIVED');
 
