@@ -1,11 +1,11 @@
 import {
   Controller, Get, Post, Query,
-  Body, Res, Headers, Logger,
+  Body, Res, Headers, Logger, Req,
 } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 
 @Controller('webhook')
 export class WebhookController {
@@ -39,18 +39,20 @@ export class WebhookController {
   @Post('facebook')
   async handleFacebookWebhook(
     @Body() body: any,
+    @Req() req: Request & { rawBody?: Buffer },
     @Headers('x-hub-signature-256') signature: string,
     @Res() res: Response,
   ) {
-    // Verify signature
+    // Verify signature using raw body bytes (Meta signs against raw body, not re-serialized JSON)
     const appSecret = this.config.get('META_APP_SECRET');
     if (signature && appSecret) {
+      const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(body));
       const expectedSig = 'sha256=' + createHmac('sha256', appSecret)
-        .update(JSON.stringify(body))
+        .update(rawBody)
         .digest('hex');
 
       if (signature !== expectedSig) {
-        this.logger.warn('Invalid webhook signature');
+        this.logger.warn('Invalid webhook signature — raw body mismatch');
         return res.status(403).send('Invalid signature');
       }
     }
