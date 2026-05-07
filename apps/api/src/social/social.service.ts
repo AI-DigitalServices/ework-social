@@ -812,8 +812,8 @@ export class SocialService {
   }
 
   async handleThreadsCallback(code: string, state: string) {
-    const appId = this.config.get('META_APP_ID');
-    const appSecret = this.config.get('META_APP_SECRET');
+    const appId = this.config.get('THREADS_APP_ID') || this.config.get('META_APP_ID');
+    const appSecret = this.config.get('THREADS_APP_SECRET') || this.config.get('META_APP_SECRET');
     const redirectUri = this.config.get('THREADS_REDIRECT_URI') ||
       this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
 
