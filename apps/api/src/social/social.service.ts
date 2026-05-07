@@ -843,7 +843,7 @@ export class SocialService {
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
       accessToken = tokenRes.data.access_token;
-      threadUserId = tokenRes.data.user_id;
+      threadUserId = String(tokenRes.data.user_id);
     } catch (err: any) {
       throw new BadRequestException('Threads token exchange failed: ' + JSON.stringify(err?.response?.data));
     }
