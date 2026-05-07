@@ -50,6 +50,7 @@ export class SocialService {
       'pages_manage_posts',
       'instagram_basic',
       'instagram_content_publish',
+      'business_management',
     ].join(',');
 
     return {
@@ -117,6 +118,25 @@ export class SocialService {
       pages = pagesRes.data.data || [];
       console.log('Pages found:', pages.length);
       console.log('Pages raw response:', JSON.stringify(pagesRes.data));
+
+      // Fallback: try Business Management API if me/accounts returns empty
+      if (pages.length === 0) {
+        console.log('me/accounts empty — trying Business Management API...');
+        try {
+          const bizRes = await axios.get('https://graph.facebook.com/v19.0/me/businesses', {
+            params: { access_token: longLivedToken, fields: 'id,name,owned_pages{id,name,access_token,category}' },
+          });
+          console.log('Businesses response:', JSON.stringify(bizRes.data));
+          const businesses = bizRes.data.data || [];
+          for (const biz of businesses) {
+            const bizPages = biz.owned_pages?.data || [];
+            pages = [...pages, ...bizPages];
+          }
+          console.log('Pages from Business API:', pages.length);
+        } catch (bizErr: any) {
+          console.log('Business API error:', JSON.stringify(bizErr?.response?.data));
+        }
+      }
 
       // Debug: check what the token can actually access
       try {
