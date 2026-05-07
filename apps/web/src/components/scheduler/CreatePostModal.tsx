@@ -62,8 +62,11 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showAiDrawer, setShowAiDrawer] = useState(false);
+  const [aspectWarnings, setAspectWarnings] = useState<string[]>([]);
 
   const selectedAccounts = accounts.filter(a => selectedAccountIds.includes(a.id));
+  const instagramSelected = selectedAccounts.some(a => a.platform === 'INSTAGRAM');
+  const instagramNeedsImage = instagramSelected && mediaUrls.length === 0;
   const activeAccount = accounts.find(a => a.id === activeTab) || selectedAccounts[0];
   const activePlatform = activeAccount?.platform || 'INSTAGRAM';
   const activeContent = contentMap[activeTab] || '';
@@ -95,13 +98,37 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     setContentMap(newMap);
   };
 
+  const checkImageAspectRatio = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (file.type.startsWith('video/')) { resolve(null); return; }
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        URL.revokeObjectURL(objectUrl);
+        if (ratio < 0.8 || ratio > 1.91) {
+          resolve(`"${file.name}" is ${img.width}×${img.height} (ratio ${ratio.toFixed(2)}:1) — outside Instagram's accepted range.`);
+        } else {
+          resolve(null);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.src = objectUrl;
+    });
+  };
+
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploading(true);
+    setAspectWarnings([]);
     try {
       const urls = await Promise.all(files.map(f => uploadMedia(f, workspace!.id)));
       setMediaUrls(prev => [...prev, ...urls]);
+      if (instagramSelected) {
+        const warnings = (await Promise.all(files.map(checkImageAspectRatio))).filter(Boolean) as string[];
+        if (warnings.length > 0) setAspectWarnings(warnings);
+      }
     } catch (err: any) {
       alert('Upload failed: ' + err.message);
     } finally {
@@ -110,7 +137,10 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     }
   };
 
-  const removeMedia = (url: string) => setMediaUrls(prev => prev.filter(u => u !== url));
+  const removeMedia = (url: string) => {
+    setMediaUrls(prev => prev.filter(u => u !== url));
+    setAspectWarnings([]);
+  };
 
   const applyBestTime = (time: string) => {
     const now = new Date();
@@ -445,6 +475,31 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
             </div>
           </div>
 
+          {/* Instagram media validation warnings */}
+          {instagramSelected && (instagramNeedsImage || aspectWarnings.length > 0) && (
+            <div className="space-y-2">
+              {instagramNeedsImage && (
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <span className="text-lg">⚠️</span>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">Instagram requires an image or video</p>
+                    <p className="text-xs text-amber-700 mt-0.5">Text-only posts are not supported on Instagram. Add at least one image or video before scheduling.</p>
+                  </div>
+                </div>
+              )}
+              {aspectWarnings.map((warning, i) => (
+                <div key={i} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <span className="text-lg">❌</span>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">Unsupported aspect ratio for Instagram</p>
+                    <p className="text-xs text-red-700 mt-0.5">{warning}</p>
+                    <p className="text-xs text-red-500 mt-1">✅ Accepted: Square 1:1 · Portrait 4:5 (1080×1350) · Landscape 1.91:1 (1080×566)</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Schedule */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -480,12 +535,12 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-slate-100">
-          <button onClick={() => handleSubmit('DRAFT')} disabled={loading || anyEmpty || anyOver || isAtPostLimit}
+          <button onClick={() => handleSubmit('DRAFT')} disabled={loading || anyEmpty || anyOver || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
             className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50">
             <FileText className="w-4 h-4" /> Save Draft{selectedAccountIds.length > 1 ? 's' : ''}
           </button>
           <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'DRAFT')}
-            disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit}
+            disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
             {loading ? (
               <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
