@@ -866,7 +866,7 @@ export class SocialService {
     // Get profile info
     let username = 'Threads User';
     try {
-      const profileRes = await axios.get(`https://graph.threads.net/v1.0/${threadUserId}`, {
+      const profileRes = await axios.get(`https://graph.threads.net/v1.0/me`, {
         params: { fields: 'id,username,name', access_token: longLivedToken },
       });
       username = profileRes.data.username || profileRes.data.name || username;
