@@ -45,11 +45,40 @@ export class CrmService {
           take: 50,
           include: { user: { select: { id: true, name: true, avatar: true } } },
         },
+        posts: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { socialAccount: { select: { platform: true, accountName: true } } },
+        },
         _count: { select: { posts: true } },
       },
     });
     if (!client) throw new NotFoundException('Client not found');
-    return client;
+
+    // Get workspace social accounts with per-platform post counts for this client
+    const socialAccounts = await this.prisma.socialAccount.findMany({
+      where: { workspaceId: client.workspaceId, isActive: true },
+      select: { id: true, platform: true, accountName: true, accountId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const platformPostCounts = await this.prisma.post.groupBy({
+      by: ['socialAccountId'],
+      where: { clientId: id },
+      _count: { id: true },
+    });
+
+    const countMap = Object.fromEntries(
+      platformPostCounts.map((p) => [p.socialAccountId, p._count.id]),
+    );
+
+    return {
+      ...client,
+      socialAccounts: socialAccounts.map((acc) => ({
+        ...acc,
+        postCount: countMap[acc.id] ?? 0,
+      })),
+    };
   }
 
   async createClient(dto: CreateClientDto) {

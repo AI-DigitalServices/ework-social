@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { useRouter } from 'next/navigation';
 import { getClientsAction, exportContactsAction } from '@/actions/crm.actions';
 import PipelineBoard from '@/components/crm/PipelineBoard';
 import AddClientModal from '@/components/crm/AddClientModal';
-import ClientDetail from '@/components/crm/ClientDetail';
 import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List, Zap, Download } from 'lucide-react';
 import AutomationTab from '@/components/crm/AutomationTab';
 import { usePlan } from '@/hooks/usePlan';
 
 export default function CrmPage() {
   const { workspace } = useAuthStore();
+  const router = useRouter();
   const { plan, hasFeature } = usePlan();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [view, setView] = useState<'pipeline' | 'list' | 'automation'>('pipeline');
 
   useEffect(() => {
@@ -36,6 +36,8 @@ export default function CrmPage() {
 
   const handleClientAdded = (client: any) => {
     setClients(prev => [client, ...prev]);
+    // Navigate straight to the new client's detail page
+    router.push(`/dashboard/crm/${client.id}`);
   };
 
   const handleStageUpdate = (clientId: string, stage: string) => {
@@ -44,10 +46,8 @@ export default function CrmPage() {
     );
   };
 
-  const handleClientUpdate = (updated: any) => {
-    setClients(prev =>
-      prev.map(c => c.id === updated.id ? updated : c)
-    );
+  const handleClientClick = (client: any) => {
+    router.push(`/dashboard/crm/${client.id}`);
   };
 
   const activeClients = clients.filter(c => c.stage === 'ACTIVE').length;
@@ -58,8 +58,8 @@ export default function CrmPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">CRM & Pipeline</h2>
-          <p className="text-slate-500 mt-1">Manage your clients and track leads.</p>
+          <h2 className="text-2xl font-bold text-slate-800">CRM & Clients</h2>
+          <p className="text-slate-500 mt-1">Manage your pipeline, contacts, and lead automations.</p>
         </div>
         <div className="flex items-center gap-2">
           {hasFeature('GROWTH') && (
@@ -113,61 +113,45 @@ export default function CrmPage() {
       </div>
 
       {/* View toggle */}
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={() => setView('pipeline')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-            view === 'pipeline' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <LayoutGrid className="w-4 h-4" />
-          Pipeline
-        </button>
-        <button
-          onClick={() => setView('list')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-            view === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <List className="w-4 h-4" />
-          List
-        </button>
-        <button
-          onClick={() => setView('automation')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-            view === 'automation' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Zap className="w-4 h-4" />
-          Automations
-        </button>
+      <div className="flex items-center gap-2 mb-5 bg-white border border-slate-200 rounded-xl p-1 w-fit">
+        {([
+          { key: 'pipeline',   icon: <LayoutGrid className="w-4 h-4" />, label: 'Pipeline'    },
+          { key: 'list',       icon: <List       className="w-4 h-4" />, label: 'All Clients' },
+          { key: 'automation', icon: <Zap        className="w-4 h-4" />, label: 'Automations' },
+        ] as const).map(({ key, icon, label }) => (
+          <button key={key} onClick={() => setView(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              view === key ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+            }`}>
+            {icon} {label}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
-      {loading ? (
+      {view === 'automation' ? (
+        <AutomationTab />
+      ) : loading ? (
         <div className="text-center py-16 text-slate-400">Loading clients...</div>
       ) : clients.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-16 text-center">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-slate-800 mb-2">No clients yet</h3>
-          <p className="text-slate-500 mb-6">Add your first client to start tracking your pipeline.</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition"
-          >
-            Add Your First Client
+          <h3 className="text-lg font-bold text-slate-800 mb-2">No contacts yet</h3>
+          <p className="text-slate-500 mb-6">Add your first contact to start tracking your pipeline.</p>
+          <button onClick={() => setShowAddModal(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+            Add Your First Contact
           </button>
         </div>
-      ) : view === 'automation' ? (
-        <AutomationTab />
       ) : view === 'pipeline' ? (
         <PipelineBoard
           clients={clients}
-          onClientClick={setSelectedClient}
+          onClientClick={handleClientClick}
           onStageUpdate={handleStageUpdate}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        /* All Clients list view */
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
@@ -180,22 +164,21 @@ export default function CrmPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {clients.map(client => (
-                <tr
-                  key={client.id}
-                  className="hover:bg-slate-50 cursor-pointer transition"
-                  onClick={() => setSelectedClient(client)}
+                <tr key={client.id}
+                  className="hover:bg-blue-50/40 cursor-pointer transition group"
+                  onClick={() => handleClientClick(client)}
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {(client.socialProfiles as any)?.instagram?.profilePictureUrl ? (
                         <img src={(client.socialProfiles as any).instagram.profilePictureUrl}
-                          alt={client.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                          alt={client.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
                       ) : (
-                        <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                           {client.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="font-medium text-slate-800">{client.name}</span>
+                      <span className="font-semibold text-slate-800 group-hover:text-blue-600 transition">{client.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{client.company || '—'}</td>
@@ -212,14 +195,12 @@ export default function CrmPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      client.stage === 'ACTIVE' ? 'bg-green-100 text-green-600' :
-                      client.stage === 'LEAD' ? 'bg-slate-100 text-slate-600' :
-                      client.stage === 'CONTACTED' ? 'bg-blue-100 text-blue-600' :
-                      client.stage === 'PROPOSAL' ? 'bg-yellow-100 text-yellow-700' :
+                      client.stage === 'ACTIVE'    ? 'bg-green-100 text-green-600' :
+                      client.stage === 'LEAD'      ? 'bg-slate-100 text-slate-600' :
+                      client.stage === 'CONTACTED' ? 'bg-blue-100 text-blue-600'  :
+                      client.stage === 'PROPOSAL'  ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-600'
-                    }`}>
-                      {client.stage}
-                    </span>
+                    }`}>{client.stage}</span>
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">
                     {client.source?.replace(/_/g, ' ') ?? '—'}
@@ -231,20 +212,11 @@ export default function CrmPage() {
         </div>
       )}
 
-      {/* Modals */}
+      {/* Add contact modal */}
       {showAddModal && (
         <AddClientModal
           onClose={() => setShowAddModal(false)}
           onAdded={handleClientAdded}
-        />
-      )}
-
-      {selectedClient && (
-        <ClientDetail
-          client={selectedClient}
-          onClose={() => setSelectedClient(null)}
-          onUpdate={handleClientUpdate}
-          plan={plan}
         />
       )}
     </div>
