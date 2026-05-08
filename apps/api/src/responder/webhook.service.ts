@@ -141,7 +141,8 @@ export class WebhookService {
           account.workspaceId,
           commentData.from?.id,
           fromName,
-          matchingRule.updateLeadStage
+          matchingRule.updateLeadStage,
+          'FACEBOOK_COMMENT',
         );
       }
     } catch (err: any) {
@@ -378,8 +379,10 @@ export class WebhookService {
         await this.updateLeadStage(
           account.workspaceId,
           senderId,
-          senderId,  // used as name fallback; will display as "Instagram User {id}"
-          matchingRule.updateLeadStage
+          senderId,
+          matchingRule.updateLeadStage,
+          'INSTAGRAM_DM',
+          accessToken,
         );
       }
     } catch (err: any) {
@@ -413,7 +416,9 @@ export class WebhookService {
     workspaceId: string,
     socialId: string,
     name: string,
-    stage: string
+    stage: string,
+    source: 'INSTAGRAM_DM' | 'INSTAGRAM_COMMENT' | 'FACEBOOK_DM' | 'FACEBOOK_COMMENT' = 'INSTAGRAM_DM',
+    accessToken?: string,
   ) {
     try {
       const tag = `ig:${socialId}`;
@@ -430,28 +435,87 @@ export class WebhookService {
       }
 
       if (existing) {
-        // Update stage and ensure tag is present
+        const prevStage = existing.stage;
         const updatedTags = existing.tags.includes(tag)
           ? existing.tags
           : [...existing.tags, tag];
         await this.prisma.client.update({
           where: { id: existing.id },
-          data: { stage: stage as any, tags: updatedTags },
+          data: {
+            stage: stage as any,
+            tags: updatedTags,
+            lastContactedAt: new Date(),
+          },
+        });
+        // Log stage change activity
+        if (prevStage !== stage) {
+          await this.prisma.activity.create({
+            data: {
+              clientId: existing.id,
+              type: 'STAGE_CHANGED',
+              description: `Stage updated from ${prevStage} to ${stage} via auto-responder`,
+              metadata: { from: prevStage, to: stage, trigger: source },
+            },
+          });
+        }
+        // Log DM/comment activity
+        await this.prisma.activity.create({
+          data: {
+            clientId: existing.id,
+            type: source.includes('DM') ? 'DM_RECEIVED' : 'COMMENT_RECEIVED',
+            description: `Auto-responder triggered by ${source.toLowerCase().replace('_', ' ')}`,
+            metadata: { source, socialId },
+          },
         });
         this.logger.log(`CRM: updated existing lead "${existing.name}" to stage ${stage}`);
       } else {
-        // Create new lead from DM sender
-        const displayName = name && name !== 'Instagram DM'
-          ? name
-          : `Instagram User ${socialId}`;
-        await this.prisma.client.create({
+        // Attempt contact enrichment via Graph API
+        let displayName = name && name !== 'Instagram DM' ? name : `Instagram User ${socialId}`;
+        let socialProfiles: Record<string, any> = { instagram: { id: socialId } };
+
+        if (accessToken && source.startsWith('INSTAGRAM')) {
+          try {
+            const profileRes = await axios.get(
+              `https://graph.facebook.com/v19.0/${socialId}`,
+              { params: { fields: 'name,username,profile_picture_url', access_token: accessToken } }
+            );
+            const profile = profileRes.data;
+            if (profile.name) displayName = profile.name;
+            socialProfiles = {
+              instagram: {
+                id: socialId,
+                username: profile.username,
+                profilePictureUrl: profile.profile_picture_url,
+              },
+            };
+            this.logger.log(`CRM: enriched lead — name: "${displayName}", username: @${profile.username}`);
+          } catch (enrichErr: any) {
+            this.logger.warn(`CRM: enrichment failed for ${socialId}: ${enrichErr?.message}`);
+          }
+        }
+
+        const newClient = await this.prisma.client.create({
           data: {
             workspaceId,
             name: displayName,
             stage: stage as any,
+            source: source as any,
             tags: [tag, 'instagram', 'auto-responder'],
+            socialProfiles,
+            lastContactedAt: new Date(),
           },
         });
+
+        // Log creation activity
+        await this.prisma.activity.create({
+          data: {
+            clientId: newClient.id,
+            type: 'CREATED',
+            description: `Lead created automatically via ${source.toLowerCase().replace(/_/g, ' ')}`,
+            metadata: { source, socialId },
+          },
+        });
+
         this.logger.log(`CRM: created new lead "${displayName}" at stage ${stage}`);
       }
     } catch (err) {

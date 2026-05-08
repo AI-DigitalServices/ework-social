@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
-import { getClientsAction } from '@/actions/crm.actions';
+import { getClientsAction, exportContactsAction } from '@/actions/crm.actions';
 import PipelineBoard from '@/components/crm/PipelineBoard';
 import AddClientModal from '@/components/crm/AddClientModal';
 import ClientDetail from '@/components/crm/ClientDetail';
-import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List, Zap } from 'lucide-react';
+import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List, Zap, Download } from 'lucide-react';
 import AutomationTab from '@/components/crm/AutomationTab';
+import { usePlan } from '@/hooks/usePlan';
 
 export default function CrmPage() {
   const { workspace } = useAuthStore();
+  const { plan, hasFeature } = usePlan();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -59,30 +61,50 @@ export default function CrmPage() {
           <h2 className="text-2xl font-bold text-slate-800">CRM & Pipeline</h2>
           <p className="text-slate-500 mt-1">Manage your clients and track leads.</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition"
-        >
-          <Plus className="w-4 h-4" />
-          Add Client
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFeature('GROWTH') && (
+            <button
+              onClick={() => exportContactsAction(workspace!.id)}
+              className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition"
+              title="Export contacts as CSV"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition"
+          >
+            <Plus className="w-4 h-4" />
+            Add Contact
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Clients', value: clients.length, icon: Users, color: 'text-blue-600 bg-blue-50' },
+          { label: 'Total Contacts', value: clients.length, icon: Users, color: 'text-blue-600 bg-blue-50' },
           { label: 'Active Clients', value: activeClients, icon: UserCheck, color: 'text-green-600 bg-green-50' },
           { label: 'Open Leads', value: openLeads, icon: TrendingUp, color: 'text-yellow-600 bg-yellow-50' },
+          {
+            label: 'Pipeline Value',
+            value: hasFeature('GROWTH')
+              ? `₦${clients.reduce((s, c) => s + (c.dealValue ?? 0), 0).toLocaleString()}`
+              : '—',
+            icon: TrendingUp,
+            color: 'text-emerald-600 bg-emerald-50',
+          },
         ].map(stat => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
-                <Icon className="w-5 h-5" />
+            <div key={stat.label} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${stat.color}`}>
+                <Icon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+                <p className="text-xl font-bold text-slate-800">{stat.value}</p>
                 <p className="text-slate-500 text-xs">{stat.label}</p>
               </div>
             </div>
@@ -146,11 +168,11 @@ export default function CrmPage() {
         />
       ) : (
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-          <table className="w-full">
+          <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {['Client', 'Email', 'Phone', 'Tags', 'Stage'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {['Contact', 'Company', 'Email', 'Deal Value', 'Tags', 'Stage', 'Source'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -164,21 +186,27 @@ export default function CrmPage() {
                   onClick={() => setSelectedClient(client)}
                 >
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {client.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium text-slate-800 text-sm">{client.name}</span>
+                    <div className="flex items-center gap-2">
+                      {(client.socialProfiles as any)?.instagram?.profilePictureUrl ? (
+                        <img src={(client.socialProfiles as any).instagram.profilePictureUrl}
+                          alt={client.name} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                      ) : (
+                        <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          {client.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-medium text-slate-800">{client.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-sm">{client.email || '—'}</td>
-                  <td className="px-4 py-3 text-slate-500 text-sm">{client.phone || '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">{client.company || '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">{client.email || '—'}</td>
+                  <td className="px-4 py-3 text-emerald-600 font-medium">
+                    {client.dealValue != null ? `₦${Number(client.dealValue).toLocaleString()}` : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {client.tags?.slice(0, 2).map((tag: string) => (
-                        <span key={tag} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs">
-                          {tag}
-                        </span>
+                      {client.tags?.filter((t: string) => !t.startsWith('ig:')).slice(0, 2).map((tag: string) => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs">{tag}</span>
                       ))}
                     </div>
                   </td>
@@ -187,11 +215,14 @@ export default function CrmPage() {
                       client.stage === 'ACTIVE' ? 'bg-green-100 text-green-600' :
                       client.stage === 'LEAD' ? 'bg-slate-100 text-slate-600' :
                       client.stage === 'CONTACTED' ? 'bg-blue-100 text-blue-600' :
-                      client.stage === 'PROPOSAL' ? 'bg-yellow-100 text-yellow-600' :
+                      client.stage === 'PROPOSAL' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-600'
                     }`}>
                       {client.stage}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">
+                    {client.source?.replace(/_/g, ' ') ?? '—'}
                   </td>
                 </tr>
               ))}
@@ -213,6 +244,7 @@ export default function CrmPage() {
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           onUpdate={handleClientUpdate}
+          plan={plan}
         />
       )}
     </div>

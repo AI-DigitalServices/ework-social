@@ -29,6 +29,8 @@ model User {
   referredBy       User?     @relation(name: "UserReferrals", fields: [referredById], references: [id])
   referrals        User[]    @relation(name: "UserReferrals")
   notifications    Notification[]
+  assignedClients  Client[]  @relation("AssignedClients")
+  activityLogs     Activity[]
 }
 
 model Workspace {
@@ -111,19 +113,28 @@ model Post {
 }
 
 model Client {
-  id          String      @id @default(cuid())
-  workspaceId String
-  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
-  name        String
-  email       String?
-  phone       String?
-  tags        String[]
-  stage       LeadStage   @default(LEAD)
-  notes       Note[]
-  posts       Post[]
-  tasks       Task[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace   @relation(fields: [workspaceId], references: [id])
+  name              String
+  email             String?
+  phone             String?
+  company           String?
+  tags              String[]
+  stage             LeadStage   @default(LEAD)
+  source            LeadSource  @default(MANUAL)
+  dealValue         Float?
+  lastContactedAt   DateTime?
+  nextFollowUpAt    DateTime?
+  assignedToId      String?
+  assignedTo        User?       @relation("AssignedClients", fields: [assignedToId], references: [id])
+  socialProfiles    Json?
+  notes             Note[]
+  posts             Post[]
+  tasks             Task[]
+  activities        Activity[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 }
 
 model Note {
@@ -190,6 +201,42 @@ enum LeadStage {
   PROPOSAL
   ACTIVE
   DORMANT
+}
+
+enum LeadSource {
+  MANUAL
+  INSTAGRAM_DM
+  INSTAGRAM_COMMENT
+  FACEBOOK_DM
+  FACEBOOK_COMMENT
+  REFERRAL
+  WEBSITE
+  OTHER
+}
+
+enum ActivityType {
+  NOTE_ADDED
+  STAGE_CHANGED
+  DM_RECEIVED
+  COMMENT_RECEIVED
+  TASK_CREATED
+  TASK_COMPLETED
+  EMAIL_SENT
+  DEAL_UPDATED
+  ASSIGNED
+  CREATED
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id])
+  type        ActivityType
+  description String
+  metadata    Json?
+  createdAt   DateTime     @default(now())
 }
 
 model AutoResponderRule {
