@@ -63,9 +63,11 @@ export class WebhookService {
               this.logger.log(`Instagram DM received: "${messagingEvent.message?.text}"`);
               await this.handleInstagramDM(igEntry.id, messagingEvent);
             }
-            // message_edit with num_edit=0 is a new message send notification — skip (no text available)
-            if (messagingEvent.message_edit) {
-              this.logger.log(`Instagram message_edit event (num_edit: ${messagingEvent.message_edit?.num_edit}) — skipping`);
+            // message_edit with num_edit=0 = new message in v25 API — fetch content via mid
+            if (messagingEvent.message_edit && messagingEvent.message_edit.num_edit === 0) {
+              const mid = messagingEvent.message_edit.mid;
+              this.logger.log(`Instagram new DM (message_edit num_edit=0) — fetching content for mid: ${mid}`);
+              await this.handleInstagramDMByMid(igEntry.id, mid);
             }
           }
         }
@@ -291,6 +293,77 @@ export class WebhookService {
       });
     } catch (err: any) {
       this.logger.error('Error handling Instagram DM:', err?.message);
+    }
+  }
+
+  private async handleInstagramDMByMid(igAccountId: string, mid: string) {
+    try {
+      const account = await this.prisma.socialAccount.findFirst({
+        where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
+      });
+      if (!account) {
+        this.logger.warn(`handleInstagramDMByMid — no account found for ${igAccountId}`);
+        return;
+      }
+
+      const accessToken = this.decryptToken(account.accessToken!);
+
+      // Fetch message content using the message ID
+      let messageText = '';
+      let senderId = '';
+      try {
+        const msgRes = await axios.get(`https://graph.facebook.com/v19.0/${mid}`, {
+          params: { fields: 'id,message,from,to', access_token: accessToken },
+        });
+        messageText = msgRes.data.message || '';
+        senderId = msgRes.data.from?.id || '';
+        this.logger.log(`Fetched DM content: "${messageText}" from senderId: ${senderId}`);
+      } catch (fetchErr: any) {
+        this.logger.error('Failed to fetch message content via mid:', JSON.stringify(fetchErr?.response?.data ?? fetchErr?.message));
+        return;
+      }
+
+      // Skip echoes (message sent by own account)
+      if (!senderId || senderId === igAccountId) {
+        this.logger.log('Skipping — message is echo from own account');
+        return;
+      }
+
+      const rules = await this.prisma.autoResponderRule.findMany({
+        where: {
+          workspaceId: account.workspaceId,
+          platform: 'INSTAGRAM',
+          isActive: true,
+          triggerType: { in: ['any_dm', 'keyword', 'first_message'] },
+        },
+      });
+
+      const matchingRule = this.findMatchingRule(rules, messageText, 'dm');
+      if (!matchingRule) {
+        this.logger.log(`No matching DM rule for message: "${messageText}"`);
+        return;
+      }
+
+      const message = matchingRule.responseMessage.replace('{name}', 'there');
+
+      await axios.post(
+        `https://graph.facebook.com/v19.0/${igAccountId}/messages`,
+        {
+          recipient: { id: senderId },
+          message: { text: message },
+        },
+        { params: { access_token: accessToken } }
+      );
+
+      this.logger.log(`Instagram DM auto-reply sent to ${senderId} via rule: ${matchingRule.name}`);
+
+      await this.prisma.autoResponderRule.update({
+        where: { id: matchingRule.id },
+        data: { triggerCount: { increment: 1 } },
+      });
+    } catch (err: any) {
+      this.logger.error('Error in handleInstagramDMByMid:', err?.message);
+      this.logger.error('Detail:', JSON.stringify(err?.response?.data ?? err));
     }
   }
 
