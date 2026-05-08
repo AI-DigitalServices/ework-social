@@ -9,7 +9,7 @@ export default function TermsPage() {
         </a>
 
         <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 36, fontWeight: 700, color: '#F0F6FF', marginBottom: 8 }}>Terms of Service</h1>
-        <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 48 }}>Last updated: March 2026</p>
+        <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 48 }}>Last updated: May 2026</p>
 
         {[
           {
@@ -34,30 +34,38 @@ export default function TermsPage() {
           },
           {
             title: '6. Social Media Platform Compliance',
-            content: `Your use of social media integrations must comply with the respective platform's terms of service (Facebook, Instagram, LinkedIn, etc.). eWork Social is not responsible for any violations of third-party platform policies.`
+            content: `Your use of social media integrations must comply with the respective platform's terms of service (Facebook, Instagram, LinkedIn, YouTube, TikTok, etc.). eWork Social is not responsible for any violations of third-party platform policies.`
           },
           {
-            title: '7. Data and Privacy',
+            title: '7. YouTube API Services',
+            content: `eWork Social uses YouTube API Services to provide YouTube scheduling and publishing features. By connecting your YouTube account, you agree to be bound by the YouTube Terms of Service (https://www.youtube.com/t/terms). eWork Social's use of information received from YouTube APIs adheres to the YouTube API Services Developer Policies. You may revoke eWork Social's access to your YouTube data at any time via Google Security Settings (https://security.google.com/settings/security/permissions).`
+          },
+          {
+            title: '8. Meta Platform Compliance',
+            content: `eWork Social integrates with Meta's platforms (Facebook and Instagram) through the Meta Platform API. By connecting your Facebook or Instagram account, you agree to comply with Meta's Terms of Service and Platform Policies. eWork Social accesses only the permissions necessary to deliver scheduling, publishing, and auto-response features. You may revoke access at any time via Facebook Settings → Security and Login → Apps and Websites.`
+          },
+          {
+            title: '9. Data and Privacy',
             content: `Your use of eWork Social is also governed by our Privacy Policy. We take data security seriously and implement industry-standard measures to protect your information.`
           },
           {
-            title: '8. Intellectual Property',
+            title: '10. Intellectual Property',
             content: `eWork Social and its original content, features, and functionality are owned by Jben Logistics (RC: 1940369) and are protected by copyright, trademark, and other intellectual property laws. You retain ownership of all content you create and publish through our platform.`
           },
           {
-            title: '9. Limitation of Liability',
+            title: '11. Limitation of Liability',
             content: `eWork Social shall not be liable for any indirect, incidental, special, or consequential damages resulting from your use of our service, including but not limited to loss of revenue, data, or business opportunities.`
           },
           {
-            title: '10. Termination',
+            title: '12. Termination',
             content: `We reserve the right to terminate or suspend your account at any time for violation of these terms. You may also delete your account at any time from Settings → Profile → Danger Zone. Upon termination, your data will be permanently deleted.`
           },
           {
-            title: '11. Changes to Terms',
+            title: '13. Changes to Terms',
             content: `We reserve the right to modify these terms at any time. We will notify users of significant changes via email. Continued use of eWork Social after changes constitutes acceptance of the new terms.`
           },
           {
-            title: '12. Contact',
+            title: '14. Contact',
             content: `For questions about these Terms, contact us at legal@eworksocial.com or visit eworksocial.com.`
           },
         ].map((section, i) => (
