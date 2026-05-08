@@ -40,7 +40,8 @@ export class WebhookService {
     if (object === 'instagram') {
       for (const igEntry of entry) {
         this.logger.log(`Instagram entry id: ${igEntry.id}`);
-        // Handle Instagram comments
+
+        // Handle changes (comments, feed events)
         if (igEntry.changes) {
           for (const change of igEntry.changes) {
             this.logger.log(`Instagram change field: ${change.field}`);
@@ -49,6 +50,22 @@ export class WebhookService {
             }
             if (change.field === 'messages') {
               await this.handleInstagramDM(igEntry.id, change.value);
+            }
+          }
+        }
+
+        // Handle direct messaging events (new DMs come through messaging array)
+        if (igEntry.messaging) {
+          for (const messagingEvent of igEntry.messaging) {
+            this.logger.log(`Instagram messaging event keys: ${Object.keys(messagingEvent).join(',')}`);
+            // New message (has text)
+            if (messagingEvent.message && !messagingEvent.message.is_echo) {
+              this.logger.log(`Instagram DM received: "${messagingEvent.message?.text}"`);
+              await this.handleInstagramDM(igEntry.id, messagingEvent);
+            }
+            // message_edit with num_edit=0 is a new message send notification — skip (no text available)
+            if (messagingEvent.message_edit) {
+              this.logger.log(`Instagram message_edit event (num_edit: ${messagingEvent.message_edit?.num_edit}) — skipping`);
             }
           }
         }
