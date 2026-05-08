@@ -346,13 +346,16 @@ export class WebhookService {
 
       const message = matchingRule.responseMessage.replace('{name}', 'there');
 
+      this.logger.log(`Sending DM reply to ${senderId} via IG account ${igAccountId}`);
+      this.logger.log(`Reply message: "${message}"`);
+
       await axios.post(
         `https://graph.facebook.com/v19.0/${igAccountId}/messages`,
         {
           recipient: { id: senderId },
           message: { text: message },
-        },
-        { params: { access_token: accessToken } }
+          access_token: accessToken,
+        }
       );
 
       this.logger.log(`Instagram DM auto-reply sent to ${senderId} via rule: ${matchingRule.name}`);
@@ -363,7 +366,11 @@ export class WebhookService {
       });
     } catch (err: any) {
       this.logger.error('Error in handleInstagramDMByMid:', err?.message);
-      this.logger.error('Detail:', JSON.stringify(err?.response?.data ?? err));
+      const detail = err?.response?.data
+        ? JSON.stringify(err.response.data)
+        : err?.message || String(err);
+      this.logger.error('Detail:', detail);
+      this.logger.error('Status:', err?.response?.status);
     }
   }
 
