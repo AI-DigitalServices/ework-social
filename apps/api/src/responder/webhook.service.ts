@@ -372,6 +372,17 @@ export class WebhookService {
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
+
+      // Update CRM lead stage if the rule has that configured
+      if (matchingRule.updateLeadStage) {
+        await this.updateLeadStage(
+          account.workspaceId,
+          senderId,
+          'Instagram DM',
+          matchingRule.updateLeadStage
+        );
+        this.logger.log(`CRM lead stage updated to: ${matchingRule.updateLeadStage}`);
+      }
     } catch (err: any) {
       const status = err?.response?.status;
       const data = JSON.stringify(err?.response?.data ?? '(empty)');
