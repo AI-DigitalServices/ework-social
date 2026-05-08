@@ -224,7 +224,13 @@ export class WebhookService {
       });
     } catch (err: any) {
       this.logger.error('Error handling Instagram comment:', err?.message);
-      this.logger.error('Instagram API error detail:', JSON.stringify(err?.response?.data));
+      this.logger.error('Instagram API error detail:', JSON.stringify(err?.response?.data ?? err?.response ?? err));
+      this.logger.error('Instagram API status:', err?.response?.status);
+      this.logger.error('Instagram API full error:', JSON.stringify({
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+      }));
     }
   }
 
