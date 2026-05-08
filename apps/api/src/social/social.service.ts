@@ -48,8 +48,6 @@ export class SocialService {
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
-      'pages_manage_metadata',
-      'pages_messaging',
       'instagram_basic',
       'instagram_content_publish',
       'instagram_manage_comments',
@@ -205,18 +203,6 @@ export class SocialService {
           });
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
-
-          // Subscribe Facebook Page to webhook events
-          try {
-            await axios.post(
-              `https://graph.facebook.com/v19.0/${page.id}/subscribed_apps`,
-              null,
-              { params: { subscribed_fields: 'feed,messages,mention', access_token: page.access_token } }
-            );
-            console.log('Page webhook subscription successful for page:', page.id);
-          } catch (subErr: any) {
-            console.log('Page webhook subscription error:', JSON.stringify(subErr?.response?.data));
-          }
         }
       } catch (igErr: any) {
         console.log('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
