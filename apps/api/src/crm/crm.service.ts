@@ -146,7 +146,7 @@ export class CrmService {
           clientId: id,
           userId: updates.userId,
           type: 'DEAL_UPDATED',
-          description: `Deal value updated to ₦${(updates.dealValue ?? 0).toLocaleString()}`,
+          description: `Deal value updated to ${(updates.dealValue ?? 0).toLocaleString()}`,
           metadata: { previous: existing.dealValue, current: updates.dealValue },
         },
       });

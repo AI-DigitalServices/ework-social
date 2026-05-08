@@ -292,6 +292,18 @@ export class WebhookService {
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
+
+      // Update CRM lead stage if the rule has that configured
+      if (matchingRule.updateLeadStage && senderId) {
+        await this.updateLeadStage(
+          account.workspaceId,
+          senderId,
+          senderId,
+          matchingRule.updateLeadStage,
+          'INSTAGRAM_DM',
+          accessToken,
+        );
+      }
     } catch (err: any) {
       this.logger.error('Error handling Instagram DM:', err?.message);
     }

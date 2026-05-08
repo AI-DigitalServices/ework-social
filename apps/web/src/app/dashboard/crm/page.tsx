@@ -9,11 +9,14 @@ import AddClientModal from '@/components/crm/AddClientModal';
 import { Plus, Users, TrendingUp, UserCheck, LayoutGrid, List, Zap, Download } from 'lucide-react';
 import AutomationTab from '@/components/crm/AutomationTab';
 import { usePlan } from '@/hooks/usePlan';
+import { useCurrencyStore, CURRENCY_SYMBOLS } from '@/store/currency.store';
 
 export default function CrmPage() {
   const { workspace } = useAuthStore();
   const router = useRouter();
   const { plan, hasFeature } = usePlan();
+  const { currency } = useCurrencyStore();
+  const currencySymbol = CURRENCY_SYMBOLS[currency];
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -91,7 +94,7 @@ export default function CrmPage() {
           {
             label: 'Pipeline Value',
             value: hasFeature('GROWTH')
-              ? `₦${clients.reduce((s, c) => s + (c.dealValue ?? 0), 0).toLocaleString()}`
+              ? `${currencySymbol}${clients.reduce((s, c) => s + (c.dealValue ?? 0), 0).toLocaleString()}`
               : '—',
             icon: TrendingUp,
             color: 'text-emerald-600 bg-emerald-50',
@@ -184,7 +187,7 @@ export default function CrmPage() {
                   <td className="px-4 py-3 text-slate-500">{client.company || '—'}</td>
                   <td className="px-4 py-3 text-slate-500">{client.email || '—'}</td>
                   <td className="px-4 py-3 text-emerald-600 font-medium">
-                    {client.dealValue != null ? `₦${Number(client.dealValue).toLocaleString()}` : '—'}
+                    {client.dealValue != null ? `${currencySymbol}${Number(client.dealValue).toLocaleString()}` : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">

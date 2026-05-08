@@ -8,4 +8,4 @@ cmds = ["pnpm install"]
 cmds = ["npx prisma generate", "pnpm run build"]
 
 [start]
-cmd = "node dist/main.js"
+cmd = "npx prisma migrate deploy && node dist/main.js"

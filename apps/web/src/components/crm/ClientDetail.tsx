@@ -10,6 +10,7 @@ import {
   updateClientAction, getActivityLogAction,
 } from '@/actions/crm.actions';
 import type { PlanTier } from '@/hooks/usePlan';
+import { useCurrencyStore, CURRENCY_SYMBOLS } from '@/store/currency.store';
 
 interface Props {
   client: any;
@@ -55,6 +56,8 @@ const ACTIVITY_ICONS: Record<string, string> = {
 export default function ClientDetail({ client, onClose, onUpdate, plan = 'FREE' }: Props) {
   const canViewActivity = ['GROWTH', 'AGENCY_PRO'].includes(plan);
   const canEditFull = ['GROWTH', 'AGENCY_PRO'].includes(plan);
+  const { currency } = useCurrencyStore();
+  const currencySymbol = CURRENCY_SYMBOLS[currency];
 
   const [tab, setTab] = useState<Tab>('notes');
   const [noteText, setNoteText] = useState('');
@@ -188,7 +191,7 @@ export default function ClientDetail({ client, onClose, onUpdate, plan = 'FREE' 
           )}
           {localClient.dealValue != null && (
             <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-              <DollarSign className="w-3.5 h-3.5" />₦{Number(localClient.dealValue).toLocaleString()}
+              <DollarSign className="w-3.5 h-3.5" />{currencySymbol}{Number(localClient.dealValue).toLocaleString()}
             </div>
           )}
           {localClient.tags?.length > 0 && (
@@ -307,7 +310,7 @@ export default function ClientDetail({ client, onClose, onUpdate, plan = 'FREE' 
                       className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   ) : (
                     <p className="text-sm text-emerald-600 font-medium">
-                      {localClient.dealValue != null ? `₦${Number(localClient.dealValue).toLocaleString()}` : '—'}
+                      {localClient.dealValue != null ? `${currencySymbol}${Number(localClient.dealValue).toLocaleString()}` : '—'}
                     </p>
                   )}
                 </div>

@@ -15,6 +15,7 @@ import {
   updateClientAction, updateStageAction, getActivityLogAction,
 } from '@/actions/crm.actions';
 import { usePlan } from '@/hooks/usePlan';
+import { useCurrencyStore, CURRENCY_SYMBOLS } from '@/store/currency.store';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ export default function ClientDetailPage() {
   const { plan } = usePlan();
   const canViewActivity = ['GROWTH', 'AGENCY_PRO'].includes(plan);
   const canEditFull     = ['GROWTH', 'AGENCY_PRO'].includes(plan);
+  const { currency } = useCurrencyStore();
+  const currencySymbol = CURRENCY_SYMBOLS[currency];
 
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -251,7 +254,7 @@ export default function ClientDetailPage() {
                 },
                 {
                   icon: <DollarSign className="w-4 h-4" />, label: 'Deal Value',
-                  value: client.dealValue != null ? `₦${Number(client.dealValue).toLocaleString()}` : null,
+                  value: client.dealValue != null ? `${currencySymbol}${Number(client.dealValue).toLocaleString()}` : null,
                   valueClass: 'text-emerald-600 font-semibold',
                 },
                 {
@@ -561,7 +564,7 @@ export default function ClientDetailPage() {
               {canEditFull && (
                 <>
                   <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">Deal Value (₦)</label>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Deal Value ({currencySymbol})</label>
                     <input type="number" value={editForm.dealValue}
                       onChange={e => setEditForm(f => ({ ...f, dealValue: e.target.value }))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
