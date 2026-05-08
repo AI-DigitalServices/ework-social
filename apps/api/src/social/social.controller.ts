@@ -29,7 +29,8 @@ export class SocialController {
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-    if (error) {
+    if (error || !code || !state) {
+      console.log('Facebook callback aborted — error:', error, 'code present:', !!code, 'state present:', !!state);
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
     }
 
