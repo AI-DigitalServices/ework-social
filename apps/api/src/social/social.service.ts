@@ -203,16 +203,16 @@ export class SocialService {
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
 
-          // Subscribe Instagram account to webhook events via the main app
+          // Subscribe Facebook Page to webhook events (brings Instagram comments through main app)
           try {
             await axios.post(
-              `https://graph.facebook.com/v19.0/${igId}/subscribed_apps`,
+              `https://graph.facebook.com/v19.0/${page.id}/subscribed_apps`,
               null,
-              { params: { subscribed_fields: 'comments,messages', access_token: page.access_token } }
+              { params: { subscribed_fields: 'feed,messages,mention,instagram_manage_comments', access_token: page.access_token } }
             );
-            console.log('Instagram webhook subscription successful for:', igId);
+            console.log('Page webhook subscription successful for page:', page.id);
           } catch (subErr: any) {
-            console.log('Instagram webhook subscription error:', JSON.stringify(subErr?.response?.data));
+            console.log('Page webhook subscription error:', JSON.stringify(subErr?.response?.data));
           }
         }
       } catch (igErr: any) {
