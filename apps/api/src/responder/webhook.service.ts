@@ -349,28 +349,29 @@ export class WebhookService {
       this.logger.log(`Sending DM reply to ${senderId} via IG account ${igAccountId}`);
       this.logger.log(`Reply message: "${message}"`);
 
-      await axios.post(
-        `https://graph.facebook.com/v19.0/${igAccountId}/messages`,
-        {
-          recipient: { id: senderId },
-          message: { text: message },
-          access_token: accessToken,
-        }
-      );
+      const payload = {
+        recipient: { id: senderId },
+        message: { text: message },
+        messaging_type: 'RESPONSE',
+        access_token: accessToken,
+      };
+      this.logger.log(`DM payload: ${JSON.stringify({ recipient: payload.recipient, messaging_type: payload.messaging_type })}`);
 
-      this.logger.log(`Instagram DM auto-reply sent to ${senderId} via rule: ${matchingRule.name}`);
+      const sendRes = await axios.post(
+        `https://graph.facebook.com/v19.0/${igAccountId}/messages`,
+        payload
+      );
+      this.logger.log(`Instagram DM auto-reply sent — response: ${JSON.stringify(sendRes.data)}`);
 
       await this.prisma.autoResponderRule.update({
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
     } catch (err: any) {
-      this.logger.error('Error in handleInstagramDMByMid:', err?.message);
-      const detail = err?.response?.data
-        ? JSON.stringify(err.response.data)
-        : err?.message || String(err);
-      this.logger.error('Detail:', detail);
-      this.logger.error('Status:', err?.response?.status);
+      const status = err?.response?.status;
+      const data = JSON.stringify(err?.response?.data ?? '(empty)');
+      const msg = err?.message;
+      this.logger.error(`handleInstagramDMByMid FAILED — status: ${status}, message: ${msg}, data: ${data}`);
     }
   }
 
