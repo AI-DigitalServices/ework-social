@@ -378,10 +378,9 @@ export class WebhookService {
         await this.updateLeadStage(
           account.workspaceId,
           senderId,
-          'Instagram DM',
+          senderId,  // used as name fallback; will display as "Instagram User {id}"
           matchingRule.updateLeadStage
         );
-        this.logger.log(`CRM lead stage updated to: ${matchingRule.updateLeadStage}`);
       }
     } catch (err: any) {
       const status = err?.response?.status;
@@ -417,15 +416,43 @@ export class WebhookService {
     stage: string
   ) {
     try {
-      const existing = await this.prisma.client.findFirst({
-        where: { workspaceId, name: { contains: name } },
+      const tag = `ig:${socialId}`;
+
+      // Try to find existing client by social ID tag first, then by name
+      let existing = await this.prisma.client.findFirst({
+        where: { workspaceId, tags: { has: tag } },
       });
 
+      if (!existing && name && name !== 'Instagram DM') {
+        existing = await this.prisma.client.findFirst({
+          where: { workspaceId, name: { contains: name } },
+        });
+      }
+
       if (existing) {
+        // Update stage and ensure tag is present
+        const updatedTags = existing.tags.includes(tag)
+          ? existing.tags
+          : [...existing.tags, tag];
         await this.prisma.client.update({
           where: { id: existing.id },
-          data: { stage: stage as any },
+          data: { stage: stage as any, tags: updatedTags },
         });
+        this.logger.log(`CRM: updated existing lead "${existing.name}" to stage ${stage}`);
+      } else {
+        // Create new lead from DM sender
+        const displayName = name && name !== 'Instagram DM'
+          ? name
+          : `Instagram User ${socialId}`;
+        await this.prisma.client.create({
+          data: {
+            workspaceId,
+            name: displayName,
+            stage: stage as any,
+            tags: [tag, 'instagram', 'auto-responder'],
+          },
+        });
+        this.logger.log(`CRM: created new lead "${displayName}" at stage ${stage}`);
       }
     } catch (err) {
       this.logger.error('Failed to update lead stage:', err);
