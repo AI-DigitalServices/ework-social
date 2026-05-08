@@ -346,7 +346,13 @@ export class WebhookService {
 
       const message = matchingRule.responseMessage.replace('{name}', 'there');
 
-      this.logger.log(`Sending DM reply to ${senderId} via IG account ${igAccountId}`);
+      // Per Meta docs: Instagram DM sending via Messenger Platform requires Facebook Page ID,
+      // not the IG account ID. Look up the linked FB page account for this workspace.
+      const fbAccount = await this.prisma.socialAccount.findFirst({
+        where: { workspaceId: account.workspaceId, platform: 'FACEBOOK', isActive: true },
+      });
+      const pageId = fbAccount?.accountId ?? igAccountId;
+      this.logger.log(`Sending DM reply to ${senderId} via Page ID: ${pageId}`);
       this.logger.log(`Reply message: "${message}"`);
 
       const payload = {
@@ -355,10 +361,9 @@ export class WebhookService {
         messaging_type: 'RESPONSE',
         access_token: accessToken,
       };
-      this.logger.log(`DM payload: ${JSON.stringify({ recipient: payload.recipient, messaging_type: payload.messaging_type })}`);
 
       const sendRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${igAccountId}/messages`,
+        `https://graph.facebook.com/v19.0/${pageId}/messages`,
         payload
       );
       this.logger.log(`Instagram DM auto-reply sent — response: ${JSON.stringify(sendRes.data)}`);

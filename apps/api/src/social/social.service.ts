@@ -48,6 +48,7 @@ export class SocialService {
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
+      'pages_manage_metadata',   // required for comments + messages webhook fields
       'instagram_basic',
       'instagram_content_publish',
       'instagram_manage_comments',
@@ -203,6 +204,19 @@ export class SocialService {
           });
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
+
+          // Account-level webhook subscription — required per Meta docs for comments+messages
+          // Must be called after connect with the page access token
+          try {
+            const subRes = await axios.post(
+              `https://graph.facebook.com/v19.0/${igId}/subscribed_apps`,
+              null,
+              { params: { subscribed_fields: 'comments,messages', access_token: page.access_token } }
+            );
+            console.log('Instagram account webhook subscription result:', JSON.stringify(subRes.data));
+          } catch (subErr: any) {
+            console.log('Instagram account webhook subscription error:', JSON.stringify(subErr?.response?.data ?? subErr?.message));
+          }
         }
       } catch (igErr: any) {
         console.log('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
