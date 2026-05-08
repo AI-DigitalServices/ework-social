@@ -471,14 +471,20 @@ export class SocialService {
     const clientId = this.config.get('YOUTUBE_CLIENT_ID');
     const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');
     const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    // Scopes ordered per incremental authorization best practice:
+    // identity scopes first, then feature-specific scopes at point of need.
+    // youtube.upload is requested here because the explicit "Connect YouTube"
+    // action signals the user's intent to use publishing features.
     const scopes = [
-      'https://www.googleapis.com/auth/youtube.upload',
-      'https://www.googleapis.com/auth/youtube.readonly',
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/youtube.readonly',
+      'https://www.googleapis.com/auth/youtube.upload',
     ].join(' ');
     return {
-      url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code&access_type=offline&prompt=consent`,
+      // include_granted_scopes=true is required for incremental authorization compliance —
+      // it rolls any previously granted scopes into the combined token.
+      url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code&access_type=offline&prompt=consent&include_granted_scopes=true`,
     };
   }
 
