@@ -202,6 +202,18 @@ export class SocialService {
           });
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
+
+          // Subscribe Instagram account to webhook events via the main app
+          try {
+            await axios.post(
+              `https://graph.facebook.com/v19.0/${igId}/subscribed_apps`,
+              null,
+              { params: { subscribed_fields: 'comments,messages', access_token: page.access_token } }
+            );
+            console.log('Instagram webhook subscription successful for:', igId);
+          } catch (subErr: any) {
+            console.log('Instagram webhook subscription error:', JSON.stringify(subErr?.response?.data));
+          }
         }
       } catch (igErr: any) {
         console.log('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
