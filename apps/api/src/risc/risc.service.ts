@@ -5,20 +5,23 @@ import { createPublicKey } from 'crypto';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
 
-// Google RISC security event types
+// All Google RISC security event types we handle
 const RISC_EVENTS = {
   SESSIONS_REVOKED:   'https://schemas.openid.net/secevent/risc/event-type/sessions-revoked',
   ACCOUNT_DISABLED:   'https://schemas.openid.net/secevent/risc/event-type/account-disabled',
   ACCOUNT_ENABLED:    'https://schemas.openid.net/secevent/risc/event-type/account-enabled',
   CREDENTIAL_CHANGE:  'https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required',
   TOKENS_REVOKED:     'https://schemas.openid.net/secevent/oauth/event-type/tokens-revoked',
+  TOKEN_REVOKED:      'https://schemas.openid.net/secevent/oauth/event-type/token-revoked',
+  VERIFICATION:       'https://schemas.openid.net/secevent/risc/event-type/verification',
 };
 
 @Injectable()
 export class RiscService {
   private readonly logger = new Logger(RiscService.name);
 
-  // Cache Google's public keys to avoid fetching on every request
+  // Cache Google's RISC discovery doc + public keys
+  private discoveryIssuer = '';
   private cachedJwks: any[] = [];
   private jwksCachedAt = 0;
   private readonly JWKS_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -30,7 +33,7 @@ export class RiscService {
 
   /**
    * Verify and process a Google RISC Security Event Token (SET).
-   * Returns true if valid and processed; false if the token should be rejected.
+   * Returns true if valid and processed; false if the token should be rejected (HTTP 400).
    */
   async processSecurityEvent(rawToken: string): Promise<boolean> {
     // 1. Verify JWT signature using Google's public keys
@@ -42,30 +45,29 @@ export class RiscService {
       return false;
     }
 
-    // 2. Validate issuer
-    if (payload.iss !== 'https://accounts.google.com') {
+    // 2. Validate issuer against the value from the RISC discovery document
+    //    Google may include a trailing slash — normalise before comparing
+    const normalise = (s: string) => s.replace(/\/$/, '');
+    const expectedIssuer = normalise(this.discoveryIssuer || 'https://accounts.google.com');
+    if (normalise(payload.iss ?? '') !== expectedIssuer) {
       this.logger.warn(`RISC invalid issuer: ${payload.iss}`);
       return false;
     }
 
-    // 3. Extract Google user ID from subject or events
+    // 3. Extract Google user ID from top-level sub OR from events subject
     const googleUserId: string | undefined =
       payload.sub ?? this.extractSubFromEvents(payload);
 
-    if (!googleUserId) {
-      this.logger.log('RISC event has no identifiable subject — accepted, no action');
-      return true;
-    }
-
-    // 4. Determine event types and handle each
+    // 4. Dispatch each event type
     const events: Record<string, any> = payload.events ?? {};
     const eventTypes = Object.keys(events);
+
     this.logger.log(
-      `RISC event — subject: ${googleUserId}, types: ${eventTypes.join(', ')}`,
+      `RISC event — jti: ${payload.jti ?? 'n/a'}, subject: ${googleUserId ?? 'none'}, types: ${eventTypes.join(', ')}`,
     );
 
     for (const eventType of eventTypes) {
-      await this.handleEvent(eventType, googleUserId);
+      await this.handleEvent(eventType, googleUserId, events[eventType]);
     }
 
     return true;
@@ -73,48 +75,54 @@ export class RiscService {
 
   // ─── Event Handlers ──────────────────────────────────────────────────────────
 
-  private async handleEvent(eventType: string, googleUserId: string) {
+  private async handleEvent(eventType: string, googleUserId: string | undefined, eventData: any) {
     switch (eventType) {
       case RISC_EVENTS.SESSIONS_REVOKED:
-      case RISC_EVENTS.TOKENS_REVOKED:
-        await this.revokeYoutubeAccounts(googleUserId, 'tokens_revoked');
+        if (googleUserId) await this.revokeYoutubeAccounts(googleUserId, 'sessions_revoked');
         break;
 
-      case RISC_EVENTS.ACCOUNT_DISABLED:
-        await this.revokeYoutubeAccounts(googleUserId, 'account_disabled');
+      case RISC_EVENTS.TOKENS_REVOKED:
+      case RISC_EVENTS.TOKEN_REVOKED:
+        if (googleUserId) await this.revokeYoutubeAccounts(googleUserId, 'tokens_revoked');
         break;
+
+      case RISC_EVENTS.ACCOUNT_DISABLED: {
+        const reason = eventData?.reason ?? 'unknown';
+        if (googleUserId) {
+          // For hijacking: terminate sessions (deactivate account)
+          // For bulk-account or unknown: same — deactivate to be safe
+          await this.revokeYoutubeAccounts(googleUserId, `account_disabled:${reason}`);
+        }
+        break;
+      }
 
       case RISC_EVENTS.CREDENTIAL_CHANGE:
-        // Clear refresh tokens so the next publish attempt forces re-auth
-        await this.flagYoutubeAccountsForReauth(googleUserId);
+        // Suggested: flag for re-auth on next publish attempt
+        if (googleUserId) await this.flagYoutubeAccountsForReauth(googleUserId);
         break;
 
       case RISC_EVENTS.ACCOUNT_ENABLED:
-        // No action — user can reconnect their account manually
-        this.logger.log(`RISC account re-enabled for Google user ${googleUserId}`);
+        // No action needed — user reconnects manually
+        this.logger.log(`RISC account re-enabled for Google user ${googleUserId ?? 'unknown'}`);
+        break;
+
+      case RISC_EVENTS.VERIFICATION:
+        // Test token — just log it as recommended in the spec
+        this.logger.log(`RISC verification token received — state: ${eventData?.state ?? 'n/a'}`);
         break;
 
       default:
-        this.logger.log(`RISC unhandled event "${eventType}" for user ${googleUserId}`);
+        this.logger.log(`RISC unhandled event type "${eventType}" for user ${googleUserId ?? 'n/a'}`);
     }
   }
 
   private async revokeYoutubeAccounts(googleUserId: string, reason: string) {
-    // Match YouTube accounts by the Google user ID stored at connect time.
-    // We store the Google channel ID as accountId; if the RISC sub matches
-    // any YouTube account in any workspace, we deactivate it.
     const accounts = await this.prisma.socialAccount.findMany({
-      where: {
-        platform: 'YOUTUBE',
-        accountId: googleUserId,
-        isActive: true,
-      },
+      where: { platform: 'YOUTUBE', accountId: googleUserId, isActive: true },
     });
 
     if (accounts.length === 0) {
-      this.logger.log(
-        `RISC [${reason}]: no active YouTube accounts found for Google user ${googleUserId}`,
-      );
+      this.logger.log(`RISC [${reason}]: no active YouTube accounts for Google user ${googleUserId}`);
       return;
     }
 
@@ -130,11 +138,7 @@ export class RiscService {
 
   private async flagYoutubeAccountsForReauth(googleUserId: string) {
     const accounts = await this.prisma.socialAccount.findMany({
-      where: {
-        platform: 'YOUTUBE',
-        accountId: googleUserId,
-        isActive: true,
-      },
+      where: { platform: 'YOUTUBE', accountId: googleUserId, isActive: true },
     });
 
     if (accounts.length === 0) return;
@@ -149,12 +153,11 @@ export class RiscService {
     );
   }
 
-  // ─── JWT Verification (no extra packages — uses Node built-in crypto) ────────
+  // ─── JWT Verification (Node built-in crypto — no extra packages) ─────────────
 
   private async verifyGoogleJwt(token: string): Promise<any> {
     const keys = await this.getGooglePublicKeys();
 
-    // Decode header to find the matching key ID
     const decoded = jwt.decode(token, { complete: true });
     if (!decoded || typeof decoded === 'string') {
       throw new Error('Failed to decode JWT');
@@ -170,9 +173,14 @@ export class RiscService {
     const publicKey = createPublicKey({ key: jwk, format: 'jwk' });
     const pem = publicKey.export({ type: 'spki', format: 'pem' }) as string;
 
+    const googleClientId = this.config.get<string>('YOUTUBE_CLIENT_ID') ?? '';
+
     return jwt.verify(token, pem, {
       algorithms: ['RS256'],
-      issuer: 'https://accounts.google.com',
+      // Accept any of our registered client IDs in the aud claim
+      audience: googleClientId || undefined,
+      // Don't check expiry — security event tokens represent historical events
+      ignoreExpiration: true,
     });
   }
 
@@ -182,11 +190,12 @@ export class RiscService {
       return this.cachedJwks;
     }
 
-    // Fetch Google's RISC discovery document → get JWKS URI
+    // Fetch RISC discovery document → get issuer + JWKS URI
     const discoveryRes = await axios.get(
       'https://accounts.google.com/.well-known/risc-configuration',
       { timeout: 8_000 },
     );
+    this.discoveryIssuer = discoveryRes.data.issuer ?? 'https://accounts.google.com';
     const jwksUri: string = discoveryRes.data.jwks_uri;
 
     const jwksRes = await axios.get(jwksUri, { timeout: 8_000 });
@@ -201,7 +210,7 @@ export class RiscService {
     const events = payload.events ?? {};
     for (const eventData of Object.values(events)) {
       const sub = (eventData as any)?.subject?.sub;
-      if (sub) return sub;
+      if (sub) return sub as string;
     }
     return undefined;
   }
