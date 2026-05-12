@@ -17,6 +17,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
 import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
 import { AiModule } from './ai/ai.module';
+import { RiscModule } from './risc/risc.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { AiModule } from './ai/ai.module';
     WorkspaceModule,
     AdminModule,
     AiModule,
+    RiscModule,
   ],
   providers: [
     {
