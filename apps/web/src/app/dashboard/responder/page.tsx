@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { getRulesAction, getResponderStatsAction } from '@/actions/responder.actions';
 import AddRuleModal from '@/components/responder/AddRuleModal';
 import RuleCard from '@/components/responder/RuleCard';
 import { Plus, Zap, ToggleRight, Activity, Share2 } from 'lucide-react';
-
-const POLL_INTERVAL = 10_000; // refresh every 10 seconds
 
 export default function ResponderPage() {
   const { workspace } = useAuthStore();
@@ -16,37 +14,42 @@ export default function ResponderPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const loadData = useCallback(async (silent = false) => {
-    try {
-      const [rulesData, statsData] = await Promise.all([
-        getRulesAction(workspace!.id),
-        getResponderStatsAction(workspace!.id),
-      ]);
-      setRules(rulesData);
-      setStats(statsData);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [workspace?.id]);
 
   // Initial load
   useEffect(() => {
-    if (workspace?.id) loadData(false);
+    if (!workspace?.id) return;
+    const fetch = async () => {
+      try {
+        const [rulesData, statsData] = await Promise.all([
+          getRulesAction(workspace.id),
+          getResponderStatsAction(workspace.id),
+        ]);
+        setRules(rulesData);
+        setStats(statsData);
+        setLastUpdated(new Date());
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetch();
   }, [workspace?.id]);
 
-  // Live polling — silently refresh every 10 seconds
+  // Live polling — poll every 8 seconds, completely independent of loadData
   useEffect(() => {
     if (!workspace?.id) return;
-    intervalRef.current = setInterval(() => loadData(true), POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [workspace?.id, loadData]);
+    const workspaceId = workspace.id; // capture primitive so closure is stable
+    const interval = setInterval(async () => {
+      try {
+        const [rulesData, statsData] = await Promise.all([
+          getRulesAction(workspaceId),
+          getResponderStatsAction(workspaceId),
+        ]);
+        setRules(rulesData);
+        setStats(statsData);
+        setLastUpdated(new Date());
+      } catch { /* silent — don't break UI on poll failure */ }
+    }, 8_000);
+    return () => clearInterval(interval);
+  }, [workspace?.id]);
 
   const handleRuleCreated = (rule: any) => {
     setRules(prev => [rule, ...prev]);
