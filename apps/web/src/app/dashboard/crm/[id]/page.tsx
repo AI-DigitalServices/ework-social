@@ -371,9 +371,9 @@ export default function ClientDetailPage() {
 
             {client.socialAccounts?.length === 0 ? (
               <div className="text-center py-8 text-slate-400 text-sm">
-                No social accounts connected yet.{' '}
-                <button onClick={() => router.push('/dashboard/settings?tab=social')}
-                  className="text-blue-600 hover:underline">Connect one →</button>
+                No posts created for this client yet.{' '}
+                <button onClick={() => router.push('/dashboard/scheduler')}
+                  className="text-blue-600 hover:underline">Create a post →</button>
               </div>
             ) : (
               <div className="space-y-3">

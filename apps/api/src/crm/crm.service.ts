@@ -55,17 +55,23 @@ export class CrmService {
     });
     if (!client) throw new NotFoundException('Client not found');
 
-    // Get workspace social accounts with per-platform post counts for this client
-    const socialAccounts = await this.prisma.socialAccount.findMany({
-      where: { workspaceId: client.workspaceId, isActive: true },
-      select: { id: true, platform: true, accountName: true, accountId: true },
-      orderBy: { createdAt: 'asc' },
-    });
-
+    // Only return social accounts that have posts created for this specific client
     const platformPostCounts = await this.prisma.post.groupBy({
       by: ['socialAccountId'],
       where: { clientId: id },
       _count: { id: true },
+    });
+
+    // No posts for this client yet — return empty array (no irrelevant accounts shown)
+    if (platformPostCounts.length === 0) {
+      return { ...client, socialAccounts: [] };
+    }
+
+    const accountIds = platformPostCounts.map((p) => p.socialAccountId);
+    const socialAccounts = await this.prisma.socialAccount.findMany({
+      where: { id: { in: accountIds }, isActive: true },
+      select: { id: true, platform: true, accountName: true, accountId: true },
+      orderBy: { createdAt: 'asc' },
     });
 
     const countMap = Object.fromEntries(
