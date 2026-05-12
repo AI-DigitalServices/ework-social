@@ -375,14 +375,14 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
         </div>
 
         {/* ── RIGHT: Phone Preview ────────────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
+        <div className="w-80 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
           <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Preview</p>
           </div>
 
           {/* Phone frame — fills height */}
-          <div className="flex-1 flex flex-col w-full max-w-[210px] bg-slate-900 rounded-[2.5rem] p-2 shadow-2xl ring-1 ring-slate-700 overflow-hidden">
+          <div className="flex-1 flex flex-col w-full max-w-[240px] bg-slate-900 rounded-[2.5rem] p-2 shadow-2xl ring-1 ring-slate-700 overflow-hidden">
             <div className="w-14 h-4 bg-slate-900 rounded-full mx-auto mb-1 flex items-center justify-center flex-shrink-0">
               <div className="w-7 h-1 bg-slate-700 rounded-full" />
             </div>
