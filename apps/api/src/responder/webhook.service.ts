@@ -10,7 +10,6 @@ export class WebhookService {
 
   async processWebhookEvent(body: any) {
     const { object, entry } = body;
-    console.log(`[WEBHOOK DEBUG] processWebhookEvent called — object: ${object}, entries: ${entry?.length}`);
     this.logger.log(`Webhook received — object: ${object}, entries: ${entry?.length}`);
 
     if (object === 'page') {
@@ -189,6 +188,29 @@ export class WebhookService {
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
+
+      // Try to get sender's name from Facebook Graph API for better CRM contact naming
+      let senderName = `Facebook User ${senderId}`;
+      try {
+        const profileRes = await axios.get(
+          `https://graph.facebook.com/v19.0/${senderId}`,
+          { params: { fields: 'name', access_token: accessToken } }
+        );
+        if (profileRes.data?.name) senderName = profileRes.data.name;
+      } catch {
+        // enrichment failed — use fallback name, don't block CRM write
+      }
+
+      // Update CRM lead stage if the rule has that configured
+      if (matchingRule.updateLeadStage && senderId) {
+        await this.updateLeadStage(
+          account.workspaceId,
+          senderId,
+          senderName,
+          matchingRule.updateLeadStage,
+          'FACEBOOK_DM',
+        );
+      }
     } catch (err: any) {
       this.logger.error('Error handling Facebook DM:', err?.message);
     }

@@ -22,8 +22,27 @@ export default function CrmPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<'pipeline' | 'list' | 'automation'>('pipeline');
 
+  // Initial load
   useEffect(() => {
-    if (workspace?.id) loadClients();
+    if (!workspace?.id) return;
+    getClientsAction(workspace.id)
+      .then(data => setClients(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [workspace?.id]);
+
+  // Live polling — auto-refresh every 12 seconds so new contacts from
+  // auto-responder triggers appear without manual page refresh
+  useEffect(() => {
+    if (!workspace?.id) return;
+    const workspaceId = workspace.id;
+    const interval = setInterval(async () => {
+      try {
+        const data = await getClientsAction(workspaceId);
+        setClients(data);
+      } catch { /* silent */ }
+    }, 12_000);
+    return () => clearInterval(interval);
   }, [workspace?.id]);
 
   const loadClients = async () => {
