@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { getRulesAction, getResponderStatsAction } from '@/actions/responder.actions';
 import AddRuleModal from '@/components/responder/AddRuleModal';
 import RuleCard from '@/components/responder/RuleCard';
 import { Plus, Zap, ToggleRight, Activity, Share2 } from 'lucide-react';
+
+const POLL_INTERVAL = 10_000; // refresh every 10 seconds
 
 export default function ResponderPage() {
   const { workspace } = useAuthStore();
@@ -13,12 +15,10 @@ export default function ResponderPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (workspace?.id) loadData();
-  }, [workspace?.id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (silent = false) => {
     try {
       const [rulesData, statsData] = await Promise.all([
         getRulesAction(workspace!.id),
@@ -26,12 +26,27 @@ export default function ResponderPage() {
       ]);
       setRules(rulesData);
       setStats(statsData);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [workspace?.id]);
+
+  // Initial load
+  useEffect(() => {
+    if (workspace?.id) loadData(false);
+  }, [workspace?.id]);
+
+  // Live polling — silently refresh every 10 seconds
+  useEffect(() => {
+    if (!workspace?.id) return;
+    intervalRef.current = setInterval(() => loadData(true), POLL_INTERVAL);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [workspace?.id, loadData]);
 
   const handleRuleCreated = (rule: any) => {
     setRules(prev => [rule, ...prev]);
@@ -63,9 +78,15 @@ export default function ResponderPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Auto-Responder</h2>
-          <p className="text-slate-500 mt-1">
-            Automate replies to comments and DMs across all platforms.
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-slate-500">Automate replies to comments and DMs across all platforms.</p>
+            {lastUpdated && (
+              <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={() => setShowModal(true)}
