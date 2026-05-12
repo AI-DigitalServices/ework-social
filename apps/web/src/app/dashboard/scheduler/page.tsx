@@ -192,7 +192,7 @@ export default function SchedulerPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredPosts.map(post => (
-            <PostCard key={post.id} post={post} onUpdate={loadData} />
+            <PostCard key={post.id} post={post} accounts={accounts} onUpdate={loadData} />
           ))}
         </div>
       )}

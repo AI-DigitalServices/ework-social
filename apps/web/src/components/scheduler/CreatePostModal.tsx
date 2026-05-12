@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles } from 'lucide-react';
+import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles, Smartphone } from 'lucide-react';
 import AiCaptionDrawer from '@/components/scheduler/AiCaptionDrawer';
 import { createPostAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
@@ -35,6 +35,16 @@ const bestTimes: Record<string, { times: string[]; days: string; tip: string }> 
   LINKEDIN:  { times: ['08:00', '10:00', '17:00', '18:00'], days: 'Tue – Thu', tip: '8–10am & 5–6pm Lagos time' },
   TIKTOK:    { times: ['07:00', '14:00', '19:00', '21:00'], days: 'Tue – Sat', tip: '7am, 2pm & 7–9pm Lagos time' },
   YOUTUBE:   { times: ['14:00', '15:00', '16:00', '17:00'], days: 'Thu – Sat', tip: '2–5pm Lagos time' },
+};
+
+const platformColors: Record<string, string> = {
+  INSTAGRAM: 'from-purple-500 to-pink-500',
+  FACEBOOK:  'from-blue-600 to-blue-700',
+  TWITTER:   'from-sky-400 to-sky-500',
+  LINKEDIN:  'from-blue-700 to-blue-800',
+  TIKTOK:    'from-slate-800 to-slate-900',
+  YOUTUBE:   'from-red-500 to-red-600',
+  THREADS:   'from-slate-700 to-slate-800',
 };
 
 interface Props {
@@ -107,10 +117,8 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
         const ratio = img.width / img.height;
         URL.revokeObjectURL(objectUrl);
         if (ratio < 0.8 || ratio > 1.91) {
-          resolve(`"${file.name}" is ${img.width}×${img.height} (ratio ${ratio.toFixed(2)}:1) — outside Instagram's accepted range.`);
-        } else {
-          resolve(null);
-        }
+          resolve(`"${file.name}" is ${img.width}×${img.height} — outside Instagram's accepted range.`);
+        } else { resolve(null); }
       };
       img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
       img.src = objectUrl;
@@ -194,364 +202,440 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     }
   };
 
+  // ── Phone Preview ─────────────────────────────────────────────────────────────
+  const previewGradient = platformColors[activePlatform] ?? 'from-slate-600 to-slate-700';
+  const firstMedia = mediaUrls[0];
+  const isVideo = firstMedia?.match(/\.(mp4|mov|avi|webm)$/i);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      {/* Wide split-panel modal */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ maxHeight: '92vh' }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Create Post</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {selectedAccountIds.length} account{selectedAccountIds.length !== 1 ? 's' : ''} selected
-              {planData && (
-                <span className="ml-2 text-slate-400">
-                  · {planData.usage.postsThisMonth}/{planData.limits.maxPostsPerMonth} posts this month
-                </span>
-              )}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
+        {/* ── LEFT: Composer ─────────────────────────────────────────────────── */}
+        <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100">
 
-        {/* Post limit warning */}
-        {isAtPostLimit && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
             <div>
-              <p className="text-sm font-semibold text-red-700">Monthly post limit reached</p>
-              <p className="text-xs text-red-600 mt-0.5">Upgrade your plan to post more this month.</p>
+              <h2 className="text-lg font-bold text-slate-800">Create Post</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {selectedAccountIds.length} account{selectedAccountIds.length !== 1 ? 's' : ''} selected
+                {planData && (
+                  <span className="ml-2">· {planData.usage.postsThisMonth}/{planData.limits.maxPostsPerMonth} posts this month</span>
+                )}
+              </p>
             </div>
-            <button
-              onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
-              className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition"
-            >
-              Upgrade
+            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
+              <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
-        )}
 
-        <div className="p-6 space-y-5">
+          {/* Scrollable form body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Account selector */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-700">Post to</label>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setSelectedAccountIds(accounts.map(a => a.id))} className="text-xs text-blue-600 font-medium">All</button>
-                <span className="text-slate-300">·</span>
-                <button onClick={() => accounts.length > 0 && setSelectedAccountIds([accounts[0].id])} className="text-xs text-slate-500 font-medium">Clear</button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {accounts.map(account => {
-                const isSelected = selectedAccountIds.includes(account.id);
-                const limit = platformLimits[account.platform]?.limit || 2200;
-                const count = (contentMap[account.id] || '').length;
-                const isOver = count > limit;
-                return (
-                  <button
-                    key={account.id}
-                    onClick={() => { toggleAccount(account.id); setActiveTab(account.id); }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition ${
-                      isSelected
-                        ? isOver ? 'border-red-400 bg-red-50 text-red-700' : 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 text-slate-600 hover:border-blue-300'
-                    }`}
-                  >
-                    <PlatformIcon platform={account.platform} size="sm" />
-                    {account.accountName}
-                    {isSelected && count > 0 && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isOver ? 'bg-red-200 text-red-700' : 'bg-blue-200 text-blue-700'}`}>
-                        {count}
-                      </span>
-                    )}
-                    {isSelected && <CheckCircle className={`w-3.5 h-3.5 ${isOver ? 'text-red-400' : 'text-blue-500'}`} />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sync toggle — gated behind Growth+ */}
-          {selectedAccounts.length > 1 && (
-            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">
-                  {syncMode ? '🔗 Synced content' : '✏️ Per-platform editing'}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {syncMode ? 'All platforms share the same copy' : 'Customize content per platform'}
-                </p>
-              </div>
-              {canUsePerPlatformEditor ? (
-                <button
-                  onClick={() => {
-                    if (!syncMode) {
-                      const newMap: Record<string, string> = {};
-                      selectedAccountIds.forEach(id => { newMap[id] = activeContent; });
-                      setContentMap(newMap);
-                    }
-                    setSyncMode(!syncMode);
-                  }}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${syncMode ? 'bg-blue-600' : 'bg-slate-300'}`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${syncMode ? 'translate-x-6' : 'translate-x-1'}`} />
+            {/* Post limit warning */}
+            {isAtPostLimit && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-red-700">Monthly post limit reached</p>
+                  <p className="text-xs text-red-600 mt-0.5">Upgrade your plan to post more this month.</p>
+                </div>
+                <button onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
+                  className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition">
+                  Upgrade
                 </button>
-              ) : (
-                <button
-                  onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg text-xs font-semibold hover:bg-violet-200 transition"
-                >
-                  <Lock className="w-3 h-3" />
-                  Growth+ feature
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Platform tabs */}
-          {selectedAccounts.length > 1 && !syncMode && canUsePerPlatformEditor && (
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
-              {selectedAccounts.map(account => {
-                const limit = platformLimits[account.platform]?.limit || 2200;
-                const count = (contentMap[account.id] || '').length;
-                const isOver = count > limit;
-                const isEmpty = count === 0;
-                return (
-                  <button
-                    key={account.id}
-                    onClick={() => setActiveTab(account.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition whitespace-nowrap flex-shrink-0 ${
-                      activeTab === account.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    <PlatformIcon platform={account.platform} size="sm" />
-                    {account.accountName}
-                    <span className={`w-2 h-2 rounded-full ${isOver ? 'bg-red-500' : isEmpty ? 'bg-amber-400' : 'bg-green-500'}`} />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Platform tip */}
-          {!syncMode && canUsePerPlatformEditor && platformTips[activePlatform] && (
-            <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-              <PlatformIcon platform={activePlatform} size="sm" />
-              <p className="text-xs text-blue-700"><strong>{activePlatform} tip:</strong> {platformTips[activePlatform]}</p>
-            </div>
-          )}
-
-          {/* Content */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-700">
-                {syncMode || !canUsePerPlatformEditor ? 'Content' : `Content for ${activeAccount?.accountName}`}
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowAiDrawer(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-xs font-semibold hover:opacity-90 transition"
-                >
-                  <Sparkles className="w-3 h-3" /> AI Write
-                </button>
-                {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
-                  <button onClick={copyToAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 font-medium transition">
-                    <Copy className="w-3 h-3" /> Copy to all
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="relative">
-              <textarea
-                value={activeContent}
-                onChange={e => handleContentChange(e.target.value)}
-                rows={5}
-                disabled={isAtPostLimit}
-                placeholder={isAtPostLimit ? 'Monthly limit reached — upgrade to post more' : `Write your ${activePlatform} post here...`}
-                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 text-slate-900 placeholder-slate-400 bg-white resize-none transition ${
-                  activeCount > activeLimit ? 'border-red-300 focus:ring-red-500' :
-                  isAtPostLimit ? 'border-slate-200 bg-slate-50 cursor-not-allowed' :
-                  'border-slate-200 focus:ring-blue-500'
-                }`}
-                style={{ color: '#0f172a' }}
-              />
-              <span className={`absolute bottom-3 right-3 text-xs font-semibold ${getCounterColor(activeCount, activeLimit)}`}>
-                {activeCount.toLocaleString()} / {activeLimit.toLocaleString()}
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-300 ${getBarColor(activeCount, activeLimit)}`}
-                style={{ width: `${Math.min((activeCount / activeLimit) * 100, 100)}%` }} />
-            </div>
-          </div>
-
-          {/* Per-platform summary */}
-          {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">All Platforms</p>
-              {selectedAccounts.map(account => {
-                const limit = platformLimits[account.platform]?.limit || 2200;
-                const count = (contentMap[account.id] || '').length;
-                const isOver = count > limit;
-                const isEmpty = count === 0;
-                return (
-                  <button key={account.id} onClick={() => setActiveTab(account.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition text-left ${
-                      activeTab === account.id ? 'border-blue-300 bg-blue-50' :
-                      isOver ? 'border-red-200 bg-red-50' :
-                      isEmpty ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'
-                    }`}
-                  >
-                    <PlatformIcon platform={account.platform} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-semibold text-slate-700">{account.accountName}</p>
-                        <span className={`text-xs font-bold ${isOver ? 'text-red-600' : isEmpty ? 'text-amber-600' : 'text-green-600'}`}>
-                          {isEmpty ? 'Empty' : isOver ? `${count - limit} over` : `${limit - count} left`}
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${isOver ? 'bg-red-500' : isEmpty ? 'bg-amber-300' : 'bg-green-500'}`}
-                          style={{ width: `${Math.min((count / limit) * 100, 100)}%` }} />
-                      </div>
-                    </div>
-                    <span>{isOver ? '⚠️' : isEmpty ? '✏️' : '✅'}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Preview */}
-          {activeContent && activeAccount && (
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">Preview — {activeAccount.accountName}</p>
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <PlatformIcon platform={activePlatform} size="md" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">{activeAccount.accountName}</p>
-                    <p className="text-xs text-slate-400">{activePlatform}</p>
-                  </div>
-                </div>
-                <p className="text-slate-800 text-sm whitespace-pre-wrap">{activeContent}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Media Upload */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Media (optional)</label>
-            <div className="space-y-3">
-              {mediaUrls.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {mediaUrls.map((url, i) => (
-                    <div key={i} className="relative group">
-                      {url.match(/\.(mp4|mov|avi|webm)$/i) ? (
-                        <div className="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-                          <Film className="w-8 h-8 text-slate-400" />
-                        </div>
-                      ) : (
-                        <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
-                      )}
-                      <button onClick={() => removeMedia(url)} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <label className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
-                <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
-                {uploading ? (
-                  <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
-                ) : (
-                  <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add images or videos</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
-                )}
-              </label>
-            </div>
-          </div>
-
-          {/* Instagram media validation warnings */}
-          {instagramSelected && (instagramNeedsImage || aspectWarnings.length > 0) && (
-            <div className="space-y-2">
-              {instagramNeedsImage && (
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <span className="text-lg">⚠️</span>
-                  <div>
-                    <p className="text-sm font-semibold text-amber-800">Instagram requires an image or video</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Text-only posts are not supported on Instagram. Add at least one image or video before scheduling.</p>
-                  </div>
-                </div>
-              )}
-              {aspectWarnings.map((warning, i) => (
-                <div key={i} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  <span className="text-lg">❌</span>
-                  <div>
-                    <p className="text-sm font-semibold text-red-800">Unsupported aspect ratio for Instagram</p>
-                    <p className="text-xs text-red-700 mt-0.5">{warning}</p>
-                    <p className="text-xs text-red-500 mt-1">✅ Accepted: Square 1:1 · Portrait 4:5 (1080×1350) · Landscape 1.91:1 (1080×566)</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Schedule */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-700">Schedule for (optional)</label>
-              {bestTimeConfig && (
-                <button onClick={() => setShowBestTimes(!showBestTimes)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg transition">
-                  <Zap className="w-3 h-3" /> Best Times
-                </button>
-              )}
-            </div>
-            <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 bg-white w-full" />
-            {showBestTimes && bestTimeConfig && (
-              <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                  <p className="text-sm font-semibold text-blue-800">{activePlatform} · {bestTimeConfig.days}</p>
-                </div>
-                <p className="text-xs text-blue-600 mb-3">💡 {bestTimeConfig.tip}</p>
-                <div className="flex flex-wrap gap-2">
-                  {bestTimeConfig.times.map(time => (
-                    <button key={time} onClick={() => applyBestTime(time)}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-600 hover:text-white transition">
-                      <Clock className="w-3 h-3" />{time}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
+
+            {/* Account selector */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">Post to</label>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setSelectedAccountIds(accounts.map(a => a.id))} className="text-xs text-blue-600 font-medium">All</button>
+                  <span className="text-slate-300">·</span>
+                  <button onClick={() => accounts.length > 0 && setSelectedAccountIds([accounts[0].id])} className="text-xs text-slate-500 font-medium">Clear</button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {accounts.map(account => {
+                  const isSelected = selectedAccountIds.includes(account.id);
+                  const limit = platformLimits[account.platform]?.limit || 2200;
+                  const count = (contentMap[account.id] || '').length;
+                  const isOver = count > limit;
+                  return (
+                    <button key={account.id}
+                      onClick={() => { toggleAccount(account.id); setActiveTab(account.id); }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition ${
+                        isSelected
+                          ? isOver ? 'border-red-400 bg-red-50 text-red-700' : 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 text-slate-600 hover:border-blue-300'
+                      }`}
+                    >
+                      <PlatformIcon platform={account.platform} size="sm" />
+                      {account.accountName}
+                      {isSelected && count > 0 && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isOver ? 'bg-red-200 text-red-700' : 'bg-blue-200 text-blue-700'}`}>
+                          {count}
+                        </span>
+                      )}
+                      {isSelected && <CheckCircle className={`w-3.5 h-3.5 ${isOver ? 'text-red-400' : 'text-blue-500'}`} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sync toggle */}
+            {selectedAccounts.length > 1 && (
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {syncMode ? '🔗 Synced content' : '✏️ Per-platform editing'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {syncMode ? 'All platforms share the same copy' : 'Customize content per platform'}
+                  </p>
+                </div>
+                {canUsePerPlatformEditor ? (
+                  <button
+                    onClick={() => {
+                      if (!syncMode) {
+                        const newMap: Record<string, string> = {};
+                        selectedAccountIds.forEach(id => { newMap[id] = activeContent; });
+                        setContentMap(newMap);
+                      }
+                      setSyncMode(!syncMode);
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${syncMode ? 'bg-blue-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${syncMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                ) : (
+                  <button onClick={() => { onClose(); router.push('/dashboard/settings?tab=plan'); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg text-xs font-semibold hover:bg-violet-200 transition">
+                    <Lock className="w-3 h-3" /> Growth+ feature
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Platform tabs */}
+            {selectedAccounts.length > 1 && !syncMode && canUsePerPlatformEditor && (
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+                {selectedAccounts.map(account => {
+                  const limit = platformLimits[account.platform]?.limit || 2200;
+                  const count = (contentMap[account.id] || '').length;
+                  const isOver = count > limit;
+                  const isEmpty = count === 0;
+                  return (
+                    <button key={account.id} onClick={() => setActiveTab(account.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition whitespace-nowrap flex-shrink-0 ${
+                        activeTab === account.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <PlatformIcon platform={account.platform} size="sm" />
+                      {account.accountName}
+                      <span className={`w-2 h-2 rounded-full ${isOver ? 'bg-red-500' : isEmpty ? 'bg-amber-400' : 'bg-green-500'}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Platform tip */}
+            {!syncMode && canUsePerPlatformEditor && platformTips[activePlatform] && (
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                <PlatformIcon platform={activePlatform} size="sm" />
+                <p className="text-xs text-blue-700"><strong>{activePlatform} tip:</strong> {platformTips[activePlatform]}</p>
+              </div>
+            )}
+
+            {/* Content textarea */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">
+                  {syncMode || !canUsePerPlatformEditor ? 'Content' : `Content for ${activeAccount?.accountName}`}
+                </label>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowAiDrawer(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-xs font-semibold hover:opacity-90 transition">
+                    <Sparkles className="w-3 h-3" /> AI Write
+                  </button>
+                  {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
+                    <button onClick={copyToAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 font-medium transition">
+                      <Copy className="w-3 h-3" /> Copy to all
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="relative">
+                <textarea
+                  value={activeContent}
+                  onChange={e => handleContentChange(e.target.value)}
+                  rows={6}
+                  disabled={isAtPostLimit}
+                  placeholder={isAtPostLimit ? 'Monthly limit reached — upgrade to post more' : `Write your ${activePlatform} post here...`}
+                  className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 text-slate-900 placeholder-slate-400 bg-white resize-none transition ${
+                    activeCount > activeLimit ? 'border-red-300 focus:ring-red-500' :
+                    isAtPostLimit ? 'border-slate-200 bg-slate-50 cursor-not-allowed' :
+                    'border-slate-200 focus:ring-blue-500'
+                  }`}
+                  style={{ color: '#0f172a' }}
+                />
+                <span className={`absolute bottom-3 right-3 text-xs font-semibold ${getCounterColor(activeCount, activeLimit)}`}>
+                  {activeCount.toLocaleString()} / {activeLimit.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-300 ${getBarColor(activeCount, activeLimit)}`}
+                  style={{ width: `${Math.min((activeCount / activeLimit) * 100, 100)}%` }} />
+              </div>
+            </div>
+
+            {/* Per-platform summary */}
+            {!syncMode && canUsePerPlatformEditor && selectedAccounts.length > 1 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">All Platforms</p>
+                {selectedAccounts.map(account => {
+                  const limit = platformLimits[account.platform]?.limit || 2200;
+                  const count = (contentMap[account.id] || '').length;
+                  const isOver = count > limit;
+                  const isEmpty = count === 0;
+                  return (
+                    <button key={account.id} onClick={() => setActiveTab(account.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition text-left ${
+                        activeTab === account.id ? 'border-blue-300 bg-blue-50' :
+                        isOver ? 'border-red-200 bg-red-50' :
+                        isEmpty ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'
+                      }`}
+                    >
+                      <PlatformIcon platform={account.platform} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-slate-700">{account.accountName}</p>
+                          <span className={`text-xs font-bold ${isOver ? 'text-red-600' : isEmpty ? 'text-amber-600' : 'text-green-600'}`}>
+                            {isEmpty ? 'Empty' : isOver ? `${count - limit} over` : `${limit - count} left`}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${isOver ? 'bg-red-500' : isEmpty ? 'bg-amber-300' : 'bg-green-500'}`}
+                            style={{ width: `${Math.min((count / limit) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                      <span>{isOver ? '⚠️' : isEmpty ? '✏️' : '✅'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Media Upload */}
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Media (optional)</label>
+              <div className="space-y-3">
+                {mediaUrls.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {mediaUrls.map((url, i) => (
+                      <div key={i} className="relative group">
+                        {url.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                          <div className="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+                            <Film className="w-8 h-8 text-slate-400" />
+                          </div>
+                        ) : (
+                          <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
+                        )}
+                        <button onClick={() => removeMedia(url)}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                  <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
+                  {uploading ? (
+                    <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
+                  ) : (
+                    <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add images or videos</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            {/* Instagram warnings */}
+            {instagramSelected && (instagramNeedsImage || aspectWarnings.length > 0) && (
+              <div className="space-y-2">
+                {instagramNeedsImage && (
+                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                    <span className="text-lg">⚠️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-800">Instagram requires an image or video</p>
+                      <p className="text-xs text-amber-700 mt-0.5">Add at least one image or video before scheduling.</p>
+                    </div>
+                  </div>
+                )}
+                {aspectWarnings.map((warning, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                    <span className="text-lg">❌</span>
+                    <div>
+                      <p className="text-sm font-semibold text-red-800">Unsupported aspect ratio for Instagram</p>
+                      <p className="text-xs text-red-700 mt-0.5">{warning}</p>
+                      <p className="text-xs text-red-500 mt-1">✅ Square 1:1 · Portrait 4:5 · Landscape 1.91:1</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Schedule */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">Schedule for (optional)</label>
+                {bestTimeConfig && (
+                  <button onClick={() => setShowBestTimes(!showBestTimes)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg transition">
+                    <Zap className="w-3 h-3" /> Best Times
+                  </button>
+                )}
+              </div>
+              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
+                className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 bg-white w-full" />
+              {showBestTimes && bestTimeConfig && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <p className="text-sm font-semibold text-blue-800">{activePlatform} · {bestTimeConfig.days}</p>
+                  </div>
+                  <p className="text-xs text-blue-600 mb-3">💡 {bestTimeConfig.tip}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {bestTimeConfig.times.map(time => (
+                      <button key={time} onClick={() => applyBestTime(time)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-600 hover:text-white transition">
+                        <Clock className="w-3 h-3" />{time}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 flex-shrink-0">
+            <button onClick={() => handleSubmit('DRAFT')}
+              disabled={loading || anyEmpty || anyOver || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
+              className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50">
+              <FileText className="w-4 h-4" /> Save Draft{selectedAccountIds.length > 1 ? 's' : ''}
+            </button>
+            <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'DRAFT')}
+              disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+              {loading ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
+              ) : scheduledAt ? (
+                <><Calendar className="w-4 h-4" /> Schedule ({selectedAccountIds.length})</>
+              ) : (
+                <><Send className="w-4 h-4" /> Post ({selectedAccountIds.length})</>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-slate-100">
-          <button onClick={() => handleSubmit('DRAFT')} disabled={loading || anyEmpty || anyOver || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
-            className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50">
-            <FileText className="w-4 h-4" /> Save Draft{selectedAccountIds.length > 1 ? 's' : ''}
-          </button>
-          <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'DRAFT')}
-            disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
-            {loading ? (
-              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
-            ) : scheduledAt ? (
-              <><Calendar className="w-4 h-4" /> Schedule ({selectedAccountIds.length})</>
-            ) : (
-              <><Send className="w-4 h-4" /> Post ({selectedAccountIds.length})</>
-            )}
-          </button>
+        {/* ── RIGHT: Live Phone Preview ───────────────────────────────────────── */}
+        <div className="w-80 flex-shrink-0 bg-slate-50 flex flex-col items-center py-6 px-4 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-5 self-start">
+            <Smartphone className="w-4 h-4 text-slate-400" />
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Preview</p>
+          </div>
+
+          {/* Phone frame */}
+          <div className="w-full max-w-[220px] bg-slate-900 rounded-[2.5rem] p-2 shadow-2xl ring-1 ring-slate-700">
+            {/* Notch */}
+            <div className="w-16 h-5 bg-slate-900 rounded-full mx-auto mb-1 flex items-center justify-center">
+              <div className="w-8 h-1.5 bg-slate-700 rounded-full" />
+            </div>
+            {/* Screen */}
+            <div className="bg-white rounded-[2rem] overflow-hidden" style={{ minHeight: 380 }}>
+
+              {/* Platform header bar */}
+              <div className={`bg-gradient-to-r ${previewGradient} px-4 py-3 flex items-center gap-2`}>
+                {activeAccount && <PlatformIcon platform={activePlatform} size="sm" />}
+                <span className="text-white text-xs font-semibold truncate">
+                  {activeAccount?.accountName || 'Your Account'}
+                </span>
+              </div>
+
+              {/* Post content */}
+              <div className="p-3">
+                {/* Avatar + name row */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${previewGradient} flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-white text-xs font-bold">
+                      {(activeAccount?.accountName || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-800 leading-none">{activeAccount?.accountName || 'Your Account'}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Just now</p>
+                  </div>
+                </div>
+
+                {/* Media preview */}
+                {firstMedia && !isVideo && (
+                  <img src={firstMedia} alt="" className="w-full rounded-lg mb-2 object-cover" style={{ maxHeight: 130 }} />
+                )}
+                {firstMedia && isVideo && (
+                  <div className="w-full rounded-lg mb-2 bg-slate-100 flex items-center justify-center" style={{ height: 100 }}>
+                    <div className="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow">
+                      <span style={{ fontSize: 14, marginLeft: 2 }}>▶</span>
+                    </div>
+                  </div>
+                )}
+                {mediaUrls.length > 1 && (
+                  <p className="text-[10px] text-slate-400 mb-1">+{mediaUrls.length - 1} more</p>
+                )}
+
+                {/* Caption */}
+                {activeContent ? (
+                  <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap line-clamp-6">
+                    {activeContent}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-300 italic">Your caption will appear here...</p>
+                )}
+
+                {/* Scheduled time badge */}
+                {scheduledAt && (
+                  <div className="mt-3 flex items-center gap-1 text-[10px] text-blue-500 bg-blue-50 px-2 py-1 rounded-full w-fit">
+                    <Clock className="w-2.5 h-2.5" />
+                    {new Date(scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+
+                {/* Engagement placeholder */}
+                <div className="flex items-center gap-3 mt-3 pt-2 border-t border-slate-100">
+                  <span className="text-[10px] text-slate-300">❤️ Like</span>
+                  <span className="text-[10px] text-slate-300">💬 Comment</span>
+                  <span className="text-[10px] text-slate-300">↗️ Share</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Platform tip below phone */}
+          {platformTips[activePlatform] && (
+            <div className="mt-4 w-full max-w-[220px]">
+              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                💡 {platformTips[activePlatform]}
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
       {showAiDrawer && (
         <AiCaptionDrawer
           platform={activePlatform}
