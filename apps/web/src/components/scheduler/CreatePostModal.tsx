@@ -210,7 +210,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       {/* Wide split-panel modal */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ maxHeight: '92vh' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '92vh' }}>
 
         {/* ── LEFT: Composer ─────────────────────────────────────────────────── */}
         <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100">
@@ -545,7 +545,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
         </div>
 
         {/* ── RIGHT: Live Phone Preview ───────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3" style={{ height: '100%' }}>
+        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
           {/* Header */}
           <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />

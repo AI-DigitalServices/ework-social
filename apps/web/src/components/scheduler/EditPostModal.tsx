@@ -181,7 +181,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ maxHeight: '92vh' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '92vh' }}>
 
         {/* ── LEFT: Editor ───────────────────────────────────────────────────── */}
         <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100">
@@ -375,7 +375,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
         </div>
 
         {/* ── RIGHT: Phone Preview ────────────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3" style={{ height: '100%' }}>
+        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
           <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Preview</p>
