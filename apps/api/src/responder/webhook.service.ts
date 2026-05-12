@@ -229,12 +229,7 @@ export class WebhookService {
       });
 
       if (!account) {
-        this.logger.warn(`No INSTAGRAM account found for id: ${igAccountId} — checking all IG accounts...`);
-        const allIg = await this.prisma.socialAccount.findMany({
-          where: { platform: 'INSTAGRAM' },
-          select: { accountId: true, accountName: true, isActive: true },
-        });
-        this.logger.warn(`All IG accounts in DB: ${JSON.stringify(allIg)}`);
+        this.logger.warn(`No INSTAGRAM account found for id: ${igAccountId}`);
         return;
       }
 
@@ -264,15 +259,22 @@ export class WebhookService {
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
+
+      // Update CRM lead stage if the rule has that configured
+      if (matchingRule.updateLeadStage && commentData.from?.id) {
+        await this.updateLeadStage(
+          account.workspaceId,
+          commentData.from.id,
+          fromName,
+          matchingRule.updateLeadStage,
+          'INSTAGRAM_COMMENT',
+          accessToken,
+        );
+      }
     } catch (err: any) {
-      this.logger.error('Error handling Instagram comment:', err?.message);
-      this.logger.error('Instagram API error detail:', JSON.stringify(err?.response?.data ?? err?.response ?? err));
-      this.logger.error('Instagram API status:', err?.response?.status);
-      this.logger.error('Instagram API full error:', JSON.stringify({
-        status: err?.response?.status,
-        data: err?.response?.data,
-        message: err?.message,
-      }));
+      this.logger.error(
+        `Instagram comment error — status: ${err?.response?.status}, message: ${err?.message}`,
+      );
     }
   }
 

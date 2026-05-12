@@ -87,8 +87,21 @@ export default function ClientDetailPage() {
   // stage quick-change
   const [stageMenuOpen, setStageMenuOpen] = useState(false);
 
+  // Initial load
   useEffect(() => {
     if (id) loadClient();
+  }, [id]);
+
+  // Live polling — refresh notes, tasks, activity every 15 seconds
+  useEffect(() => {
+    if (!id) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/crm/clients/${id}`);
+        setClient(res.data);
+      } catch { /* silent */ }
+    }, 15_000);
+    return () => clearInterval(interval);
   }, [id]);
 
   const loadClient = async () => {
