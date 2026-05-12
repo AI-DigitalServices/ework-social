@@ -375,24 +375,26 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
         </div>
 
         {/* ── RIGHT: Phone Preview ────────────────────────────────────────────── */}
-        <div className="w-80 flex-shrink-0 bg-slate-50 flex flex-col items-center py-6 px-4 overflow-y-auto">
-          <div className="flex items-center gap-2 mb-5 self-start">
+        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3" style={{ height: '100%' }}>
+          <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Preview</p>
           </div>
 
-          <div className="w-full max-w-[220px] bg-slate-900 rounded-[2.5rem] p-2 shadow-2xl ring-1 ring-slate-700">
-            <div className="w-16 h-5 bg-slate-900 rounded-full mx-auto mb-1 flex items-center justify-center">
-              <div className="w-8 h-1.5 bg-slate-700 rounded-full" />
+          {/* Phone frame — fills height */}
+          <div className="flex-1 flex flex-col w-full max-w-[210px] bg-slate-900 rounded-[2.5rem] p-2 shadow-2xl ring-1 ring-slate-700 overflow-hidden">
+            <div className="w-14 h-4 bg-slate-900 rounded-full mx-auto mb-1 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-1 bg-slate-700 rounded-full" />
             </div>
-            <div className="bg-white rounded-[2rem] overflow-hidden" style={{ minHeight: 380 }}>
-              <div className={`bg-gradient-to-r ${previewGradient} px-4 py-3 flex items-center gap-2`}>
+            {/* Screen — scrollable inside phone */}
+            <div className="flex-1 bg-white rounded-[1.8rem] overflow-hidden flex flex-col">
+              <div className={`bg-gradient-to-r ${previewGradient} px-3 py-2.5 flex items-center gap-2 flex-shrink-0`}>
                 {activeAccount && <PlatformIcon platform={activePlatform} size="sm" />}
                 <span className="text-white text-xs font-semibold truncate">
                   {activeAccount?.accountName || 'Your Account'}
                 </span>
               </div>
-              <div className="p-3">
+              <div className="flex-1 overflow-y-auto p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${previewGradient} flex items-center justify-center flex-shrink-0`}>
                     <span className="text-white text-xs font-bold">
@@ -406,7 +408,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
                 </div>
 
                 {firstMedia && !isVideo && (
-                  <img src={firstMedia} alt="" className="w-full rounded-lg mb-2 object-cover" style={{ maxHeight: 130 }} />
+                  <img src={firstMedia} alt="" className="w-full rounded-lg mb-2 object-cover" style={{ maxHeight: 140 }} />
                 )}
                 {firstMedia && isVideo && (
                   <div className="w-full rounded-lg mb-2 bg-slate-100 flex items-center justify-center" style={{ height: 100 }}>
@@ -417,8 +419,9 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
                 )}
                 {mediaUrls.length > 1 && <p className="text-[10px] text-slate-400 mb-1">+{mediaUrls.length - 1} more</p>}
 
+                {/* Full caption — no clamp, scrolls naturally inside phone */}
                 {content ? (
-                  <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap line-clamp-6">{content}</p>
+                  <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap">{content}</p>
                 ) : (
                   <p className="text-[11px] text-slate-300 italic">Your caption will appear here...</p>
                 )}
@@ -440,11 +443,9 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           </div>
 
           {platformTips[activePlatform] && (
-            <div className="mt-4 w-full max-w-[220px]">
-              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                💡 {platformTips[activePlatform]}
-              </p>
-            </div>
+            <p className="mt-3 text-[10px] text-slate-400 text-center leading-relaxed flex-shrink-0 px-2">
+              💡 {platformTips[activePlatform]}
+            </p>
           )}
         </div>
       </div>
