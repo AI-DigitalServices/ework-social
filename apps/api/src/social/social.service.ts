@@ -971,7 +971,25 @@ export class SocialService {
 
       const creationId = containerRes.data.id;
 
-      // Step 2: Publish container
+      // Step 2: For video, poll until Threads finishes processing (max ~90s)
+      if (params.media_type === 'VIDEO') {
+        for (let i = 0; i < 18; i++) {
+          await new Promise(r => setTimeout(r, 5000));
+          const statusRes = await axios.get(
+            `https://graph.threads.net/v1.0/${creationId}`,
+            { params: { fields: 'status,error_message', access_token: accessToken } }
+          );
+          const status = statusRes.data.status;
+          this.logger.log(`Threads container ${creationId} status: ${status}`);
+          if (status === 'FINISHED') break;
+          if (status === 'ERROR' || status === 'EXPIRED') {
+            throw new Error(`Threads media processing failed: ${statusRes.data.error_message || status}`);
+          }
+          if (i === 17) throw new Error('Threads video processing timed out after 90 seconds');
+        }
+      }
+
+      // Step 3: Publish container
       const publishRes = await axios.post(
         `https://graph.threads.net/v1.0/${userId}/threads_publish`,
         null,
