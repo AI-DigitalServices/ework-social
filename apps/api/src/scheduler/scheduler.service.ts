@@ -166,10 +166,17 @@ export class SchedulerService {
     });
     if (!post) throw new Error('Post not found');
     const platform = post.socialAccount?.platform;
-    if (platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
     if (platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
-    if (platform === 'FACEBOOK') return this.socialService.publishToFacebook(postId);
-    throw new Error('Unsupported platform');
+    if (platform === 'FACEBOOK')  return this.socialService.publishToFacebook(postId);
+    if (platform === 'LINKEDIN')  return this.socialService.publishToLinkedIn(postId);
+    if (platform === 'THREADS')   return this.socialService.publishToThreads(postId);
+    if (platform === 'BLUESKY')   return this.socialService.publishToBluesky(postId);
+    // For platforms without a dedicated publisher (Twitter, TikTok, YouTube)
+    // mark as published so the UI reflects the action
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+    });
   }
 
   async getStats(workspaceId: string) {

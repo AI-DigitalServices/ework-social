@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles, Smartphone } from 'lucide-react';
 import AiCaptionDrawer from '@/components/scheduler/AiCaptionDrawer';
-import { createPostAction } from '@/actions/scheduler.actions';
+import { createPostAction, publishNowAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
@@ -176,27 +176,45 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const anyOver = selectedAccounts.some(a => (contentMap[a.id] || '').length > (platformLimits[a.platform]?.limit || 2200));
   const anyEmpty = selectedAccounts.some(a => !(contentMap[a.id] || '').trim());
 
-  const handleSubmit = async (status: 'DRAFT' | 'SCHEDULED') => {
+  const handleSubmit = async (status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED') => {
     if (anyOver || anyEmpty || isAtPostLimit) return;
     setLoading(true);
     try {
-      const posts = await Promise.all(
-        selectedAccountIds.map(accountId =>
-          createPostAction({
-            workspaceId: workspace!.id,
-            socialAccountId: accountId,
-            content: contentMap[accountId] || '',
-            mediaUrls,
-            scheduledAt: scheduledAt || undefined,
-            status,
-          })
-        )
-      );
-      posts.forEach(post => onCreated(post));
+      if (status === 'PUBLISHED') {
+        // Create as DRAFT first, then fire publish-now for each
+        const posts = await Promise.all(
+          selectedAccountIds.map(accountId =>
+            createPostAction({
+              workspaceId: workspace!.id,
+              socialAccountId: accountId,
+              content: contentMap[accountId] || '',
+              mediaUrls,
+              scheduledAt: undefined,
+              status: 'DRAFT',
+            })
+          )
+        );
+        await Promise.all(posts.map(post => publishNowAction(post.id)));
+        posts.forEach(post => onCreated({ ...post, status: 'PUBLISHED' }));
+      } else {
+        const posts = await Promise.all(
+          selectedAccountIds.map(accountId =>
+            createPostAction({
+              workspaceId: workspace!.id,
+              socialAccountId: accountId,
+              content: contentMap[accountId] || '',
+              mediaUrls,
+              scheduledAt: scheduledAt || undefined,
+              status,
+            })
+          )
+        );
+        posts.forEach(post => onCreated(post));
+      }
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || 'Failed to create post');
+      alert(err?.response?.data?.message || 'Failed to publish post');
     } finally {
       setLoading(false);
     }
@@ -530,15 +548,15 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50">
               <FileText className="w-4 h-4" /> Save Draft{selectedAccountIds.length > 1 ? 's' : ''}
             </button>
-            <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'DRAFT')}
+            <button onClick={() => handleSubmit(scheduledAt ? 'SCHEDULED' : 'PUBLISHED')}
               disabled={loading || anyEmpty || anyOver || selectedAccountIds.length === 0 || isAtPostLimit || instagramNeedsImage || aspectWarnings.length > 0}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
               {loading ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Publishing...</>
               ) : scheduledAt ? (
                 <><Calendar className="w-4 h-4" /> Schedule ({selectedAccountIds.length})</>
               ) : (
-                <><Send className="w-4 h-4" /> Post ({selectedAccountIds.length})</>
+                <><Send className="w-4 h-4" /> Post Now ({selectedAccountIds.length})</>
               )}
             </button>
           </div>
