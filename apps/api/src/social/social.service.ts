@@ -945,34 +945,42 @@ export class SocialService {
       const accessToken = this.decryptToken(post.socialAccount.accessToken);
       const userId = post.socialAccount.accountId;
 
-      // Step 1: Create media container
-      const params: any = {
-        media_type: 'TEXT',
+      this.logger.log(`[Threads] Publishing post ${postId} for user ${userId}`);
+
+      // Determine media type
+      const firstMedia = post.mediaUrls?.[0];
+      const isVideo = firstMedia ? this.isVideoUrl(firstMedia) : false;
+      const mediaType = firstMedia ? (isVideo ? 'VIDEO' : 'IMAGE') : 'TEXT';
+
+      // Step 1: Create container — send as JSON body (required for video)
+      const body: any = {
+        media_type: mediaType,
         text: post.content,
         access_token: accessToken,
       };
+      if (isVideo && firstMedia)  body.video_url  = firstMedia;
+      if (!isVideo && firstMedia) body.image_url  = firstMedia;
 
-      if (post.mediaUrls && post.mediaUrls.length > 0) {
-        const firstMedia = post.mediaUrls[0];
-        if (this.isVideoUrl(firstMedia)) {
-          params.media_type = 'VIDEO';
-          params.video_url = firstMedia;
-        } else {
-          params.media_type = 'IMAGE';
-          params.image_url = firstMedia;
-        }
+      this.logger.log(`[Threads] Container body: ${JSON.stringify({ ...body, access_token: '***' })}`);
+
+      let containerRes: any;
+      try {
+        containerRes = await axios.post(
+          `https://graph.threads.net/v1.0/${userId}/threads`,
+          body,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+      } catch (containerErr: any) {
+        const detail = JSON.stringify(containerErr?.response?.data ?? containerErr?.message);
+        this.logger.error(`[Threads] Container creation failed: ${detail}`);
+        throw new Error(`Threads container error: ${containerErr?.response?.data?.error?.message || detail}`);
       }
 
-      const containerRes = await axios.post(
-        `https://graph.threads.net/v1.0/${userId}/threads`,
-        null,
-        { params }
-      );
-
       const creationId = containerRes.data.id;
+      this.logger.log(`[Threads] Container created: ${creationId}`);
 
-      // Step 2: For video, poll until Threads finishes processing (max ~90s)
-      if (params.media_type === 'VIDEO') {
+      // Step 2: For video, poll until FINISHED (max 90s)
+      if (isVideo) {
         for (let i = 0; i < 18; i++) {
           await new Promise(r => setTimeout(r, 5000));
           const statusRes = await axios.get(
@@ -980,20 +988,21 @@ export class SocialService {
             { params: { fields: 'status,error_message', access_token: accessToken } }
           );
           const status = statusRes.data.status;
-          this.logger.log(`Threads container ${creationId} status: ${status}`);
+          this.logger.log(`[Threads] Container ${creationId} status: ${status}`);
           if (status === 'FINISHED') break;
           if (status === 'ERROR' || status === 'EXPIRED') {
-            throw new Error(`Threads media processing failed: ${statusRes.data.error_message || status}`);
+            throw new Error(`Threads video processing failed (${status}): ${statusRes.data.error_message || 'unknown'}`);
           }
           if (i === 17) throw new Error('Threads video processing timed out after 90 seconds');
         }
       }
 
-      // Step 3: Publish container
+      // Step 3: Publish
+      this.logger.log(`[Threads] Publishing container ${creationId}`);
       const publishRes = await axios.post(
         `https://graph.threads.net/v1.0/${userId}/threads_publish`,
-        null,
-        { params: { creation_id: creationId, access_token: accessToken } }
+        { creation_id: creationId, access_token: accessToken },
+        { headers: { 'Content-Type': 'application/json' } }
       );
 
       await this.prisma.post.update({
@@ -1001,13 +1010,17 @@ export class SocialService {
         data: { status: 'PUBLISHED', externalId: publishRes.data.id },
       });
 
+      this.logger.log(`[Threads] Published successfully: ${publishRes.data.id}`);
       return { success: true, postId: publishRes.data.id };
+
     } catch (err: any) {
+      const errorMessage = err?.response?.data?.error?.message || err?.message || 'Failed to publish to Threads';
+      this.logger.error(`[Threads] Publish failed for post ${postId}: ${errorMessage}`);
       await this.prisma.post.update({
         where: { id: postId },
-        data: { status: 'FAILED', errorMessage: err?.response?.data?.error?.message || 'Failed to publish to Threads' },
+        data: { status: 'FAILED', errorMessage },
       });
-      throw new BadRequestException(err?.response?.data?.error?.message || 'Failed to publish to Threads');
+      throw new BadRequestException(errorMessage);
     }
   }
 
