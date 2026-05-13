@@ -268,6 +268,28 @@ export class SocialService {
     }
   }
 
+  private isVideoUrl(url: string): boolean {
+    return /\.(mp4|mov|avi|webm)$/i.test(url);
+  }
+
+  // Poll Instagram container status until FINISHED or ERROR (max ~90s)
+  private async waitForInstagramContainer(containerId: string, accessToken: string): Promise<void> {
+    for (let i = 0; i < 18; i++) {
+      await new Promise(r => setTimeout(r, 5000)); // wait 5s per attempt
+      const statusRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${containerId}`,
+        { params: { fields: 'status_code', access_token: accessToken } }
+      );
+      const code = statusRes.data.status_code;
+      this.logger.log(`Instagram container ${containerId} status: ${code}`);
+      if (code === 'FINISHED') return;
+      if (code === 'ERROR' || code === 'EXPIRED') {
+        throw new Error(`Instagram media processing failed with status: ${code}`);
+      }
+    }
+    throw new Error('Instagram media processing timed out after 90 seconds');
+  }
+
   async publishToInstagram(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
@@ -277,49 +299,55 @@ export class SocialService {
       throw new BadRequestException('Post or account not found');
     }
 
-    // Instagram requires at least one image — text-only posts are not supported
+    // Instagram requires at least one image or video
     if (!post.mediaUrls || post.mediaUrls.length === 0) {
       await this.prisma.post.update({
         where: { id: postId },
-        data: { status: 'FAILED', errorMessage: 'Instagram requires at least one image. Text-only posts are not supported.' },
+        data: { status: 'FAILED', errorMessage: 'Instagram requires at least one image or video.' },
       });
-      throw new BadRequestException('Instagram requires at least one image. Text-only posts are not supported.');
+      throw new BadRequestException('Instagram requires at least one image or video.');
     }
 
     try {
-      const imageUrl = post.mediaUrls[0];
+      const mediaUrl = post.mediaUrls[0];
       const accountId = post.socialAccount.accountId;
       const accessToken = this.decryptToken(post.socialAccount.accessToken);
+      const isVideo = this.isVideoUrl(mediaUrl);
 
-      // Step 1: Create media container with image
+      // Step 1: Create media container (IMAGE or REELS for video)
+      const containerParams: any = {
+        caption: post.content,
+        access_token: accessToken,
+      };
+
+      if (isVideo) {
+        containerParams.media_type = 'REELS';
+        containerParams.video_url = mediaUrl;
+        containerParams.share_to_feed = 'true';
+      } else {
+        containerParams.media_type = 'IMAGE';
+        containerParams.image_url = mediaUrl;
+      }
+
       const mediaRes = await axios.post(
         `https://graph.facebook.com/v19.0/${accountId}/media`,
         null,
-        {
-          params: {
-            caption: post.content,
-            media_type: 'IMAGE',
-            image_url: imageUrl,
-            access_token: accessToken,
-          },
-        },
+        { params: containerParams },
       );
 
       const creationId = mediaRes.data.id;
-      if (!creationId) {
-        throw new Error('No creation ID returned from Instagram');
+      if (!creationId) throw new Error('No creation ID returned from Instagram');
+
+      // Step 2: For video, wait until Instagram finishes processing
+      if (isVideo) {
+        await this.waitForInstagramContainer(creationId, accessToken);
       }
 
-      // Step 2: Publish the media container
+      // Step 3: Publish the container
       const publishRes = await axios.post(
         `https://graph.facebook.com/v19.0/${accountId}/media_publish`,
         null,
-        {
-          params: {
-            creation_id: creationId,
-            access_token: accessToken,
-          },
-        },
+        { params: { creation_id: creationId, access_token: accessToken } },
       );
 
       await this.prisma.post.update({
@@ -925,8 +953,14 @@ export class SocialService {
       };
 
       if (post.mediaUrls && post.mediaUrls.length > 0) {
-        params.media_type = 'IMAGE';
-        params.image_url = post.mediaUrls[0];
+        const firstMedia = post.mediaUrls[0];
+        if (this.isVideoUrl(firstMedia)) {
+          params.media_type = 'VIDEO';
+          params.video_url = firstMedia;
+        } else {
+          params.media_type = 'IMAGE';
+          params.image_url = firstMedia;
+        }
       }
 
       const containerRes = await axios.post(
