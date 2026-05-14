@@ -503,8 +503,21 @@ export class SocialService {
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
       return { success: true, postId: res.data.id };
     } catch (err: any) {
-      await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
-      throw new BadRequestException(err.response?.data?.message || 'Failed to publish to LinkedIn');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to publish to LinkedIn';
+      const isTokenExpired = errorMessage.toLowerCase().includes('expired') || err.response?.status === 401;
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage },
+      });
+      // If token expired, mark the account so user knows to reconnect
+      if (isTokenExpired) {
+        await this.prisma.socialAccount.update({
+          where: { id: post.socialAccount!.id },
+          data: { isActive: false },
+        });
+        this.logger.warn(`LinkedIn token expired for account ${post.socialAccount!.id} — marked inactive`);
+      }
+      throw new BadRequestException(errorMessage);
     }
   }
 
