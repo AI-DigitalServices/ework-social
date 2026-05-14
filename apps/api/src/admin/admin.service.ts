@@ -199,4 +199,14 @@ export class AdminService {
       memoryMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
     };
   }
+
+  async getWaitlist() {
+    const [entries, total] = await Promise.all([
+      this.prisma.waitlist.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.waitlist.count(),
+    ]);
+    return { total, entries };
+  }
 }

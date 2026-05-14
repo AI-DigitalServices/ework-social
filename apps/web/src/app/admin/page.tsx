@@ -24,10 +24,11 @@ export default function AdminPage() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [health, setHealth] = useState<any>(null);
   const [referrals, setReferrals] = useState<any[]>([]);
+  const [waitlist, setWaitlist] = useState<{ total: number; entries: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [hasHydrated, setHasHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'subscriptions' | 'failed' | 'health'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'subscriptions' | 'failed' | 'health' | 'waitlist'>('overview');
 
   useEffect(() => { setHasHydrated(true); }, []);
 
@@ -41,18 +42,20 @@ export default function AdminPage() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [kpiRes, failedRes, subsRes, healthRes, refRes] = await Promise.all([
+      const [kpiRes, failedRes, subsRes, healthRes, refRes, waitlistRes] = await Promise.all([
         api.get('/admin/kpi'),
         api.get('/admin/failed-posts'),
         api.get('/admin/subscriptions'),
         api.get('/admin/health'),
         api.get('/admin/referrals'),
+        api.get('/admin/waitlist'),
       ]);
       setKpi(kpiRes.data);
       setFailedPosts(failedRes.data);
       setSubscriptions(subsRes.data);
       setHealth(healthRes.data);
       setReferrals(refRes.data);
+      setWaitlist(waitlistRes.data);
       setLastRefresh(new Date());
     } catch (err) {
       console.error(err);
@@ -97,6 +100,7 @@ export default function AdminPage() {
     { id: 'subscriptions', label: `💳 Subscriptions (${subscriptions.length})` },
     { id: 'failed', label: `❌ Failed Posts (${failedPosts.length})` },
     { id: 'health', label: '🖥️ System Health' },
+    { id: 'waitlist', label: `🏆 Waitlist (${waitlist?.total ?? 0})` },
   ];
 
   return (
@@ -394,6 +398,61 @@ export default function AdminPage() {
               <p style={{ color: '#4A6080', fontSize: 12 }}>
                 Cron job runs every 2 minutes. Overdue posts are picked up automatically. If overdue count stays high, check Railway logs for errors.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Waitlist Tab */}
+        {activeTab === 'waitlist' && waitlist && (
+          <div>
+            {/* Summary bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+              {[
+                { label: 'Total Signups', value: waitlist.total, color: '#2563EB' },
+                { label: 'This Week', value: waitlist.entries.filter(e => new Date(e.createdAt) > new Date(Date.now() - 7 * 86400000)).length, color: '#10B981' },
+                { label: 'Today', value: waitlist.entries.filter(e => new Date(e.createdAt).toDateString() === new Date().toDateString()).length, color: '#F59E0B' },
+              ].map((stat, i) => (
+                <div key={i} style={s.card}>
+                  <div style={{ color: '#4A6080', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{stat.label}</div>
+                  <div style={{ color: stat.color, fontSize: 32, fontWeight: 800 }}>{stat.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Signups table */}
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ color: '#F0F6FF', fontSize: 16, fontWeight: 700 }}>🏆 Founding Members</h3>
+                <span style={{ color: '#4A6080', fontSize: 13 }}>{waitlist.total} total signups</span>
+              </div>
+              {waitlist.entries.length === 0 ? (
+                <p style={{ color: '#4A6080', textAlign: 'center', padding: '40px 0' }}>No signups yet — share the waitlist link!</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1A2840' }}>
+                        {['#', 'Name', 'Email', 'Source', 'Signed Up'].map(h => (
+                          <th key={h} style={{ textAlign: 'left', color: '#4A6080', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, padding: '0 0 12px' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...waitlist.entries].reverse().map((entry, i) => (
+                        <tr key={entry.id} style={{ borderBottom: '1px solid #111827' }}>
+                          <td style={{ padding: '14px 0', color: '#2563EB', fontSize: 13, fontWeight: 700 }}>#{i + 1}</td>
+                          <td style={{ padding: '14px 12px 14px 0', color: '#E8F0FA', fontSize: 14 }}>{entry.name || '—'}</td>
+                          <td style={{ padding: '14px 12px 14px 0', color: '#93C5FD', fontSize: 14 }}>{entry.email}</td>
+                          <td style={{ padding: '14px 12px 14px 0' }}>
+                            <span style={{ background: '#1A2840', color: '#6B8299', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}>{entry.source || 'landing_page'}</span>
+                          </td>
+                          <td style={{ padding: '14px 0', color: '#4A6080', fontSize: 13 }}>{new Date(entry.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

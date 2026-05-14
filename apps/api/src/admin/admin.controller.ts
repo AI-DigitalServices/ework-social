@@ -49,6 +49,12 @@ export class AdminController {
     return this.referralService.getAllReferralStats();
   }
 
+  @Get('waitlist')
+  async getWaitlist(@Req() req: any) {
+    this.checkAdmin(req);
+    return this.adminService.getWaitlist();
+  }
+
   @Get('my-referrals')
   async getMyReferrals(@Req() req: any) {
     return this.referralService.getReferralStats(req.user.sub);
