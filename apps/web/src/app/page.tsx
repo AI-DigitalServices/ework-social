@@ -145,7 +145,7 @@ export default function LandingPage() {
             <a href="#features" className="nav-link">Features</a>
             <a href="#platforms" className="nav-link">Platforms</a>
             <a href="#pricing" className="nav-link">Pricing</a>
-            <a href="#waitlist" className="nav-link" style={{ color: '#60A5FA', fontWeight: 600 }}>Early Access</a>
+            <a href="#waitlist" style={{ color: '#EF4444', fontWeight: 700, fontSize: 14, textDecoration: 'none', padding: '6px 14px', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 6, transition: 'all 0.2s', background: 'rgba(239,68,68,0.08)' }}>🔥 Early Access</a>
             <a href="/login" className="nav-link">Sign in</a>
             <a href="/register" className="btn-primary" style={{ padding: '10px 22px', fontSize: 14 }}>Get started free</a>
           </div>
