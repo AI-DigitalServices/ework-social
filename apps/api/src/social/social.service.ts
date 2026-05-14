@@ -937,6 +937,30 @@ export class SocialService {
     return { success: true, connectedAccounts: [account], message: `Connected @${username} on Threads` };
   }
 
+  async setThreadsTokenManually(workspaceId: string, rawToken: string) {
+    // Verify the token works by calling /me on Threads API
+    let userId: string;
+    let username: string;
+    try {
+      const meRes = await axios.get('https://graph.threads.net/v1.0/me', {
+        params: { fields: 'id,username', access_token: rawToken },
+      });
+      userId = String(meRes.data.id);
+      username = meRes.data.username || 'Threads User';
+    } catch (err: any) {
+      throw new BadRequestException('Token verification failed: ' + JSON.stringify(err?.response?.data ?? err?.message));
+    }
+
+    const account = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'THREADS', accountId: userId } },
+      update: { accountName: username, accessToken: this.encryptToken(rawToken), isActive: true },
+      create: { workspaceId, platform: 'THREADS', accountId: userId, accountName: username, accessToken: this.encryptToken(rawToken), isActive: true },
+    });
+
+    this.logger.log(`[Threads] Manual token set for user ${userId} (@${username})`);
+    return { success: true, accountId: userId, username };
+  }
+
   async publishToThreads(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },

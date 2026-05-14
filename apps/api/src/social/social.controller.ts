@@ -104,6 +104,13 @@ export class SocialController {
     return this.socialService.connectBluesky(body.workspaceId, body.identifier, body.appPassword);
   }
 
+  // Temporary: manually set a Threads access token generated from Meta Developer Console
+  @Post('threads/manual-token')
+  @UseGuards(JwtGuard)
+  setThreadsToken(@Body() body: { workspaceId: string; accessToken: string }) {
+    return this.socialService.setThreadsTokenManually(body.workspaceId, body.accessToken);
+  }
+
 
   @Get('youtube/auth-url')
   @UseGuards(JwtGuard)
