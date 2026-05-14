@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { joinWaitlistAction } from '@/actions/waitlist.actions';
+import { joinWaitlistAction, getWaitlistCountAction } from '@/actions/waitlist.actions';
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -50,6 +50,7 @@ export default function LandingPage() {
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState<{ position: number } | null>(null);
   const [waitlistError, setWaitlistError] = useState('');
+  const [waitlistCount, setWaitlistCount] = useState(0);
 
   async function handleWaitlistSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +71,8 @@ export default function LandingPage() {
     setIsVisible(true);
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
+    // Fetch live waitlist count
+    getWaitlistCountAction().then(setWaitlistCount).catch(() => {});
 
     // Auto-detect currency from IP geolocation
     fetch('https://ipapi.co/json/')
@@ -138,7 +141,7 @@ export default function LandingPage() {
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrollY > 40 ? 'rgba(8,12,20,0.96)' : 'transparent', backdropFilter: scrollY > 40 ? 'blur(16px)' : 'none', borderBottom: scrollY > 40 ? '1px solid #1A2840' : 'none', transition: 'all 0.3s', padding: '0 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
+            <img src="/icon.png" alt="eWork Social" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
             <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: '-0.5px' }}>eWork Social</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
@@ -165,9 +168,8 @@ export default function LandingPage() {
           </div>
 
           <div className={`fade-in ${isVisible ? 'show' : ''}`} style={{ transitionDelay: '0.25s', marginBottom: 44 }}>
-            <p style={{ fontSize: 19, color: '#8BA0BC', lineHeight: 1.75, fontWeight: 400, maxWidth: 600, margin: '0 auto' }}>
-              The all-in-one platform for digital agencies. Schedule posts, manage clients,
-              track analytics, and automate responses — built to scale.
+            <p style={{ fontSize: 19, color: '#8BA0BC', lineHeight: 1.75, fontWeight: 400, maxWidth: 640, margin: '0 auto' }}>
+              The all-in-one platform for agencies, creators, and brands. Schedule posts across every major platform, manage clients, track analytics, and automate engagement — from one dashboard.
             </p>
           </div>
 
@@ -192,7 +194,7 @@ export default function LandingPage() {
               <div style={{ padding: 28, display: 'grid', gridTemplateColumns: '190px 1fr', gap: 24, textAlign: 'left' as const }}>
                 <div style={{ borderRight: '1px solid #1A2840', paddingRight: 22 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
-                    <div style={{ width: 26, height: 26, background: '#2563EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⚡</div>
+                    <img src="/icon.png" alt="eWork Social" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
                     <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 13 }}>eWork Social</span>
                   </div>
                   {[['📊', 'Dashboard'], ['📅', 'Scheduler'], ['👥', 'CRM'], ['📈', 'Analytics'], ['🤖', 'Auto-Responder']].map(([icon, label], i) => (
@@ -369,31 +371,31 @@ export default function LandingPage() {
           })}
         </div>
         <p style={{ textAlign: 'center', color: '#4A6080', fontSize: 12, marginTop: 24, fontWeight: 500 }}>
-          * Prices shown are approximate conversions. Final billing processed in NGN via Paystack.
+          * Prices shown are approximate conversions based on your region. Final billing currency depends on your payment method.
         </p>
       </section>
 
-      {/* AFRICA FIRST SECTION */}
+      {/* BUILT FOR EVERYONE SECTION */}
       <section style={{ padding: '80px 48px', background: '#070B12', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
             <div>
               <div className="africa-badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
-                🌍 Africa-First, Globally Ready
+                🌐 Built for Everyone, Everywhere
               </div>
               <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF', marginBottom: 20, lineHeight: 1.2 }}>
-                Built for where<br />agencies are growing
+                Built for how<br />modern agencies work
               </h2>
               <p style={{ color: '#6B8299', fontSize: 16, lineHeight: 1.8, fontWeight: 400 }}>
-                eWork Social was built with African digital agencies in mind — with Paystack billing, local currency support, WhatsApp notifications, and timezone-aware scheduling. But the platform works everywhere.
+                eWork Social works for agencies, freelancers, and in-house teams anywhere in the world — with multi-currency billing, local payment options, timezone-aware scheduling, and no limits on where you operate.
               </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {[
-                { icon: '💳', label: 'Paystack Billing', desc: 'NGN, KES, ZAR, GHS', color: '#10B981' },
+                { icon: '💳', label: 'Multi-Currency', desc: 'USD, NGN, KES, GHS, ZAR & more', color: '#10B981' },
                 { icon: '🕐', label: 'Timezone Aware', desc: 'Auto-detects your region', color: '#3B82F6' },
-                { icon: '💬', label: 'WhatsApp Alerts', desc: 'Notifications & reminders', color: '#F59E0B' },
-                { icon: '🌐', label: 'Works Globally', desc: 'No geographic limits', color: '#8B5CF6' },
+                { icon: '👥', label: 'Team Collaboration', desc: 'Roles, workspaces & permissions', color: '#F59E0B' },
+                { icon: '🌐', label: 'No Geographic Limits', desc: 'Works in every country', color: '#8B5CF6' },
               ].map((item, i) => (
                 <div key={i} style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 14, padding: '20px 18px' }}>
                   <div style={{ fontSize: 24, marginBottom: 10 }}>{item.icon}</div>
@@ -424,21 +426,21 @@ export default function LandingPage() {
               {
                 quote: "This is exactly what agencies need. The CRM + scheduler combo in one tool is a game changer for managing multiple clients.",
                 name: "Agency Owner",
-                title: "Digital Marketing Agency, Lagos",
+                title: "Digital Marketing Agency, New York",
                 initials: "AO",
                 color: "#2563EB",
               },
               {
-                quote: "Finally a tool built with African agencies in mind. The Naira pricing alone makes it a no-brainer compared to foreign tools.",
+                quote: "Finally a tool that handles scheduling, CRM and analytics in one place. I switched from three separate tools and haven't looked back.",
                 name: "Social Media Manager",
-                title: "Creative Agency, Abuja",
+                title: "Creative Agency, London",
                 initials: "SM",
                 color: "#7C3AED",
               },
               {
-                quote: "The automated pipeline follow-up emails save me hours every week. I set it once and it keeps my leads warm automatically.",
+                quote: "The automated follow-up emails and CRM pipeline save me hours every week. I set it once and it keeps my leads warm automatically.",
                 name: "Freelance Strategist",
-                title: "Digital Consultant, Accra",
+                title: "Digital Consultant, Toronto",
                 initials: "FS",
                 color: "#059669",
               },
@@ -495,7 +497,7 @@ export default function LandingPage() {
               },
               {
                 q: "What payment methods are accepted?",
-                a: "We use Paystack for payments, supporting cards, bank transfers and USSD across Nigeria, Ghana, Kenya, South Africa and more. Pricing is displayed in your local currency.",
+                a: "We support multiple payment methods including cards, bank transfers, and local options depending on your region. Pricing is displayed in your local currency and auto-detected from your location.",
               },
               {
                 q: "What is the CRM pipeline automation?",
@@ -541,11 +543,11 @@ export default function LandingPage() {
                 <span style={{ color: '#60A5FA', fontSize: 13, fontWeight: 700 }}>50 total</span>
               </div>
               <div style={{ height: 6, background: '#1A2840', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: '30%', background: 'linear-gradient(90deg, #2563EB, #60A5FA)', borderRadius: 3, transition: 'width 1s ease' }} />
+                <div style={{ height: '100%', width: `${Math.min((waitlistCount / 50) * 100, 100)}%`, background: 'linear-gradient(90deg, #2563EB, #60A5FA)', borderRadius: 3, transition: 'width 1s ease' }} />
               </div>
             </div>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ color: '#F0F6FF', fontSize: 28, fontWeight: 800, lineHeight: 1 }}>~35</div>
+              <div style={{ color: '#F0F6FF', fontSize: 28, fontWeight: 800, lineHeight: 1 }}>{Math.max(50 - waitlistCount, 0)}</div>
               <div style={{ color: '#4A6080', fontSize: 12, marginTop: 2 }}>spots left</div>
             </div>
           </div>
@@ -576,8 +578,32 @@ export default function LandingPage() {
               <p style={{ color: '#6B8299', fontSize: 15, lineHeight: 1.7, maxWidth: 460, margin: '0 auto 20px' }}>
                 We&apos;ve sent a confirmation to your inbox with all your Founding Member perks. We&apos;ll be in touch the moment early access opens.
               </p>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, padding: '8px 16px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, padding: '8px 16px', marginBottom: 28 }}>
                 <span style={{ color: '#10B981', fontSize: 13, fontWeight: 600 }}>✓ Check your email for confirmation</span>
+              </div>
+              <p style={{ color: '#4A6080', fontSize: 13, marginBottom: 14 }}>Know someone who&apos;d love this? Share the waitlist 👇</p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just joined the eWork Social waitlist as Founding Member #${waitlistSuccess.position} 🎉\n\nAn all-in-one social media management platform for agencies, creators & brands.\n\nGet early access + 50% off → https://www.eworksocial.com #SocialMediaManagement`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#000', color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 8, textDecoration: 'none' }}
+                >
+                  𝕏 Share on X
+                </a>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`I just joined the eWork Social waitlist 🎉 — it's an all-in-one social media management platform for agencies, creators & brands. Get early access + 50% off here: https://www.eworksocial.com`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#25D366', color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 8, textDecoration: 'none' }}
+                >
+                  💬 Share on WhatsApp
+                </a>
+                <a
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://www.eworksocial.com')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0A66C2', color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 8, textDecoration: 'none' }}
+                >
+                  💼 Share on LinkedIn
+                </a>
               </div>
             </div>
           ) : (
@@ -631,7 +657,7 @@ export default function LandingPage() {
             Ready to scale your agency?
           </h2>
           <p style={{ color: '#6B8299', fontSize: 17, marginBottom: 44, lineHeight: 1.75, fontWeight: 400 }}>
-            Join agencies across Africa and beyond managing their clients&apos; social media with eWork Social. Start your free 7-day trial — no credit card needed.
+            Join agencies, creators, and brands worldwide managing their social media with eWork Social. Start your free 7-day trial — no credit card needed.
           </p>
           <a href="/register" className="btn-primary" style={{ fontSize: 16, padding: '17px 44px' }}>Get started free →</a>
         </div>
