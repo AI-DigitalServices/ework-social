@@ -84,6 +84,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
+  const [inactiveAccounts, setInactiveAccounts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -110,6 +111,16 @@ export default function DashboardPage() {
         setRecentPosts(p?.slice(0, 4) || []);
       }).catch(console.error)
         .finally(() => setLoading(false));
+
+      // Check for inactive social accounts (expired tokens)
+      import('@/lib/api').then(({ default: api }) => {
+        api.get(`/social/accounts?workspaceId=${workspace.id}`)
+          .then(res => {
+            const inactive = res.data.filter((a: any) => !a.isActive);
+            setInactiveAccounts(inactive);
+          })
+          .catch(() => {});
+      });
     }
   }, [workspace?.id]);
 
@@ -145,6 +156,35 @@ export default function DashboardPage() {
       {showWelcome && user && (
         <WelcomeModal name={user.name?.split(' ')[0] || 'there'} onClose={() => setShowWelcome(false)} />
       )}
+
+      {/* Inactive account banners */}
+      {inactiveAccounts.map((account) => (
+        <div key={account.id} className="flex items-center justify-between gap-4 px-5 py-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">
+              {account.platform === 'LINKEDIN' ? '💼' :
+               account.platform === 'INSTAGRAM' ? '📸' :
+               account.platform === 'FACEBOOK' ? '📘' :
+               account.platform === 'THREADS' ? '🧵' :
+               account.platform === 'BLUESKY' ? '🦋' : '🔗'}
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {account.platform} token expired — @{account.accountName}
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Scheduled posts to this account are paused. Reconnect to resume publishing.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/settings?tab=social"
+            className="shrink-0 text-xs font-bold px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
+          >
+            Reconnect →
+          </Link>
+        </div>
+      ))}
 
       {/* Welcome header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
