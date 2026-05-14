@@ -140,10 +140,10 @@ export default function LandingPage() {
       {/* NAV */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrollY > 40 ? 'rgba(8,12,20,0.96)' : 'transparent', backdropFilter: scrollY > 40 ? 'blur(16px)' : 'none', borderBottom: scrollY > 40 ? '1px solid #1A2840' : 'none', transition: 'all 0.3s', padding: '0 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img src="/icon.png" alt="eWork Social" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
             <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: '-0.5px' }}>eWork Social</span>
-          </div>
+          </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
             <a href="#features" className="nav-link">Features</a>
             <a href="#platforms" className="nav-link">Platforms</a>
@@ -667,10 +667,10 @@ export default function LandingPage() {
       <footer style={{ borderTop: '1px solid #1A2840', padding: '44px 48px 32px', background: '#070B12' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>⚡</div>
-              <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px' }}>eWork Social</span>
-            </div>
+            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+              <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
+              <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px', color: '#fff' }}>eWork Social</span>
+            </a>
             <div style={{ display: 'flex', gap: 28 }}>
               <a href="/privacy" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>
               <a href="/terms" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Terms of Service</a>
