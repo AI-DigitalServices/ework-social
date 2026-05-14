@@ -14,6 +14,8 @@ export class AnalyticsService {
       activeClients,
       openLeads,
       socialAccounts,
+      teamMembers,
+      automationRules,
     ] = await Promise.all([
       this.prisma.post.count({ where: { workspaceId } }),
       this.prisma.post.count({ where: { workspaceId, status: 'SCHEDULED' } }),
@@ -27,6 +29,8 @@ export class AnalyticsService {
         },
       }),
       this.prisma.socialAccount.count({ where: { workspaceId } }),
+      this.prisma.workspaceMember.count({ where: { workspaceId } }),
+      this.prisma.automationRule.count({ where: { workspaceId, isActive: true } }),
     ]);
 
     return {
@@ -37,6 +41,8 @@ export class AnalyticsService {
       activeClients,
       openLeads,
       socialAccounts,
+      hasTeamMember: teamMembers > 1,
+      hasAutomation: automationRules > 0,
     };
   }
 
