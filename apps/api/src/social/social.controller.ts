@@ -146,15 +146,21 @@ export class SocialController {
     @Query('code') code: string,
     @Query('state') state: string,
     @Query('error') error: string,
+    @Query('error_reason') errorReason: string,
+    @Query('error_description') errorDescription: string,
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    if (error) {
+      console.error('Threads OAuth denied by Meta:', { error, errorReason, errorDescription });
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    }
+    console.log('Threads callback received — code present:', !!code, 'state present:', !!state);
     try {
       await this.socialService.handleThreadsCallback(code, state);
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
-    } catch (err) {
-      console.error('Threads OAuth error:', err);
+    } catch (err: any) {
+      console.error('Threads OAuth token exchange error:', err?.message, err?.response?.data ?? '');
       return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
     }
   }

@@ -881,6 +881,7 @@ export class SocialService {
     // Exchange code for access token
     let accessToken: string;
     let threadUserId: string;
+    this.logger.log(`[Threads OAuth] appId=${appId} redirectUri=${redirectUri}`);
     try {
       const tokenRes = await axios.post(
         'https://graph.threads.net/oauth/access_token',
@@ -895,7 +896,9 @@ export class SocialService {
       );
       accessToken = tokenRes.data.access_token;
       threadUserId = String(tokenRes.data.user_id);
+      this.logger.log(`[Threads OAuth] Token exchange success — userId: ${threadUserId}`);
     } catch (err: any) {
+      this.logger.error(`[Threads OAuth] Token exchange FAILED — ${JSON.stringify(err?.response?.data ?? err?.message)}`);
       throw new BadRequestException('Threads token exchange failed: ' + JSON.stringify(err?.response?.data));
     }
 
