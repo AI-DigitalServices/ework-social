@@ -271,4 +271,51 @@ export class EmailService {
     }
   }
 
+  async sendWaitlistConfirmationEmail(email: string, name: string, position: number) {
+    if (!this.resend) return;
+    const landingUrl = `${process.env.FRONTEND_URL || 'https://www.eworksocial.com'}`;
+    try {
+      await this.resend!.emails.send({
+        from: 'Bernard from eWork Social <noreply@eworksocial.com>',
+        to: email,
+        subject: `You're Founding Member #${position} — welcome to eWork Social 🎉`,
+        html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#080C14;font-family:Arial,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+          <tr><td align="center">
+          <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
+          <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
+          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span>
+          <div style="margin-top:8px;display:inline-block;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;">
+          <span style="color:#fff;font-size:12px;font-weight:600;letter-spacing:1px;">FOUNDING MEMBER</span></div></td></tr>
+          <tr><td style="padding:36px 40px;">
+          <div style="text-align:center;margin-bottom:28px;">
+          <div style="display:inline-block;background:#1A2840;border:2px solid #2563EB;border-radius:50%;width:72px;height:72px;line-height:72px;text-align:center;">
+          <span style="font-size:28px;font-weight:900;color:#2563EB;">#${position}</span></div></div>
+          <h1 style="color:#F0F6FF;font-size:24px;font-weight:700;margin:0 0 8px;text-align:center;">You're in, ${name}! 🎉</h1>
+          <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 24px;text-align:center;">You've secured your spot as <strong style="color:#2563EB;">Founding Member #${position}</strong> of eWork Social — the social media management platform built for African digital marketers.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A1220;border:1px solid #1A2840;border-radius:12px;margin-bottom:28px;">
+          <tr><td style="padding:20px 24px;">
+          <p style="color:#93C5FD;font-size:13px;font-weight:700;letter-spacing:1px;margin:0 0 14px;">YOUR FOUNDING MEMBER PERKS</p>
+          <table cellpadding="0" cellspacing="0">
+          <tr><td style="padding:6px 0;color:#6B8299;font-size:14px;">✅&nbsp;</td><td style="padding:6px 0;color:#CBD5E1;font-size:14px;">50% off your first 3 months</td></tr>
+          <tr><td style="padding:6px 0;color:#6B8299;font-size:14px;">✅&nbsp;</td><td style="padding:6px 0;color:#CBD5E1;font-size:14px;">Priority access before public launch</td></tr>
+          <tr><td style="padding:6px 0;color:#6B8299;font-size:14px;">✅&nbsp;</td><td style="padding:6px 0;color:#CBD5E1;font-size:14px;">Direct line to the founding team</td></tr>
+          <tr><td style="padding:6px 0;color:#6B8299;font-size:14px;">✅&nbsp;</td><td style="padding:6px 0;color:#CBD5E1;font-size:14px;">Founding Member badge on your profile</td></tr>
+          </table>
+          </td></tr></table>
+          <p style="color:#6B8299;font-size:14px;line-height:1.7;margin:0 0 28px;">We're in the final stretch — ironing out a few things before we open the doors. We'll email you the moment early access is live. No spam, ever.</p>
+          <p style="color:#6B8299;font-size:14px;margin:0 0 4px;">Talk soon,</p>
+          <p style="color:#CBD5E1;font-size:14px;font-weight:600;margin:0;">Bernard &amp; the eWork Social team</p>
+          </td></tr>
+          <tr><td style="padding:20px 40px;border-top:1px solid #1A2840;text-align:center;">
+          <p style="color:#2A3A52;font-size:12px;margin:0;">© 2025 eWork Social · <a href="${landingUrl}" style="color:#2A3A52;text-decoration:none;">eworksocial.com</a></p>
+          <p style="color:#1A2840;font-size:11px;margin:4px 0 0;">You're receiving this because you joined our waitlist.</p>
+          </td></tr></table></td></tr></table>
+          </body></html>`,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send waitlist confirmation email', err);
+    }
+  }
+
 }

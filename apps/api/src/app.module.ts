@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
 import { AiModule } from './ai/ai.module';
 import { RiscModule } from './risc/risc.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { RiscModule } from './risc/risc.module';
     AdminModule,
     AiModule,
     RiscModule,
+    WaitlistModule,
   ],
   providers: [
     {

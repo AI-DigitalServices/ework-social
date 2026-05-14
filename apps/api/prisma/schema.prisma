@@ -296,3 +296,11 @@ model WorkspaceInvite {
   invitedBy   User      @relation(fields: [invitedById], references: [id])
   createdAt   DateTime  @default(now())
 }
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  source    String?  @default("landing_page")
+  createdAt DateTime @default(now())
+}

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { joinWaitlistAction } from '@/actions/waitlist.actions';
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -42,6 +43,28 @@ export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [currency, setCurrency] = useState(CURRENCIES[0]);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+
+  // Waitlist state
+  const [waitlistName, setWaitlistName] = useState('');
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistSuccess, setWaitlistSuccess] = useState<{ position: number } | null>(null);
+  const [waitlistError, setWaitlistError] = useState('');
+
+  async function handleWaitlistSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waitlistEmail) return;
+    setWaitlistLoading(true);
+    setWaitlistError('');
+    try {
+      const res = await joinWaitlistAction({ email: waitlistEmail, name: waitlistName, source: 'landing_page' });
+      setWaitlistSuccess({ position: res.position });
+    } catch (err: any) {
+      setWaitlistError(err?.response?.data?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setWaitlistLoading(false);
+    }
+  }
 
   useEffect(() => {
     setIsVisible(true);
@@ -122,6 +145,7 @@ export default function LandingPage() {
             <a href="#features" className="nav-link">Features</a>
             <a href="#platforms" className="nav-link">Platforms</a>
             <a href="#pricing" className="nav-link">Pricing</a>
+            <a href="#waitlist" className="nav-link" style={{ color: '#60A5FA', fontWeight: 600 }}>Early Access</a>
             <a href="/login" className="nav-link">Sign in</a>
             <a href="/register" className="btn-primary" style={{ padding: '10px 22px', fontSize: 14 }}>Get started free</a>
           </div>
@@ -489,6 +513,113 @@ export default function LandingPage() {
               <FaqItem key={i} question={item.q} answer={item.a} />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FOUNDING MEMBER WAITLIST */}
+      <section id="waitlist" style={{ padding: '110px 48px', borderTop: '1px solid #1A2840', background: 'linear-gradient(180deg, #080C14 0%, #070B12 100%)' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 24, padding: '6px 16px', marginBottom: 20 }}>
+              <span style={{ fontSize: 14 }}>🏆</span>
+              <span style={{ color: '#60A5FA', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>FOUNDING MEMBER OFFER</span>
+            </div>
+            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(30px, 5vw, 48px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF', marginBottom: 16, lineHeight: 1.2 }}>
+              Join early. Pay less. Forever.
+            </h2>
+            <p style={{ color: '#6B8299', fontSize: 17, lineHeight: 1.75, maxWidth: 560, margin: '0 auto' }}>
+              We&apos;re opening early access to a limited group of Founding Members before our public launch. Lock in 50% off your first 3 months and help shape the product.
+            </p>
+          </div>
+
+          {/* Spots counter bar */}
+          <div style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 16, padding: '20px 28px', marginBottom: 36, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ color: '#93C5FD', fontSize: 13, fontWeight: 600 }}>Founding spots claimed</span>
+                <span style={{ color: '#60A5FA', fontSize: 13, fontWeight: 700 }}>50 total</span>
+              </div>
+              <div style={{ height: 6, background: '#1A2840', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: '30%', background: 'linear-gradient(90deg, #2563EB, #60A5FA)', borderRadius: 3, transition: 'width 1s ease' }} />
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ color: '#F0F6FF', fontSize: 28, fontWeight: 800, lineHeight: 1 }}>~35</div>
+              <div style={{ color: '#4A6080', fontSize: 12, marginTop: 2 }}>spots left</div>
+            </div>
+          </div>
+
+          {/* Perks list */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 40 }}>
+            {[
+              { icon: '💰', title: '50% off first 3 months', desc: 'Locked in at founding price' },
+              { icon: '🚀', title: 'Priority early access', desc: 'Before public launch' },
+              { icon: '🏅', title: 'Founding Member badge', desc: 'On your workspace profile' },
+              { icon: '📞', title: 'Direct founder access', desc: 'WhatsApp & email support' },
+            ].map((perk, i) => (
+              <div key={i} style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{perk.icon}</span>
+                <div>
+                  <div style={{ color: '#E8F0FA', fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{perk.title}</div>
+                  <div style={{ color: '#4A6080', fontSize: 12 }}>{perk.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Form / Success state */}
+          {waitlistSuccess ? (
+            <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(37,99,235,0.1))', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 20, padding: '44px 40px', textAlign: 'center' }}>
+              <div style={{ fontSize: 52, marginBottom: 16 }}>🎉</div>
+              <h3 style={{ color: '#F0F6FF', fontSize: 24, fontWeight: 700, marginBottom: 10 }}>You&apos;re Founding Member #{waitlistSuccess.position}!</h3>
+              <p style={{ color: '#6B8299', fontSize: 15, lineHeight: 1.7, maxWidth: 460, margin: '0 auto 20px' }}>
+                We&apos;ve sent a confirmation to your inbox with all your Founding Member perks. We&apos;ll be in touch the moment early access opens.
+              </p>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, padding: '8px 16px' }}>
+                <span style={{ color: '#10B981', fontSize: 13, fontWeight: 600 }}>✓ Check your email for confirmation</span>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleWaitlistSubmit} style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 20, padding: '36px 40px' }}>
+              <p style={{ color: '#93C5FD', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', marginBottom: 20 }}>CLAIM YOUR SPOT</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label style={{ color: '#6B8299', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>First name (optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chidi"
+                    value={waitlistName}
+                    onChange={e => setWaitlistName(e.target.value)}
+                    style={{ width: '100%', background: '#080C14', border: '1px solid #1A2840', borderRadius: 10, padding: '12px 16px', color: '#E8F0FA', fontSize: 15, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ color: '#6B8299', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Work email <span style={{ color: '#EF4444' }}>*</span></label>
+                  <input
+                    type="email"
+                    placeholder="you@agency.com"
+                    value={waitlistEmail}
+                    onChange={e => setWaitlistEmail(e.target.value)}
+                    required
+                    style={{ width: '100%', background: '#080C14', border: '1px solid #1A2840', borderRadius: 10, padding: '12px 16px', color: '#E8F0FA', fontSize: 15, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                  />
+                </div>
+              </div>
+              {waitlistError && (
+                <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{waitlistError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={waitlistLoading || !waitlistEmail}
+                className="btn-primary"
+                style={{ width: '100%', padding: '15px', fontSize: 16, fontWeight: 700, marginTop: 4, opacity: waitlistLoading || !waitlistEmail ? 0.6 : 1, cursor: waitlistLoading || !waitlistEmail ? 'not-allowed' : 'pointer' }}
+              >
+                {waitlistLoading ? 'Securing your spot...' : '🏆 Claim Founding Member Spot →'}
+              </button>
+              <p style={{ color: '#2A3A52', fontSize: 12, textAlign: 'center', marginTop: 14 }}>No spam. No credit card. Just early access and a great deal.</p>
+            </form>
+          )}
         </div>
       </section>
 
