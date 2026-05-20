@@ -40,7 +40,7 @@ function AcceptInviteContent() {
   return (
     <div style={{ minHeight: '100vh', background: '#080C14', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ background: '#0C1524', border: '1px solid #1A2840', borderRadius: 20, padding: '48px 40px', maxWidth: 420, width: '100%', textAlign: 'center' }}>
-        <div style={{ width: 56, height: 56, background: '#2563EB', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 24 }}>⚡</div>
+        <img src="/icon.png" alt="eWork Social" style={{ width: 56, height: 56, borderRadius: 16, objectFit: 'cover', margin: '0 auto 24px', display: 'block' }} />
         {status === 'loading' && (
           <>
             <div style={{ width: 32, height: 32, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />

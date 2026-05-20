@@ -27,7 +27,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">Welcome, ${name}! 👋</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 28px;">You are almost ready to start managing your clients social media. Verify your email to activate your account.</p>
@@ -59,7 +59,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">Reset your password 🔐</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 8px;">Hi ${name},</p>
@@ -92,7 +92,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">You are all set, ${name}! 🎉</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 28px;">Your email is verified. Your 7-day free trial is now active.</p>
@@ -118,7 +118,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">Hey ${name} 👋</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 16px;">You signed up 2 days ago but haven't connected a social account yet.</p>
@@ -151,7 +151,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#c8531a,#e05a1a);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social · Trial Ending Soon</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social · Trial Ending Soon</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">Your trial ends in 2 days ⏰</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 16px;">Hi ${name}, your free trial of eWork Social expires in 2 days.</p>
@@ -184,7 +184,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#991b1b,#dc2626);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social · Trial Ended</span></td></tr>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social · Trial Ended</span></td></tr>
           <tr><td style="padding:36px 40px;">
           <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">Your free trial has ended 🔒</h1>
           <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 16px;">Hi ${name}, your 7-day free trial of eWork Social has ended.</p>
@@ -246,9 +246,7 @@ export class EmailService {
         html: `
           <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
             <div style="margin-bottom: 32px;">
-              <div style="width: 40px; height: 40px; background: #2563EB; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <span style="color: white; font-size: 20px;">⚡</span>
-              </div>
+              <img src="https://www.eworksocial.com/icon.png" alt="eWork Social" width="40" height="40" style="border-radius:10px;display:block;margin-bottom:16px;" />
               <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0;">You're invited!</h1>
             </div>
             <p style="color: #334155; font-size: 15px; line-height: 1.6;">
@@ -284,7 +282,7 @@ export class EmailService {
           <tr><td align="center">
           <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
           <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
-          <span style="font-size:20px;font-weight:700;color:white;">⚡ eWork Social</span>
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;"><span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span>
           <div style="margin-top:8px;display:inline-block;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 14px;">
           <span style="color:#fff;font-size:12px;font-weight:600;letter-spacing:1px;">FOUNDING MEMBER</span></div></td></tr>
           <tr><td style="padding:36px 40px;">

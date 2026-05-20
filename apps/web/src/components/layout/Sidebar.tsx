@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
-  MessageSquareReply, Settings, LogOut, Zap, X, Menu,
+  MessageSquareReply, Settings, LogOut, X, Menu,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -62,9 +62,7 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
         {/* Logo */}
         <div className="px-6 py-6 border-b border-slate-700">
           <Link href="/" className="flex items-center gap-2 no-underline">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
+            <img src="/icon.png" alt="eWork Social" className="w-8 h-8 rounded-lg object-cover" />
             <span className="text-white font-bold text-lg">eWork Social</span>
           </Link>
           <div className="mt-3 px-3 py-2.5 bg-slate-800 rounded-lg">

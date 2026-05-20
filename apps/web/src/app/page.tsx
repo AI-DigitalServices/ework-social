@@ -652,7 +652,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section style={{ padding: '90px 48px', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, margin: '0 auto 28px', boxShadow: '0 12px 32px rgba(37,99,235,0.4)' }}>⚡</div>
+          <img src="/icon.png" alt="eWork Social" style={{ width: 68, height: 68, borderRadius: 18, objectFit: 'cover', margin: '0 auto 28px', display: 'block', boxShadow: '0 12px 32px rgba(37,99,235,0.4)' }} />
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 50px)', fontWeight: 700, letterSpacing: '-1.5px', marginBottom: 18, color: '#F0F6FF' }}>
             Ready to scale your agency?
           </h2>

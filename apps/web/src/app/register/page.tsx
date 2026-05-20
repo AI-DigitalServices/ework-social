@@ -60,7 +60,7 @@ export default function RegisterPage() {
         <div className="reg-left">
           <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', filter: 'blur(120px)', background: '#2563EB', opacity: 0.1, top: -100, left: -100, pointerEvents: 'none' }} />
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 80 }}>
-            <div style={{ width: 36, height: 36, background: '#2563EB', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⚡</div>
+            <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
             <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>eWork Social</span>
           </Link>
           <div style={{ maxWidth: 440 }}>
@@ -96,7 +96,7 @@ export default function RegisterPage() {
             {/* Mobile logo - only shows on mobile */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }} className="mobile-logo">
               <style>{`.mobile-logo { display: none; } @media(max-width:768px){ .mobile-logo { display: flex !important; } }`}</style>
-              <div style={{ width: 36, height: 36, background: '#2563EB', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⚡</div>
+              <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
               <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 20, color: '#fff' }}>eWork Social</span>
             </div>
 

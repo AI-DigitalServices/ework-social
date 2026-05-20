@@ -29,12 +29,12 @@ const platformTips: Record<string, string> = {
 };
 
 const bestTimes: Record<string, { times: string[]; days: string; tip: string }> = {
-  INSTAGRAM: { times: ['09:00', '11:00', '13:00', '19:00'], days: 'Tue – Fri', tip: '9–11am & 7–9pm Lagos time' },
-  FACEBOOK:  { times: ['09:00', '13:00', '15:00', '20:00'], days: 'Wed – Fri', tip: '1–4pm & 8pm Lagos time' },
-  TWITTER:   { times: ['08:00', '12:00', '17:00', '21:00'], days: 'Mon – Thu', tip: '8–10am & 5–9pm Lagos time' },
-  LINKEDIN:  { times: ['08:00', '10:00', '17:00', '18:00'], days: 'Tue – Thu', tip: '8–10am & 5–6pm Lagos time' },
-  TIKTOK:    { times: ['07:00', '14:00', '19:00', '21:00'], days: 'Tue – Sat', tip: '7am, 2pm & 7–9pm Lagos time' },
-  YOUTUBE:   { times: ['14:00', '15:00', '16:00', '17:00'], days: 'Thu – Sat', tip: '2–5pm Lagos time' },
+  INSTAGRAM: { times: ['09:00', '11:00', '13:00', '19:00'], days: 'Tue – Fri', tip: '9–11am & 7–9pm your local time' },
+  FACEBOOK:  { times: ['09:00', '13:00', '15:00', '20:00'], days: 'Wed – Fri', tip: '1–4pm & 8pm your local time' },
+  TWITTER:   { times: ['08:00', '12:00', '17:00', '21:00'], days: 'Mon – Thu', tip: '8–10am & 5–9pm your local time' },
+  LINKEDIN:  { times: ['08:00', '10:00', '17:00', '18:00'], days: 'Tue – Thu', tip: '8–10am & 5–6pm your local time' },
+  TIKTOK:    { times: ['07:00', '14:00', '19:00', '21:00'], days: 'Tue – Sat', tip: '7am, 2pm & 7–9pm your local time' },
+  YOUTUBE:   { times: ['14:00', '15:00', '16:00', '17:00'], days: 'Thu – Sat', tip: '2–5pm your local time' },
 };
 
 const platformColors: Record<string, string> = {

@@ -112,7 +112,7 @@ export default function AdminPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, background: '#2563EB', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⚡</div>
+              <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }} />
               <h1 style={{ color: '#F0F6FF', fontSize: 24, fontWeight: 700 }}>Founder Dashboard</h1>
             </div>
             <p style={{ color: '#4A6080', fontSize: 13 }}>Last refreshed: {lastRefresh.toLocaleTimeString()}</p>

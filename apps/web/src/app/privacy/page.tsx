@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@700&display=swap'); * { box-sizing: border-box; } a { color: #3B82F6; }`}</style>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 48 }}>
-          <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
+          <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
           <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 16, color: '#fff' }}>eWork Social</span>
         </a>
 
