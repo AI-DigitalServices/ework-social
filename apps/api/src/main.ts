@@ -9,11 +9,15 @@ Sentry.init({
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
+
+  // Security headers
+  app.use(helmet());
 
   // Trust Cloudflare and Railway proxy headers for real IP rate limiting
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
