@@ -8,13 +8,17 @@ export class JwtGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+
+    // Allow CORS preflight requests — they never carry tokens
+    if (request.method === 'OPTIONS') return true;
+
     const token = this.extractToken(request);
 
     if (!token) throw new UnauthorizedException('No token provided');
 
     try {
       const payload = await this.jwt.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'secret',
+        secret: process.env.JWT_SECRET,
       });
       request.user = payload;
       return true;
