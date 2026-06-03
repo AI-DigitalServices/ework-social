@@ -269,6 +269,53 @@ export class EmailService {
     }
   }
 
+  async sendVerificationReminderEmail(email: string, name: string, token: string, isUrgent = false) {
+    if (!this.resend) return;
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const subject = isUrgent
+      ? `⚠️ Last chance — verify your eWork Social account`
+      : `Reminder: Please verify your eWork Social email`;
+    const headline = isUrgent
+      ? `Your account is waiting, ${name} ⚠️`
+      : `Don't forget to verify your email, ${name}`;
+    const subtext = isUrgent
+      ? `This is your final reminder. Your verification link will expire soon and your account access will be limited. Click below to activate your account now.`
+      : `You signed up for eWork Social but haven't verified your email yet. Verify now to unlock your full account and start managing your clients' social media.`;
+    try {
+      await this.resend!.emails.send({
+        from: 'Bernard from eWork Social <noreply@eworksocial.com>',
+        to: email,
+        subject,
+        html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#080C14;font-family:Arial,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+          <tr><td align="center">
+          <table width="560" cellpadding="0" cellspacing="0" style="background:#0C1524;border-radius:16px;border:1px solid #1A2840;">
+          <tr><td style="background:linear-gradient(135deg,#1a37c8,#2563EB);padding:28px;text-align:center;border-radius:16px 16px 0 0;">
+          <img src="https://www.eworksocial.com/icon-32.png" alt="eWork Social" width="28" height="28" style="border-radius:7px;vertical-align:middle;margin-right:8px;">
+          <span style="font-size:18px;font-weight:700;color:white;vertical-align:middle;">eWork Social</span></td></tr>
+          <tr><td style="padding:36px 40px;">
+          <h1 style="color:#F0F6FF;font-size:22px;font-weight:700;margin:0 0 12px;">${headline}</h1>
+          <p style="color:#6B8299;font-size:15px;line-height:1.7;margin:0 0 28px;">${subtext}</p>
+          <div style="text-align:center;margin:0 0 28px;">
+          <a href="${verifyUrl}" style="display:inline-block;background:${isUrgent ? '#dc2626' : '#2563EB'};color:white;font-size:15px;font-weight:700;padding:14px 36px;border-radius:10px;text-decoration:none;">
+          ${isUrgent ? '⚠️ Verify Now — Before It Expires' : 'Verify My Email Address'}</a>
+          </div>
+          <p style="color:#3A506B;font-size:13px;line-height:1.6;">Once verified you'll be able to:<br>
+          &nbsp;&nbsp;✅ Connect your social accounts<br>
+          &nbsp;&nbsp;✅ Schedule posts across platforms<br>
+          &nbsp;&nbsp;✅ Manage all your clients from one dashboard</p>
+          <p style="color:#2A3A52;font-size:12px;margin-top:20px;">If you did not create an account, you can safely ignore this email.</p>
+          </td></tr>
+          <tr><td style="padding:20px 40px;border-top:1px solid #1A2840;text-align:center;">
+          <p style="color:#2A3A52;font-size:12px;margin:0;">© 2025 eWork Social · <a href="https://www.eworksocial.com" style="color:#2A3A52;">eworksocial.com</a></p>
+          </td></tr></table></td></tr></table>
+          </body></html>`,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send verification reminder email', err);
+    }
+  }
+
   async sendWaitlistConfirmationEmail(email: string, name: string, position: number) {
     if (!this.resend) return;
     const landingUrl = `${process.env.FRONTEND_URL || 'https://www.eworksocial.com'}`;

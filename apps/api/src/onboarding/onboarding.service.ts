@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class OnboardingService {
@@ -11,6 +12,48 @@ export class OnboardingService {
     private prisma: PrismaService,
     private email: EmailService,
   ) {}
+
+  // Runs every day at 9am — nudges unverified users to confirm their email
+  @Cron('0 9 * * *')
+  async runVerificationReminders() {
+    this.logger.log('Running verification reminder sequence...');
+    const now = new Date();
+
+    const unverifiedUsers = await this.prisma.user.findMany({
+      where: { isVerified: false },
+    });
+
+    for (const user of unverifiedUsers) {
+      const hoursSinceSignup = (now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60);
+      const daysSinceSignup = Math.floor(hoursSinceSignup / 24);
+
+      // Refresh the token so the link stays valid for each reminder
+      const newToken = crypto.randomBytes(32).toString('hex');
+      const newExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { verificationToken: newToken, verificationExpiry: newExpiry },
+      });
+
+      try {
+        if (daysSinceSignup === 1) {
+          // Day 1: friendly first reminder
+          await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, false);
+          this.logger.log(`Verification reminder (day 1) sent to ${user.email}`);
+        } else if (daysSinceSignup === 3) {
+          // Day 3: second nudge
+          await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, false);
+          this.logger.log(`Verification reminder (day 3) sent to ${user.email}`);
+        } else if (daysSinceSignup === 6) {
+          // Day 6: urgent final reminder before trial ends
+          await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, true);
+          this.logger.log(`Verification reminder (day 6 — urgent) sent to ${user.email}`);
+        }
+      } catch (err) {
+        this.logger.error(`Failed verification reminder for ${user.email}`, err);
+      }
+    }
+  }
 
   @Cron('0 9 * * *')
   async runOnboardingSequence() {
