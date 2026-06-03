@@ -37,17 +37,18 @@ export class OnboardingService {
 
       try {
         if (daysSinceSignup === 1) {
-          // Day 1: friendly first reminder
           await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, false);
           this.logger.log(`Verification reminder (day 1) sent to ${user.email}`);
         } else if (daysSinceSignup === 3) {
-          // Day 3: second nudge
           await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, false);
           this.logger.log(`Verification reminder (day 3) sent to ${user.email}`);
         } else if (daysSinceSignup === 6) {
-          // Day 6: urgent final reminder before trial ends
           await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, true);
           this.logger.log(`Verification reminder (day 6 — urgent) sent to ${user.email}`);
+        } else if (daysSinceSignup > 6 && daysSinceSignup % 7 === 0) {
+          // Weekly nudge after day 6 until they verify
+          await this.email.sendVerificationReminderEmail(user.email, user.name, newToken, true);
+          this.logger.log(`Verification reminder (day ${daysSinceSignup} — weekly) sent to ${user.email}`);
         }
       } catch (err) {
         this.logger.error(`Failed verification reminder for ${user.email}`, err);
