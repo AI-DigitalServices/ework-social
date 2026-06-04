@@ -126,12 +126,20 @@ export default function WorkspaceTab() {
 
       {/* Team members */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-slate-800">Team Members</h3>
           <button onClick={() => setShowInvite(!showInvite)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">
             <Plus className="w-4 h-4" /> Invite Member
           </button>
+        </div>
+
+        {/* Workspace context label */}
+        <div className="flex items-center gap-2 mb-5 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+          <Users className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+          <p className="text-xs text-blue-700">
+            Managing team for <strong>{workspace?.name}</strong> — invited members only access this workspace.
+          </p>
         </div>
 
         {/* Invite form */}
