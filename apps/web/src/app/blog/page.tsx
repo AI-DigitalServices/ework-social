@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { posts } from '@/content/blog/posts';
 
