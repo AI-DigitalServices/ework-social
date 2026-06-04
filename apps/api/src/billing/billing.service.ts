@@ -173,21 +173,31 @@ export class BillingService {
 
     const now = new Date();
     const trialEndsAt = sub.trialEndsAt;
-    const isActive = sub.status === 'ACTIVE' && sub.plan !== 'FREE';
 
-    if (isActive) return { plan: sub.plan, trialActive: false, trialDaysLeft: 0, expired: false };
+    // Any paid plan (regardless of status) is always treated as active —
+    // prevents a cancelled/expired trial from overriding a manual upgrade
+    const isPaidPlan = sub.plan !== 'FREE';
+    const isActive   = sub.status === 'ACTIVE' && isPaidPlan;
+
+    if (isActive)   return { plan: sub.plan, trialActive: false, trialDaysLeft: 0, expired: false };
+
+    // If plan was manually set to a paid tier but status wasn't updated, honour it
+    if (isPaidPlan) return { plan: sub.plan, trialActive: false, trialDaysLeft: 0, expired: false };
 
     if (trialEndsAt) {
-      const msLeft = trialEndsAt.getTime() - now.getTime();
+      const msLeft  = trialEndsAt.getTime() - now.getTime();
       const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
       if (daysLeft > 0) {
         return { plan: 'FREE', trialActive: true, trialDaysLeft: daysLeft, expired: false };
       } else {
-        await this.prisma.subscription.update({
-          where: { id: sub.id },
-          data: { plan: 'FREE', status: 'CANCELLED' },
-        });
-        return { plan: 'FREE', trialActive: false, trialDaysLeft: 0, expired: true };
+        // Only reset to FREE/CANCELLED if they are genuinely on the FREE plan
+        if (sub.plan === 'FREE') {
+          await this.prisma.subscription.update({
+            where: { id: sub.id },
+            data: { status: 'CANCELLED' },
+          });
+        }
+        return { plan: sub.plan === 'FREE' ? 'FREE' : sub.plan, trialActive: false, trialDaysLeft: 0, expired: sub.plan === 'FREE' };
       }
     }
     return { plan: 'FREE', trialActive: false, trialDaysLeft: 0, expired: true };

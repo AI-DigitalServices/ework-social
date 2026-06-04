@@ -1,9 +1,9 @@
-import { Controller, Get, Post, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ReferralService } from './referral.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
-const ADMIN_EMAILS = ['admin@eworksocial.com', 'eworksocial@gmail.com', 'aiservices.agent@gmail.com'];
+const ADMIN_EMAILS = ['admin@eworksocial.com', 'eworksocial@gmail.com', 'aiservices.agent@gmail.com', 'info.oshapify@gmail.com'];
 
 @Controller('admin')
 @UseGuards(JwtGuard)
@@ -64,5 +64,11 @@ export class AdminController {
   async generateReferral(@Req() req: any) {
     const code = await this.referralService.generateReferralCode(req.user.sub);
     return { code, link: `https://app.eworksocial.com/register?ref=${code}` };
+  }
+
+  @Post('set-plan')
+  async setPlan(@Req() req: any, @Body() body: { workspaceId: string; plan: string }) {
+    this.checkAdmin(req);
+    return this.adminService.setWorkspacePlan(body.workspaceId, body.plan);
   }
 }

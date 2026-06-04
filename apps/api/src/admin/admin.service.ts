@@ -209,4 +209,18 @@ export class AdminService {
     ]);
     return { total, entries };
   }
+
+  async setWorkspacePlan(workspaceId: string, plan: string) {
+    const isPaid = plan !== 'FREE';
+    const updated = await this.prisma.subscription.update({
+      where: { workspaceId },
+      data: {
+        plan: plan as any,
+        status: isPaid ? 'ACTIVE' : 'CANCELLED',
+        // Clear trial expiry for paid plans so it never interferes
+        trialEndsAt: isPaid ? null : undefined,
+      },
+    });
+    return { success: true, workspaceId, plan: updated.plan, status: updated.status };
+  }
 }
