@@ -148,6 +148,7 @@ export default function LandingPage() {
             <a href="#features" className="nav-link">Features</a>
             <a href="#platforms" className="nav-link">Platforms</a>
             <a href="#pricing" className="nav-link">Pricing</a>
+            <a href="/blog" className="nav-link">Blog</a>
             <a href="#waitlist" style={{ color: '#EF4444', fontWeight: 700, fontSize: 14, textDecoration: 'none', padding: '6px 14px', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 6, transition: 'all 0.2s', background: 'rgba(239,68,68,0.08)' }}>🔥 Early Access</a>
             <a href="/login" className="nav-link">Sign in</a>
             <a href="/register" className="btn-primary" style={{ padding: '10px 22px', fontSize: 14 }}>Get started free</a>
@@ -672,6 +673,7 @@ export default function LandingPage() {
               <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px', color: '#fff' }}>eWork Social</span>
             </a>
             <div style={{ display: 'flex', gap: 28 }}>
+              <a href="/blog" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Blog</a>
               <a href="/privacy" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>
               <a href="/terms" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Terms of Service</a>
               <a href="/login" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Sign In</a>
