@@ -107,7 +107,98 @@ export const posts: BlogPost[] = [
 <p>If you have questions about how eWork Social works for your specific setup, reply to this article or send me a message directly — I read everything and respond personally.</p>
     `,
   },
+  {
+    slug: "complete-guide-scheduling-social-media-posts-every-platform",
+    title: "The Complete Guide to Scheduling Social Media Posts Across Every Platform",
+    excerpt: "Posting manually to 5 platforms every day is a productivity killer. Here is how smart agencies use scheduling to reclaim their time and post consistently.",
+    category: "Scheduling",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-06-09",
+    readTime: 8,
+    content: `
+<p>If you are still posting manually to social media every day, you are working harder than you need to. Logging into Instagram, then Facebook, then LinkedIn, then TikTok — separately, one by one, every single day — is not a content strategy. It is a time trap.</p>
+
+<p>The agencies that grow fastest are not the ones creating the most content. They are the ones who have built systems that make consistent posting effortless. Scheduling is the foundation of that system.</p>
+
+<h2>Why Scheduling Changes Everything</h2>
+
+<p>When you schedule your content in advance, three things happen that cannot happen when you post manually.</p>
+
+<p><strong>First, you stop being reactive.</strong> Instead of scrambling to post something every morning, you sit down once a week, plan your content, schedule it across platforms, and spend the rest of the week on strategy, client relationships, and creative work.</p>
+
+<p><strong>Second, your consistency improves dramatically.</strong> The number one reason social media accounts go quiet is not lack of ideas — it is lack of time on the day you planned to post. Scheduling removes that bottleneck entirely. The post goes out whether you are in a client meeting, on a call, or asleep.</p>
+
+<p><strong>Third, you can optimise for timing.</strong> Research consistently shows that posts published at specific times get significantly more engagement than posts published at random times. Scheduling lets you target those windows precisely, every time.</p>
+
+<h2>The Best Times to Post on Each Platform</h2>
+
+<p>Timing matters more than most people realise. Here is what the data shows for West African audiences specifically:</p>
+
+<p><strong>Instagram:</strong> Tuesday to Friday, 9am to 11am and 7pm to 9pm Lagos time. Avoid Monday mornings and weekends for business content.</p>
+
+<p><strong>Facebook:</strong> Wednesday to Friday, 1pm to 4pm Lagos time. Facebook Pages see the highest organic reach mid-week during lunch hours.</p>
+
+<p><strong>LinkedIn:</strong> Tuesday to Thursday, 8am to 10am and 5pm to 6pm Lagos time. LinkedIn is a professional platform — post when professionals are commuting or taking breaks.</p>
+
+<p><strong>TikTok:</strong> Tuesday to Saturday, 7am, 2pm, and 7pm to 9pm Lagos time. TikTok's algorithm rewards early morning and evening engagement heavily.</p>
+
+<p><strong>YouTube:</strong> Thursday to Saturday, 2pm to 5pm Lagos time. Longer video content performs best when people have leisure time.</p>
+
+<p><strong>Threads and Bluesky:</strong> These platforms are newer and still establishing audience patterns. Post Tuesday to Friday between 10am and 12pm as a starting point and adjust based on your own analytics.</p>
+
+<h2>How to Build a Weekly Scheduling Workflow</h2>
+
+<p>The agencies that do this well follow a simple system. Here is the exact workflow we recommend to eWork Social users:</p>
+
+<p><strong>Monday — Content planning (60 minutes).</strong> Review last week's top performing posts. Identify this week's themes. Decide what to post on which platform and when. Write all the copy.</p>
+
+<p><strong>Tuesday — Scheduling (30 minutes).</strong> Open eWork Social, create posts for each client, select the platforms, set the times using the Best Times feature, and schedule everything for the week. You are done with posting for the week in 30 minutes.</p>
+
+<p><strong>Wednesday to Friday — Engagement (15 minutes per day).</strong> Check comments, respond to DMs, monitor what is performing. The auto-responder handles the routine replies automatically.</p>
+
+<p><strong>Saturday — Review (30 minutes).</strong> Check what performed well, what flopped, and why. Use this to inform next week's content planning.</p>
+
+<p>That is a total of roughly 3 hours of content work per week per client — down from the 8 to 10 hours most agencies spend when posting manually.</p>
+
+<h2>Platform-Specific Scheduling Tips</h2>
+
+<p><strong>Instagram:</strong> Always include an image or video. Text-only posts are not supported through the API. Batch your image editing on Monday so you have all assets ready when you sit down to schedule on Tuesday.</p>
+
+<p><strong>Facebook:</strong> Facebook Pages get the best reach when posts include a question that encourages comments. Write your post, then add a one-line question at the end. This takes 10 seconds and consistently boosts engagement by 30 to 50 percent.</p>
+
+<p><strong>LinkedIn:</strong> The first two lines of your post are what people see before they click "see more". Write your hook first. Make it specific and surprising. The rest of the post can elaborate, but the hook determines whether anyone reads it.</p>
+
+<p><strong>TikTok:</strong> TikTok requires a video file. Use eWork Social to schedule the video upload and description in advance. The platform favours accounts that post consistently over accounts that post occasionally, regardless of quality.</p>
+
+<p><strong>YouTube:</strong> Upload your video through eWork Social with a keyword-rich title and description. YouTube is a search engine as much as it is a social platform. Think about what your audience is searching for and write your title around that.</p>
+
+<h2>Using AI to Write Captions Faster</h2>
+
+<p>One of the biggest time sinks in scheduling is writing captions. Most social media managers spend 15 to 30 minutes per post just on the copy — multiplied across 5 platforms and 10 clients, that is hours of writing every week.</p>
+
+<p>eWork Social includes an AI writing assistant built directly into the post scheduler. You type the topic — for example, "promote our new real estate listing in Lekki" — select the tone and platform, and the AI generates three caption options in seconds. You pick the best one, edit if needed, and schedule.</p>
+
+<p>For agencies managing multiple clients, this alone saves 5 to 8 hours per week.</p>
+
+<h2>The Mistake Most Agencies Make With Scheduling</h2>
+
+<p>The most common mistake is scheduling content that was written for one platform and pasting it identically across every platform. What works on LinkedIn sounds wrong on TikTok. What works on Instagram reads poorly on Facebook.</p>
+
+<p>Each platform has a different audience, a different tone, and different content formats. Effective scheduling means adapting your core message for each platform — not copying and pasting.</p>
+
+<p>eWork Social's per-platform editor lets you write different copy for each platform in the same workflow. You start with a base message, then customise it for each platform before scheduling. This takes an extra 5 minutes and produces significantly better results.</p>
+
+<h2>Getting Started</h2>
+
+<p>If you are managing social media for clients and still posting manually, the first step is connecting your platforms. eWork Social supports LinkedIn, TikTok, YouTube, Threads, Bluesky, and — once Meta approval is complete — Facebook and Instagram.</p>
+
+<p>Connect your first workspace in under 5 minutes. Schedule your first week of content in under 30 minutes. See how much time you get back.</p>
+
+<p>Founding member spots are still open at <a href="https://app.eworksocial.com/register">app.eworksocial.com</a> — 50 percent off locked in permanently for the first agencies who join.</p>
+    `,
+  },
 ];
+
 
 export function getPost(slug: string): BlogPost | undefined {
   return posts.find(p => p.slug === slug);
