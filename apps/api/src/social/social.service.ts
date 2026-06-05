@@ -256,15 +256,71 @@ export class SocialService {
 
     try {
       const accessToken = this.decryptToken(post.socialAccount.accessToken);
-      const res = await axios.post(
-        `https://graph.facebook.com/v19.0/${post.socialAccount.accountId}/feed`,
-        { message: post.content, access_token: accessToken },
-      );
-      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
+      const pageId = post.socialAccount.accountId;
+      let res: any;
+
+      const imageUrls = (post.mediaUrls || []).filter((u: string) => !this.isVideoUrl(u));
+      const videoUrl = (post.mediaUrls || []).find((u: string) => this.isVideoUrl(u));
+
+      if (videoUrl) {
+        // Post video to Facebook
+        res = await axios.post(
+          `https://graph.facebook.com/v19.0/${pageId}/videos`,
+          {
+            description: post.content,
+            file_url: videoUrl,
+            access_token: accessToken,
+          },
+        );
+      } else if (imageUrls.length === 1) {
+        // Post single image
+        res = await axios.post(
+          `https://graph.facebook.com/v19.0/${pageId}/photos`,
+          {
+            caption: post.content,
+            url: imageUrls[0],
+            access_token: accessToken,
+          },
+        );
+      } else if (imageUrls.length > 1) {
+        // Post multiple images as album
+        const photoIds: string[] = [];
+        for (const imageUrl of imageUrls) {
+          const photoRes = await axios.post(
+            `https://graph.facebook.com/v19.0/${pageId}/photos`,
+            {
+              url: imageUrl,
+              published: false,
+              access_token: accessToken,
+            },
+          );
+          photoIds.push(photoRes.data.id);
+        }
+        const attachedMedia = photoIds.map(id => ({ media_fbid: id }));
+        res = await axios.post(
+          `https://graph.facebook.com/v19.0/${pageId}/feed`,
+          {
+            message: post.content,
+            attached_media: attachedMedia,
+            access_token: accessToken,
+          },
+        );
+      } else {
+        // Text only post
+        res = await axios.post(
+          `https://graph.facebook.com/v19.0/${pageId}/feed`,
+          { message: post.content, access_token: accessToken },
+        );
+      }
+
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', externalId: res.data.id },
+      });
       return { success: true, postId: res.data.id };
     } catch (err: any) {
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'FAILED' } });
-      throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish');
+      throw new BadRequestException(err.response?.data?.error?.message || 'Failed to publish to Facebook');
     }
   }
 
