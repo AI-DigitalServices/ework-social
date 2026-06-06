@@ -17,6 +17,8 @@ const platformLimits: Record<string, { limit: number; label: string }> = {
   LINKEDIN:  { limit: 3000,  label: 'LinkedIn' },
   TIKTOK:    { limit: 2200,  label: 'TikTok' },
   YOUTUBE:   { limit: 5000,  label: 'YouTube' },
+  THREADS:   { limit: 500,   label: 'Threads' },
+  BLUESKY:   { limit: 300,   label: 'Bluesky' },
 };
 
 const platformTips: Record<string, string> = {

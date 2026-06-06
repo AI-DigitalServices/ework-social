@@ -1049,9 +1049,14 @@ export class SocialService {
       const mediaType = firstMedia ? (isVideo ? 'VIDEO' : 'IMAGE') : 'TEXT';
 
       // Step 1: Create container — send as JSON body (required for video)
+      // Threads limit: 500 characters
+      const threadsText = post.content.length > 500
+        ? post.content.slice(0, 497) + '...'
+        : post.content;
+
       const body: any = {
         media_type: mediaType,
-        text: post.content,
+        text: threadsText,
         access_token: accessToken,
       };
       if (isVideo && firstMedia)  body.video_url  = firstMedia;
