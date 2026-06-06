@@ -965,10 +965,22 @@ export class SocialService {
       );
       accessToken = tokenRes.data.access_token;
       threadUserId = String(tokenRes.data.user_id);
-      this.logger.log(`[Threads OAuth] Token exchange success — userId: ${threadUserId}`);
+      this.logger.log(`[Threads OAuth] Token exchange success — userId from token: ${threadUserId}`);
     } catch (err: any) {
       this.logger.error(`[Threads OAuth] Token exchange FAILED — ${JSON.stringify(err?.response?.data ?? err?.message)}`);
       throw new BadRequestException('Threads token exchange failed: ' + JSON.stringify(err?.response?.data));
+    }
+
+    // Verify real user ID directly from Threads API — token user_id can differ
+    try {
+      const meRes = await axios.get('https://graph.threads.net/v1.0/me', {
+        params: { fields: 'id,username', access_token: accessToken },
+      });
+      const realUserId = String(meRes.data.id);
+      this.logger.log(`[Threads OAuth] Real userId from /me: ${realUserId} (token had: ${threadUserId})`);
+      threadUserId = realUserId;
+    } catch (meErr: any) {
+      this.logger.warn(`[Threads OAuth] Could not fetch /me, using token userId: ${threadUserId}`);
     }
 
     // Get long-lived token
