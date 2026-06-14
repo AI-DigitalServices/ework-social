@@ -41,6 +41,7 @@ function formatPrice(symbol: string, amount: number) {
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currency, setCurrency] = useState(CURRENCIES[0]);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
 
@@ -112,6 +113,18 @@ export default function LandingPage() {
         .btn-outline:hover { border-color: #10B981; color: #10B981; background: rgba(16,185,129,0.08); box-shadow: 0 0 0 1px #10B981; }
         .nav-link { color: #8BA0BC; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
+        .nav-links-desktop { display: flex; align-items: center; gap: 36px; }
+        .nav-burger { display: none; }
+        .mobile-menu { display: none; }
+        @media (max-width: 860px) {
+          .nav-links-desktop { display: none; }
+          .nav-burger { display: flex; }
+          .mobile-menu.open { display: flex; }
+        }
+        .site-nav { padding: 0 48px; }
+        @media (max-width: 640px) {
+          .site-nav { padding: 0 16px !important; }
+        }
         .feature-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 16px; padding: 32px; transition: all 0.3s; }
         .feature-card:hover { border-color: rgba(37,99,235,0.5); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .pricing-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 20px; padding: 36px; transition: all 0.3s; position: relative; }
@@ -138,13 +151,13 @@ export default function LandingPage() {
       `}</style>
 
       {/* NAV */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrollY > 40 ? 'rgba(8,12,20,0.96)' : 'transparent', backdropFilter: scrollY > 40 ? 'blur(16px)' : 'none', borderBottom: scrollY > 40 ? '1px solid #1A2840' : 'none', transition: 'all 0.3s', padding: '0 48px' }}>
+      <nav className="site-nav" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrollY > 40 ? 'rgba(8,12,20,0.96)' : 'transparent', backdropFilter: scrollY > 40 ? 'blur(16px)' : 'none', borderBottom: scrollY > 40 ? '1px solid #1A2840' : 'none', transition: 'all 0.3s' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img src="/icon.png" alt="eWork Social" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />
             <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: '-0.5px' }}>eWork Social</span>
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
+          <div className="nav-links-desktop">
             <a href="#features" className="nav-link">Features</a>
             <a href="#platforms" className="nav-link">Platforms</a>
             <a href="#pricing" className="nav-link">Pricing</a>
@@ -153,6 +166,40 @@ export default function LandingPage() {
             <a href="/login" className="nav-link">Sign in</a>
             <a href="/register" className="btn-primary" style={{ padding: '10px 22px', fontSize: 14 }}>Get started free</a>
           </div>
+
+          {/* Mobile burger button */}
+          <button
+            className="nav-burger"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: 8, flexDirection: 'column', gap: 5,
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <span style={{ display: 'block', width: 22, height: 2, background: '#fff', borderRadius: 2, transition: 'all 0.2s', transform: mobileMenuOpen ? 'translateY(7px) rotate(45deg)' : 'none' }} />
+            <span style={{ display: 'block', width: 22, height: 2, background: '#fff', borderRadius: 2, transition: 'all 0.2s', opacity: mobileMenuOpen ? 0 : 1 }} />
+            <span style={{ display: 'block', width: 22, height: 2, background: '#fff', borderRadius: 2, transition: 'all 0.2s', transform: mobileMenuOpen ? 'translateY(-7px) rotate(-45deg)' : 'none' }} />
+          </button>
+        </div>
+
+        {/* Mobile dropdown menu */}
+        <div
+          className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}
+          style={{
+            flexDirection: 'column', gap: 4, padding: '16px 24px 24px',
+            background: 'rgba(8,12,20,0.98)', borderTop: '1px solid #1A2840',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          <a href="#features" className="nav-link" style={{ padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>Features</a>
+          <a href="#platforms" className="nav-link" style={{ padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>Platforms</a>
+          <a href="#pricing" className="nav-link" style={{ padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+          <a href="/blog" className="nav-link" style={{ padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>Blog</a>
+          <a href="#waitlist" style={{ color: '#EF4444', fontWeight: 700, fontSize: 14, textDecoration: 'none', padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>🔥 Early Access</a>
+          <a href="/login" className="nav-link" style={{ padding: '12px 0' }} onClick={() => setMobileMenuOpen(false)}>Sign in</a>
+          <a href="/register" className="btn-primary" style={{ padding: '12px 22px', fontSize: 14, textAlign: 'center', marginTop: 8 }} onClick={() => setMobileMenuOpen(false)}>Get started free</a>
         </div>
       </nav>
 

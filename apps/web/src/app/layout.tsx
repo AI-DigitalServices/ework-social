@@ -12,6 +12,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   title: "eWork Social — All-in-One Social Media Management Platform",
   description: "eWork Social is an all-in-one social media management platform designed for agencies, creators, and brands — schedule posts, manage clients, analyze performance, and run CRM workflows from a single dashboard.",
