@@ -34,6 +34,7 @@ export class BillingService {
       [this.config.get('PAYSTACK_STARTER_PLAN')!]: 'STARTER',
       [this.config.get('PAYSTACK_GROWTH_PLAN')!]: 'GROWTH',
       [this.config.get('PAYSTACK_AGENCY_PRO_PLAN')!]: 'AGENCY_PRO',
+      [this.config.get('PAYSTACK_FOUNDING_PLAN')!]: 'AGENCY_PRO',
     };
     return map[planCode] || 'STARTER';
   }
@@ -132,11 +133,32 @@ export class BillingService {
   }
 
   private async handlePaymentSuccess(data: any) {
-    const workspaceId = data.metadata?.workspaceId;
-    if (!workspaceId) return;
-
+    let workspaceId = data.metadata?.workspaceId;
     const planCode = data.plan?.plan_code;
     const plan = this.getPlanFromCode(planCode);
+
+    // Fallback for standalone Payment Page checkouts (no metadata.workspaceId)
+    // Match the paying customer's email to their workspace
+    if (!workspaceId) {
+      const email = data.customer?.email;
+      if (!email) {
+        console.warn(`Webhook charge.success had no workspaceId and no customer email: ${data.reference}`);
+        return;
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        include: { ownedWorkspaces: true },
+      });
+
+      if (!user || !user.ownedWorkspaces?.[0]) {
+        console.warn(`Webhook charge.success: no matching user/workspace for email ${email}`);
+        return;
+      }
+
+      workspaceId = user.ownedWorkspaces[0].id;
+      console.log(`Founding member payment matched by email ${email} -> workspace ${workspaceId}`);
+    }
 
     await this.prisma.subscription.upsert({
       where: { workspaceId },
