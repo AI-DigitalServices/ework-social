@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { getPlanLimits } from '../common/plan-limits';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ApprovalService {
@@ -10,6 +11,7 @@ export class ApprovalService {
     private prisma: PrismaService,
     private email: EmailService,
     private config: ConfigService,
+    private notifications: NotificationsService,
   ) {}
 
   // Agency sends post for client approval
@@ -116,11 +118,24 @@ export class ApprovalService {
       },
     });
 
-    // Update post status back to DRAFT so scheduler can pick it up
     await this.prisma.post.update({
       where: { id: approval.postId },
       data: { status: 'DRAFT' },
     });
+
+    // Notify workspace owner
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: approval.workspaceId },
+      select: { ownerId: true },
+    });
+    if (workspace) {
+      await this.notifications.createNotification(
+        workspace.ownerId,
+        'approval',
+        '✅ Post Approved',
+        `${approval.clientName} approved your post. It is ready to publish.`,
+      );
+    }
 
     return { success: true, message: 'Post approved successfully' };
   }
@@ -146,6 +161,20 @@ export class ApprovalService {
       where: { id: approval.postId },
       data: { status: 'DRAFT' },
     });
+
+    // Notify workspace owner
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: approval.workspaceId },
+      select: { ownerId: true },
+    });
+    if (workspace) {
+      await this.notifications.createNotification(
+        workspace.ownerId,
+        'approval',
+        '✏️ Revision Requested',
+        `${approval.clientName} requested changes: "${revisionNote?.slice(0, 80)}..."`,
+      );
+    }
 
     return { success: true, message: 'Revision request sent to agency' };
   }

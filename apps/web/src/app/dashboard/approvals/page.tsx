@@ -43,7 +43,12 @@ export default function ApprovalsPage() {
     }
   }, [workspace?.id]);
 
-  useEffect(() => { loadApprovals(); }, [loadApprovals]);
+  useEffect(() => {
+    loadApprovals();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(loadApprovals, 30000);
+    return () => clearInterval(interval);
+  }, [loadApprovals]);
 
   const copyLink = (approvalToken: string) => {
     const url = `${window.location.origin}/approve/${approvalToken}`;

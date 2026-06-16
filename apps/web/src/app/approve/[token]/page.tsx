@@ -23,6 +23,7 @@ export default function ApprovalPage() {
   const [action, setAction] = useState<'idle' | 'approving' | 'revising' | 'done'>('idle');
   const [revisionNote, setRevisionNote] = useState('');
   const [showRevInput, setShowRevInput] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [result, setResult] = useState<{ type: 'success' | 'revision'; message: string } | null>(null);
 
   useEffect(() => {
@@ -166,12 +167,38 @@ export default function ApprovalPage() {
               {data?.post?.content}
             </p>
 
-            {/* Media previews */}
+            {/* Media previews — click to enlarge */}
             {data?.post?.mediaUrls?.length > 0 && (
               <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
                 {data.post.mediaUrls.map((url: string, i: number) => (
-                  <img key={i} src={url} alt={`Media ${i + 1}`} style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <div key={i} onClick={() => setLightboxUrl(url)}
+                    style={{ cursor: 'pointer', position: 'relative' }}>
+                    <img src={url} alt={`Media ${i + 1}`}
+                      style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8,
+                        border: '2px solid rgba(55,138,221,0.3)', transition: 'border-color 0.2s' }} />
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', background: 'rgba(0,0,0,0.3)', borderRadius: 8,
+                      opacity: 0, transition: 'opacity 0.2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                      <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>View</span>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            )}
+
+            {/* Lightbox */}
+            {lightboxUrl && (
+              <div onClick={() => setLightboxUrl(null)}
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  zIndex: 1000, cursor: 'pointer', padding: 24 }}>
+                <img src={lightboxUrl} alt="Full size"
+                  style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain',
+                    borderRadius: 12, boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }} />
+                <div style={{ position: 'absolute', top: 20, right: 20, color: '#fff',
+                  fontSize: 28, cursor: 'pointer', fontWeight: 300 }}>✕</div>
               </div>
             )}
           </div>
