@@ -89,7 +89,11 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { ownedWorkspaces: true },
+      include: {
+        ownedWorkspaces: {
+          include: { subscription: true },
+        },
+      },
     });
 
     if (!user || !user.password)
