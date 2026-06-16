@@ -6,18 +6,19 @@ import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
   MessageSquareReply, Settings, LogOut, X, Menu,
-  ChevronDown, Plus, Check, Building2,
+  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 
 const navItems = [
-  { label: 'Dashboard',     href: '/dashboard',           icon: LayoutDashboard },
-  { label: 'Scheduler',     href: '/dashboard/scheduler', icon: CalendarDays },
-  { label: 'CRM & Clients', href: '/dashboard/crm',       icon: Users },
-  { label: 'Analytics',     href: '/dashboard/analytics', icon: BarChart3 },
-  { label: 'Auto-Responder',href: '/dashboard/responder', icon: MessageSquareReply },
-  { label: 'Settings',      href: '/dashboard/settings',  icon: Settings },
+  { label: 'Dashboard',        href: '/dashboard',            icon: LayoutDashboard, proOnly: false },
+  { label: 'Scheduler',        href: '/dashboard/scheduler',  icon: CalendarDays,    proOnly: false },
+  { label: 'CRM & Clients',    href: '/dashboard/crm',        icon: Users,           proOnly: false },
+  { label: 'Client Approvals', href: '/dashboard/approvals',  icon: ClipboardCheck,  proOnly: true  },
+  { label: 'Analytics',        href: '/dashboard/analytics',  icon: BarChart3,       proOnly: false },
+  { label: 'Auto-Responder',   href: '/dashboard/responder',  icon: MessageSquareReply, proOnly: false },
+  { label: 'Settings',         href: '/dashboard/settings',   icon: Settings,        proOnly: false },
 ];
 
 export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => void }) {
@@ -217,6 +218,23 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
             const Icon = item.icon;
             const isActive = pathname === item.href ||
               (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+            const plan = (workspace as any)?.subscription?.plan || '';
+            const isProLocked = item.proOnly && !['AGENCY_PRO'].includes(plan);
+
+            if (isProLocked) {
+              return (
+                <div
+                  key={item.href}
+                  title="Upgrade to Agency Pro to unlock"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 cursor-not-allowed select-none"
+                >
+                  <Icon className="w-5 h-5 opacity-40" />
+                  <span className="opacity-40">{item.label}</span>
+                  <Lock className="w-3 h-3 ml-auto opacity-40" />
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}

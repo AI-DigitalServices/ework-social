@@ -14,6 +14,20 @@ export class EmailService {
     }
   }
 
+  async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+    if (!this.resend) return;
+    try {
+      await this.resend.emails.send({
+        from: 'eWork Social <noreply@eworksocial.com>',
+        to,
+        subject,
+        html,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send email:', err);
+    }
+  }
+
   async sendVerificationEmail(email: string, name: string, token: string) {
     if (!this.resend) return;
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;

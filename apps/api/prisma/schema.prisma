@@ -47,6 +47,7 @@ model Workspace {
   automationRules AutomationRule[]
   invites         WorkspaceInvite[]
   subscription Subscription?
+  postApprovals   PostApproval[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -110,6 +111,7 @@ model Post {
   client          Client?       @relation(fields: [clientId], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  approval        PostApproval?
 }
 
 model Client {
@@ -126,6 +128,7 @@ model Client {
   dealValue         Float?
   lastContactedAt   DateTime?
   nextFollowUpAt    DateTime?
+  postApprovals     PostApproval[]
   assignedToId      String?
   assignedTo        User?       @relation("AssignedClients", fields: [assignedToId], references: [id])
   socialProfiles    Json?
@@ -193,6 +196,7 @@ enum PostStatus {
   SCHEDULED
   PUBLISHED
   FAILED
+  PENDING_APPROVAL
 }
 
 enum LeadStage {
@@ -303,4 +307,30 @@ model Waitlist {
   name      String?
   source    String?  @default("landing_page")
   createdAt DateTime @default(now())
+}
+
+model PostApproval {
+  id              String            @id @default(cuid())
+  postId          String            @unique
+  post            Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  workspaceId     String
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id])
+  clientId        String?
+  client          Client?           @relation(fields: [clientId], references: [id])
+  clientEmail     String
+  clientName      String
+  token           String            @unique @default(cuid())
+  status          ApprovalStatus    @default(PENDING)
+  revisionNote    String?
+  approvedAt      DateTime?
+  respondedAt     DateTime?
+  emailSentAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REVISION_REQUESTED
 }

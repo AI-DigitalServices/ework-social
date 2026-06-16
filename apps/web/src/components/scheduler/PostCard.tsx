@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, Clock, CheckCircle, AlertCircle, FileText, MoreVertical, RefreshCw, Edit2, X, Send } from 'lucide-react';
+import { Trash2, Clock, CheckCircle, AlertCircle, FileText, MoreVertical, RefreshCw, Edit2, X, Send, ClipboardCheck } from 'lucide-react';
 import { deletePostAction, retryPostAction, publishNowAction } from '@/actions/scheduler.actions';
 import EditPostModal from '@/components/scheduler/EditPostModal';
+import SendApprovalModal from '@/components/scheduler/SendApprovalModal';
 
 const platformIcons: Record<string, string> = {
   FACEBOOK: '📘', INSTAGRAM: '📸', TWITTER: '🐦',
@@ -14,7 +15,8 @@ const statusConfig: Record<string, { icon: any; color: string; label: string }> 
   DRAFT:     { icon: FileText,      color: 'text-slate-500 bg-slate-100',  label: 'Draft' },
   SCHEDULED: { icon: Clock,         color: 'text-blue-600 bg-blue-100',    label: 'Scheduled' },
   PUBLISHED: { icon: CheckCircle,   color: 'text-green-600 bg-green-100',  label: 'Published' },
-  FAILED:    { icon: AlertCircle,   color: 'text-red-600 bg-red-100',      label: 'Failed' },
+  FAILED:            { icon: AlertCircle,   color: 'text-red-600 bg-red-100',      label: 'Failed' },
+  PENDING_APPROVAL:  { icon: ClipboardCheck, color: 'text-purple-600 bg-purple-100', label: 'Pending Approval' },
 };
 
 interface Props {
@@ -30,6 +32,7 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
   const [publishingNow, setPublishingNow] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [editMode, setEditMode] = useState<'edit' | 'duplicate' | null>(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const status = statusConfig[post.status] || statusConfig.DRAFT;
   const StatusIcon = status.icon;
@@ -95,6 +98,12 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
                     <button onClick={() => { handlePublishNow(); setShowMenu(false); }} disabled={publishingNow}
                       className="flex items-center gap-2 px-4 py-2.5 text-green-600 hover:bg-green-50 text-sm w-full">
                       <Send className="w-4 h-4" /> {publishingNow ? 'Publishing...' : 'Publish Now'}
+                    </button>
+                  )}
+                  {(post.status === 'DRAFT' || post.status === 'SCHEDULED') && (
+                    <button onClick={() => { setShowApprovalModal(true); setShowMenu(false); }}
+                      className="flex items-center gap-2 px-4 py-2.5 text-purple-600 hover:bg-purple-50 text-sm w-full">
+                      <ClipboardCheck className="w-4 h-4" /> Send for Approval
                     </button>
                   )}
                   <button onClick={() => { setEditMode('edit'); setShowMenu(false); }}
@@ -167,6 +176,15 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
           mode={editMode}
           onClose={() => setEditMode(null)}
           onSaved={() => { onUpdate?.(); setEditMode(null); }}
+        />
+      )}
+
+      {/* Send for Approval modal */}
+      {showApprovalModal && (
+        <SendApprovalModal
+          post={post}
+          onClose={() => setShowApprovalModal(false)}
+          onSent={() => { setShowApprovalModal(false); onUpdate?.(); }}
         />
       )}
     </>

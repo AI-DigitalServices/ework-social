@@ -17,6 +17,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
 import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
 import { AiModule } from './ai/ai.module';
+import { ApprovalModule } from './approval/approval.module';
 import { RiscModule } from './risc/risc.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 
@@ -55,6 +56,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     WorkspaceModule,
     AdminModule,
     AiModule,
+    ApprovalModule,
     RiscModule,
     WaitlistModule,
   ],
