@@ -6,6 +6,7 @@ export interface BlogPost {
   author: string;
   publishedAt: string;
   readTime: number;
+  coverImage: string;
   content: string;
 }
 
@@ -18,6 +19,7 @@ export const posts: BlogPost[] = [
     author: "Bernard Oshapi",
     publishedAt: "2026-06-04",
     readTime: 7,
+    coverImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80",
     content: `
 <p>If you manage social media for more than one client, you already know the drill. Five browser tabs open at once. Logging into Instagram for Client A, Facebook for Client B, LinkedIn for Client C — separately, every single day. A content calendar in Google Sheets that someone has edited without telling you. Client approvals coming in via WhatsApp at 11pm.</p>
 
@@ -115,6 +117,7 @@ export const posts: BlogPost[] = [
     author: "Bernard Oshapi",
     publishedAt: "2026-06-09",
     readTime: 8,
+    coverImage: "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=1200&q=80",
     content: `
 <p>If you are still posting manually to social media every day, you are working harder than you need to. Logging into Instagram, then Facebook, then LinkedIn, then TikTok — separately, one by one, every single day — is not a content strategy. It is a time trap.</p>
 

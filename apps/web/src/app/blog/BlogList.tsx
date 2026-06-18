@@ -1,157 +1,149 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { BlogPost } from '@/content/blog/posts';
 
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  'Agency Tips':    { bg: 'rgba(37,99,235,0.15)',  color: '#60A5FA' },
-  'Scheduling':     { bg: 'rgba(16,185,129,0.15)', color: '#34D399' },
-  'Platform Guides':{ bg: 'rgba(245,158,11,0.15)', color: '#FCD34D' },
-  'AI & Automation':{ bg: 'rgba(139,92,246,0.15)', color: '#A78BFA' },
-  'Case Studies':   { bg: 'rgba(239,68,68,0.15)',  color: '#F87171' },
+const CATEGORY_COLORS: Record<string, string> = {
+  'Agency Tips':     '#3B82F6',
+  'Scheduling':      '#10B981',
+  'Platform Guides': '#F59E0B',
+  'AI & Automation': '#8B5CF6',
+  'Case Studies':    '#EF4444',
 };
 
-function getReadingEmoji(category: string): string {
-  const map: Record<string, string> = {
-    'Agency Tips': '🏢', 'Scheduling': '📅',
-    'Platform Guides': '📱', 'AI & Automation': '🤖',
-    'Case Studies': '📊',
-  };
-  return map[category] || '📝';
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
 }
 
-export default function BlogList({ posts }: { posts: BlogPost[] }) {
-  const featured = posts[0];
-  const rest = posts.slice(1);
+function HeroCard({ post }: { post: BlogPost }) {
+  const [hovered, setHovered] = useState(false);
+  const catColor = CATEGORY_COLORS[post.category] || '#3B82F6';
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 80px' }}>
+    <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', display: 'block', flex: '1 1 60%' }}>
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e5e7eb', transition: 'box-shadow 0.2s', boxShadow: hovered ? '0 8px 32px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)' }}
+      >
+        {/* Hero image */}
+        <div style={{ position: 'relative', height: 320, overflow: 'hidden' }}>
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s', transform: hovered ? 'scale(1.03)' : 'scale(1)' }}
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)' }} />
+          <span style={{ position: 'absolute', top: 16, left: 16, background: catColor, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, letterSpacing: 1 }}>
+            {post.category.toUpperCase()}
+          </span>
+        </div>
 
-      {/* Featured post — large card */}
-      {featured && (
-        <Link href={`/blog/${featured.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 32 }}>
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #0C1524 0%, #0F1D30 100%)',
-              border: '1px solid #1A2840',
-              borderRadius: 20, overflow: 'hidden',
-              transition: 'transform 0.2s, border-color 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#2563EB';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = '#1A2840';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            {/* Featured banner */}
-            <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #2563EB)', padding: '10px 28px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>✦ FEATURED ARTICLE</span>
+        {/* Content */}
+        <div style={{ padding: '24px 28px 28px', background: '#fff' }}>
+          <h2 style={{ color: '#111827', fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.25, fontFamily: 'Georgia, serif', letterSpacing: '-0.3px' }}>
+            {post.title}
+          </h2>
+          <p style={{ color: '#6B7280', fontSize: 15, lineHeight: 1.7, margin: '0 0 20px' }}>
+            {post.excerpt}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: catColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700 }}>
+              {post.author.charAt(0)}
             </div>
-
-            <div style={{ padding: '32px 36px 36px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-                <span style={{ fontSize: 28 }}>{getReadingEmoji(featured.category)}</span>
-                <div>
-                  {(() => {
-                    const cat = CATEGORY_COLORS[featured.category] || { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA' };
-                    return (
-                      <span style={{ background: cat.bg, color: cat.color, fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 999, letterSpacing: 1 }}>
-                        {featured.category.toUpperCase()}
-                      </span>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              <h2 style={{ color: '#F0F6FF', fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 800, margin: '0 0 14px', lineHeight: 1.2, fontFamily: 'Georgia, serif', letterSpacing: '-0.5px' }}>
-                {featured.title}
-              </h2>
-
-              <p style={{ color: '#6B8299', fontSize: 16, lineHeight: 1.75, margin: '0 0 24px' }}>
-                {featured.excerpt}
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700 }}>
-                    {featured.author.charAt(0)}
-                  </div>
-                  <div>
-                    <p style={{ color: '#C8D8E8', fontSize: 13, fontWeight: 600, margin: 0 }}>{featured.author}</p>
-                    <p style={{ color: '#3A506B', fontSize: 12, margin: 0 }}>
-                      {new Date(featured.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · {featured.readTime} min read
-                    </p>
-                  </div>
-                </div>
-                <span style={{ color: '#2563EB', fontSize: 14, fontWeight: 700 }}>Read article →</span>
-              </div>
+            <div>
+              <p style={{ color: '#111827', fontSize: 13, fontWeight: 600, margin: 0 }}>{post.author}</p>
+              <p style={{ color: '#9CA3AF', fontSize: 12, margin: 0 }}>{formatDate(post.publishedAt)} · {post.readTime} min read</p>
             </div>
           </div>
-        </Link>
-      )}
-
-      {/* Divider */}
-      {rest.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <div style={{ flex: 1, height: 1, background: '#1A2840' }} />
-          <span style={{ color: '#3A506B', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>MORE ARTICLES</span>
-          <div style={{ flex: 1, height: 1, background: '#1A2840' }} />
         </div>
-      )}
-
-      {/* Rest of posts — compact cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 20 }}>
-        {rest.map((post, idx) => {
-          const cat = CATEGORY_COLORS[post.category] || { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA' };
-          return (
-            <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-              <div
-                style={{
-                  background: '#0C1524', border: '1px solid #1A2840',
-                  borderRadius: 16, padding: '26px 28px',
-                  height: '100%', transition: 'transform 0.2s, border-color 0.2s',
-                  borderLeft: `3px solid ${cat.color}`,
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = cat.color;
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget.style as any).borderColor = '';
-                  e.currentTarget.style.borderLeft = `3px solid ${cat.color}`;
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <span style={{ fontSize: 20 }}>{getReadingEmoji(post.category)}</span>
-                  <span style={{ background: cat.bg, color: cat.color, fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, letterSpacing: 1 }}>
-                    {post.category.toUpperCase()}
-                  </span>
-                  <span style={{ color: '#3A506B', fontSize: 11, marginLeft: 'auto' }}>{post.readTime} min</span>
-                </div>
-
-                <h3 style={{ color: '#F0F6FF', fontSize: 18, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.3, fontFamily: 'Georgia, serif' }}>
-                  {post.title}
-                </h3>
-
-                <p style={{ color: '#6B8299', fontSize: 13.5, lineHeight: 1.65, margin: '0 0 18px' }}>
-                  {post.excerpt.slice(0, 100)}...
-                </p>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#4A6080', fontSize: 12 }}>
-                    {new Date(post.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                  <span style={{ color: cat.color, fontSize: 12, fontWeight: 700 }}>Read →</span>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
       </div>
+    </Link>
+  );
+}
+
+function SideCard({ post }: { post: BlogPost }) {
+  const [hovered, setHovered] = useState(false);
+  const catColor = CATEGORY_COLORS[post.category] || '#3B82F6';
+
+  return (
+    <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{ display: 'flex', gap: 14, padding: '16px 0', borderBottom: '1px solid #F3F4F6', transition: 'opacity 0.2s', opacity: hovered ? 0.8 : 1 }}
+      >
+        {/* Thumbnail */}
+        <div style={{ width: 90, height: 70, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+          <img src={post.coverImage} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ color: catColor, fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>
+            {post.category.toUpperCase()}
+          </span>
+          <h4 style={{ color: '#111827', fontSize: 14, fontWeight: 700, margin: '4px 0 6px', lineHeight: 1.3, fontFamily: 'Georgia, serif', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {post.title}
+          </h4>
+          <p style={{ color: '#9CA3AF', fontSize: 11, margin: 0 }}>
+            {formatDate(post.publishedAt)} · {post.readTime} min
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export default function BlogList({ posts, isDark = false }: { posts: BlogPost[]; isDark?: boolean }) {
+  const featured = posts[0];
+  const trending = posts.slice(1, 5);
+  const grid = posts.slice(5);
+
+  if (!featured) return null;
+
+  const catColor = CATEGORY_COLORS[featured.category] || '#3B82F6';
+
+  return (
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+
+      {/* Hero section — featured + trending sidebar */}
+      <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', marginBottom: 48 }}>
+
+        {/* Featured post */}
+        <HeroCard post={featured} />
+
+        {/* Trending sidebar */}
+        {trending.length > 0 && (
+          <div style={{
+            flex: '1 1 300px', background: isDark ? '#0C1524' : '#F9FAFB',
+            borderRadius: 16, padding: '24px', border: `1px solid ${isDark ? '#1A2840' : '#E5E7EB'}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `2px solid ${catColor}` }}>
+              <span style={{ color: isDark ? '#fff' : '#111827', fontWeight: 800, fontSize: 16 }}>More Articles</span>
+            </div>
+            {trending.map(post => <SideCard key={post.slug} post={post} />)}
+          </div>
+        )}
+      </div>
+
+      {/* Grid for remaining posts */}
+      {grid.length > 0 && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+            <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>ALL ARTICLES</span>
+            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+            {grid.map(post => (
+              <HeroCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
