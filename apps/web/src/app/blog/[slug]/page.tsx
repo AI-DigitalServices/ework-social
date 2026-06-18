@@ -2,12 +2,18 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { posts, getPost } from '@/content/blog/posts';
 
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 export async function generateStaticParams() {
   return posts.map(p => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = getPost(params.slug);
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params;
+  const post = getPost(slug);
   if (!post) return {};
   return {
     title: `${post.title} — eWork Social Blog`,
@@ -22,8 +28,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getPost(params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = getPost(slug);
   if (!post) notFound();
 
   return (
@@ -47,29 +54,29 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <div style={{ maxWidth: 740, margin: '0 auto', padding: '64px 24px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <span style={{ background: '#1E3A5F', color: '#60A5FA', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999 }}>
-            {post.category}
+            {post!.category}
           </span>
           <span style={{ color: '#3A506B', fontSize: 13 }}>
-            {new Date(post.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date(post!.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
-          <span style={{ color: '#3A506B', fontSize: 13 }}>· {post.readTime} min read</span>
+          <span style={{ color: '#3A506B', fontSize: 13 }}>· {post!.readTime} min read</span>
         </div>
 
         <h1 style={{ color: '#F0F6FF', fontSize: 38, fontWeight: 800, lineHeight: 1.2, margin: '0 0 24px', fontFamily: 'Georgia, serif', letterSpacing: '-0.5px' }}>
-          {post.title}
+          {post!.title}
         </h1>
 
         <p style={{ color: '#6B8299', fontSize: 18, lineHeight: 1.7, margin: '0 0 32px' }}>
-          {post.excerpt}
+          {post!.excerpt}
         </p>
 
         {/* Author */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 32, borderBottom: '1px solid #1A2840' }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 700 }}>
-            {post.author.charAt(0)}
+            {post!.author.charAt(0)}
           </div>
           <div>
-            <p style={{ color: '#F0F6FF', fontSize: 14, fontWeight: 600, margin: 0 }}>{post.author}</p>
+            <p style={{ color: '#F0F6FF', fontSize: 14, fontWeight: 600, margin: 0 }}>{post!.author}</p>
             <p style={{ color: '#3A506B', fontSize: 13, margin: 0 }}>Founder, eWork Social · Digital Marketing Manager</p>
           </div>
         </div>
@@ -91,7 +98,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         `}</style>
         <div
           className="blog-content"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: post!.content }}
         />
 
         {/* Bottom CTA */}
