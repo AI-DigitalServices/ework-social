@@ -1,15 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { BlogPost } from '@/content/blog/posts';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Agency Tips':     '#3B82F6',
-  'Scheduling':      '#10B981',
-  'Platform Guides': '#F59E0B',
-  'AI & Automation': '#8B5CF6',
-  'Case Studies':    '#EF4444',
+  'Agency Tips':          '#3B82F6',
+  'Scheduling':           '#10B981',
+  'Platform Guides':      '#F59E0B',
+  'AI & Automation':      '#8B5CF6',
+  'Case Studies':         '#EF4444',
+  'Social Media Strategy':'#06B6D4',
+  'Client Management':    '#F97316',
+  'African Market':       '#10B981',
+  'Tools & Reviews':      '#EC4899',
+  'Analytics & Growth':   '#6366F1',
 };
 
 function formatDate(iso: string) {
@@ -181,10 +186,22 @@ function SideCard({ post }: { post: BlogPost }) {
 }
 
 export default function BlogList({ posts, isDark = false }: { posts: BlogPost[]; isDark?: boolean }) {
+  const [activeCategory, setActiveCategory] = useState('All');
+
   const featured = posts[0];
   const trending = posts.slice(1, 5);
   const threeCards = posts.slice(1, 4);
-  const grid = posts.slice(4);
+
+  const allCategories = useMemo(() => {
+    const cats = new Set(posts.map(p => p.category));
+    return ['All', ...Array.from(cats)];
+  }, [posts]);
+
+  const filteredGrid = useMemo(() => {
+    const base = posts.slice(4);
+    if (activeCategory === 'All') return base;
+    return base.filter(p => p.category === activeCategory);
+  }, [posts, activeCategory]);
 
   if (!featured) return null;
 
@@ -230,20 +247,48 @@ export default function BlogList({ posts, isDark = false }: { posts: BlogPost[];
         </div>
       )}
 
-      {grid.length > 0 && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-            <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>ALL ARTICLES</span>
-            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+      {/* Category filter tabs */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+          <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>ALL ARTICLES</span>
+          <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+          {allCategories.map(cat => {
+            const isActive = cat === activeCategory;
+            const color = CATEGORY_COLORS[cat] || '#3B82F6';
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  padding: '6px 16px', borderRadius: 999,
+                  border: `1px solid ${isActive ? color : '#E5E7EB'}`,
+                  background: isActive ? color : '#fff',
+                  color: isActive ? '#fff' : '#6B7280',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {filteredGrid.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: '#9CA3AF', fontSize: 15 }}>
+            No articles in this category yet. Check back soon!
           </div>
+        ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-            {grid.map(post => (
+            {filteredGrid.map(post => (
               <HeroCard key={post.slug} post={post} />
             ))}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
