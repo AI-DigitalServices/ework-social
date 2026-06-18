@@ -18,6 +18,89 @@ function formatDate(iso: string) {
   });
 }
 
+function ThreeCard({ post }: { post: BlogPost }) {
+  const [hovered, setHovered] = useState(false);
+  const catColor = CATEGORY_COLORS[post.category] || '#3B82F6';
+
+  return (
+    <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', display: 'block', flex: '1 1 0' }}>
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          borderRadius: 14, overflow: 'hidden',
+          border: '1px solid #e5e7eb', height: '100%',
+          background: '#fff',
+          transition: 'box-shadow 0.2s, transform 0.2s',
+          boxShadow: hovered ? '0 8px 28px rgba(0,0,0,0.1)' : '0 2px 6px rgba(0,0,0,0.05)',
+          transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+        }}
+      >
+        {/* Image */}
+        <div style={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover',
+              transition: 'transform 0.3s', transform: hovered ? 'scale(1.05)' : 'scale(1)' }}
+          />
+          <span style={{
+            position: 'absolute', top: 12, left: 12,
+            background: catColor, color: '#fff',
+            fontSize: 10, fontWeight: 700, padding: '3px 10px',
+            borderRadius: 999, letterSpacing: 1,
+          }}>
+            {post.category.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '16px 18px 20px' }}>
+          <h3 style={{
+            color: '#111827', fontSize: 15, fontWeight: 700,
+            margin: '0 0 8px', lineHeight: 1.4,
+            fontFamily: 'Georgia, serif',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {post.title}
+          </h3>
+          <p style={{
+            color: '#6B7280', fontSize: 13, lineHeight: 1.6,
+            margin: '0 0 14px',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {post.excerpt}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: '50%',
+                background: catColor, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 11, fontWeight: 700,
+              }}>
+                {post.author.charAt(0)}
+              </div>
+              <span style={{ color: '#9CA3AF', fontSize: 11 }}>
+                {new Date(post.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+            <span style={{ color: catColor, fontSize: 11, fontWeight: 700 }}>
+              {post.readTime} min →
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function HeroCard({ post }: { post: BlogPost }) {
   const [hovered, setHovered] = useState(false);
   const catColor = CATEGORY_COLORS[post.category] || '#3B82F6';
@@ -100,7 +183,8 @@ function SideCard({ post }: { post: BlogPost }) {
 export default function BlogList({ posts, isDark = false }: { posts: BlogPost[]; isDark?: boolean }) {
   const featured = posts[0];
   const trending = posts.slice(1, 5);
-  const grid = posts.slice(5);
+  const threeCards = posts.slice(1, 4);
+  const grid = posts.slice(4);
 
   if (!featured) return null;
 
@@ -130,6 +214,22 @@ export default function BlogList({ posts, isDark = false }: { posts: BlogPost[];
       </div>
 
       {/* Grid for remaining posts */}
+      {/* Three card row */}
+      {threeCards.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+            <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>LATEST ARTICLES</span>
+            <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            {threeCards.map(post => (
+              <ThreeCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {grid.length > 0 && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
