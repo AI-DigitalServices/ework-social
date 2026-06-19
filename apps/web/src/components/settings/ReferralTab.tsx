@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Copy, CheckCircle, Users, DollarSign, Link, Gift } from 'lucide-react';
+import { Copy, CheckCircle, Users, TrendingUp, Link, Gift, Wallet, Star } from 'lucide-react';
 
 export default function ReferralTab() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [paymentDetails, setPaymentDetails] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   useEffect(() => { loadReferrals(); }, []);
 
@@ -35,20 +40,49 @@ export default function ReferralTab() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || !paymentDetails) return;
+    setWithdrawing(true);
+    try {
+      await api.post('/admin/request-withdrawal', {
+        amount: parseInt(withdrawAmount),
+        paymentDetails,
+      });
+      setWithdrawSuccess(true);
+      setShowWithdraw(false);
+    } catch (err) { console.error(err); }
+    finally { setWithdrawing(false); }
+  };
+
   if (loading) return (
     <div className="flex justify-center py-12">
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
+  const isFoundingPartner = data?.isFoundingPartner;
+  const commissionRate = data?.commissionRate || 20;
+
   return (
     <div className="space-y-6 max-w-2xl">
+
+      {/* Founding Partner Badge */}
+      {isFoundingPartner && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-4 flex items-center gap-3">
+          <Star className="w-6 h-6 text-white flex-shrink-0" />
+          <div>
+            <p className="text-white font-bold text-sm">Founding Partner Status</p>
+            <p className="text-amber-100 text-xs">You earn 30% commission for 24 months on every referral</p>
+          </div>
+        </div>
+      )}
+
       {/* How it works */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: '🔗', title: 'Share your link', desc: 'Send to agency owners' },
-          { icon: '✅', title: 'They sign up', desc: 'Via your referral link' },
-          { icon: '💰', title: 'You earn 20%', desc: 'For 3 months per referral' },
+          { icon: '🔗', title: 'Share your link', desc: 'Send to agency owners & freelancers' },
+          { icon: '✅', title: 'They sign up & pay', desc: 'Via your referral link' },
+          { icon: '💰', title: `You earn ${commissionRate}%`, desc: isFoundingPartner ? 'For 24 months per referral' : 'For 12 months per referral' },
         ].map((step, i) => (
           <div key={i} className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
             <div className="text-2xl mb-2">{step.icon}</div>
@@ -92,7 +126,7 @@ export default function ReferralTab() {
         {[
           { label: 'Total Referrals', value: data?.totalReferrals || 0, icon: Users, color: 'text-blue-600 bg-blue-100' },
           { label: 'Paying', value: data?.payingReferrals || 0, icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-          { label: 'Est. Commission', value: `$${data?.estimatedCommission || 0}`, icon: DollarSign, color: 'text-purple-600 bg-purple-100' },
+          { label: 'Est. Commission', value: `₦${(data?.estimatedCommission || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-purple-600 bg-purple-100' },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -106,6 +140,64 @@ export default function ReferralTab() {
           );
         })}
       </div>
+
+      {/* Withdrawal request */}
+      {(data?.estimatedCommission || 0) >= 10000 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+              <Wallet className="w-4 h-4 text-green-500" /> Request Withdrawal
+            </h3>
+            <span className="text-xs text-slate-500">Min. ₦10,000</span>
+          </div>
+
+          {withdrawSuccess ? (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <p className="text-green-700 font-semibold text-sm">Request submitted!</p>
+              <p className="text-green-600 text-xs mt-1">We'll process your payment within 3-5 business days.</p>
+            </div>
+          ) : !showWithdraw ? (
+            <button onClick={() => setShowWithdraw(true)}
+              className="w-full py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition">
+              Request Withdrawal
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Amount (₦)</label>
+                <input
+                  type="number"
+                  value={withdrawAmount}
+                  onChange={e => setWithdrawAmount(e.target.value)}
+                  placeholder="e.g. 15000"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Account Details</label>
+                <textarea
+                  value={paymentDetails}
+                  onChange={e => setPaymentDetails(e.target.value)}
+                  placeholder="Bank name, account number, account name"
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowWithdraw(false)}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
+                  Cancel
+                </button>
+                <button onClick={handleWithdraw} disabled={withdrawing || !withdrawAmount || !paymentDetails}
+                  className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50">
+                  {withdrawing ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Referrals list */}
       {data?.referrals?.length > 0 && (
@@ -137,20 +229,25 @@ export default function ReferralTab() {
 
       {/* Commission rates */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm font-semibold text-blue-800 mb-3">💡 Commission Rates (20% for 3 months)</p>
+        <p className="text-sm font-semibold text-blue-800 mb-3">
+          💡 Your Commission Rates ({commissionRate}% for {isFoundingPartner ? '24' : '12'} months)
+        </p>
         <div className="grid grid-cols-3 gap-2 text-xs text-blue-700">
           {[
-            { plan: 'Starter', amount: '$1/mo' },
-            { plan: 'Growth', amount: '$2.4/mo' },
-            { plan: 'Agency Pro', amount: '$5.8/mo' },
+            { plan: 'Starter', amount: `₦${Math.round(5000 * commissionRate / 100).toLocaleString()}/mo` },
+            { plan: 'Growth', amount: `₦${Math.round(12000 * commissionRate / 100).toLocaleString()}/mo` },
+            { plan: 'Agency Pro', amount: `₦${Math.round(30000 * commissionRate / 100).toLocaleString()}/mo` },
           ].map((r, i) => (
             <div key={i} className="bg-white rounded-lg p-3 text-center">
               <p className="font-bold text-base text-blue-800">{r.amount}</p>
-              <p>{r.plan} referral</p>
+              <p>{r.plan}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-blue-600 mt-3">Contact us to set up your payout method.</p>
+        {!isFoundingPartner && (
+          <p className="text-xs text-blue-600 mt-3">After 12 months: 10% residual commission ongoing.</p>
+        )}
+        <p className="text-xs text-blue-600 mt-2">Minimum withdrawal: ₦10,000 · Paid via Paystack transfer within 3-5 business days.</p>
       </div>
     </div>
   );

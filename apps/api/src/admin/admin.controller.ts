@@ -60,6 +60,12 @@ export class AdminController {
     return this.referralService.getReferralStats(req.user.sub);
   }
 
+  @Post('request-withdrawal')
+  @UseGuards(JwtGuard)
+  async requestWithdrawal(@Request() req: any, @Body() body: { amount: number; paymentDetails: string }) {
+    return this.referralService.requestWithdrawal(req.user.sub, body.amount, body.paymentDetails);
+  }
+
   @Post('generate-referral')
   async generateReferral(@Req() req: any) {
     const code = await this.referralService.generateReferralCode(req.user.sub);

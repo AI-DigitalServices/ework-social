@@ -1,10 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
+
+// Commission structure
+// Founding Partner: 30% for 24 months
+// Standard: 20% for 12 months then 10% residual
+const NAIRA_PLAN_PRICES: Record<string, number> = {
+  STARTER: 5000,
+  GROWTH: 12000,
+  AGENCY_PRO: 30000,
+};
+
+function getCommissionRate(isFoundingPartner: boolean): number {
+  return isFoundingPartner ? 0.30 : 0.20;
+}
 
 @Injectable()
 export class ReferralService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private email: EmailService,
+  ) {}
 
   async generateReferralCode(userId: string): Promise<string> {
     const existing = await this.prisma.user.findUnique({
@@ -43,14 +60,26 @@ export class ReferralService {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Check if this user is a founding partner
+    const referrerUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { referralCode: true, createdAt: true },
+    });
+    // Founding partner = joined before July 2026
+    const isFoundingPartner = referrerUser
+      ? new Date(referrerUser.createdAt) < new Date('2026-07-01')
+      : false;
+
+    const commissionRate = getCommissionRate(isFoundingPartner);
+
     const paying = referrals.filter(r =>
       ['STARTER', 'GROWTH', 'AGENCY_PRO'].includes(r.ownedWorkspaces[0]?.subscription?.plan || '')
     );
 
     const commission = paying.reduce((total, r) => {
       const plan = r.ownedWorkspaces[0]?.subscription?.plan;
-      const rates: Record<string, number> = { STARTER: 1, GROWTH: 2.4, AGENCY_PRO: 5.8 };
-      return total + (rates[plan || ''] || 0);
+      const price = NAIRA_PLAN_PRICES[plan || ''] || 0;
+      return total + (price * commissionRate);
     }, 0);
 
     return {
@@ -58,7 +87,9 @@ export class ReferralService {
       referralLink: `https://app.eworksocial.com/register?ref=${user.referralCode}`,
       totalReferrals: referrals.length,
       payingReferrals: paying.length,
-      estimatedCommission: Math.round(commission * 100) / 100,
+      estimatedCommission: Math.round(commission),
+      isFoundingPartner,
+      commissionRate: commissionRate * 100,
       referrals: referrals.map(r => ({
         id: r.id,
         name: r.name,
@@ -106,5 +137,49 @@ export class ReferralService {
       where: { id: newUserId },
       data: { referredById: referrer.id },
     });
+  }
+
+  async requestWithdrawal(userId: string, amount: number, paymentDetails: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true, referralCode: true },
+    });
+    if (!user) throw new Error('User not found');
+
+    // Notify admin via email
+    await this.email.sendEmail({
+      to: 'admin@eworksocial.com',
+      subject: `Withdrawal Request — ${user.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #185FA5;">New Withdrawal Request</h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Email</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${user.email}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Referral Code</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${user.referralCode}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount Requested</strong></td><td style="padding: 8px; border: 1px solid #ddd;">₦${amount.toLocaleString()}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${paymentDetails}</td></tr>
+          </table>
+          <p style="color: #666; margin-top: 16px;">Please process this withdrawal via Paystack transfer.</p>
+        </div>
+      `,
+    });
+
+    // Notify user their request was received
+    await this.email.sendEmail({
+      to: user.email,
+      subject: 'Withdrawal Request Received — eWork Social',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #080C14; color: #C8D8E8; padding: 32px; border-radius: 12px;">
+          <h2 style="color: #378ADD;">Withdrawal Request Received</h2>
+          <p>Hi ${user.name},</p>
+          <p>We've received your withdrawal request for <strong style="color: #10B981;">₦${amount.toLocaleString()}</strong>.</p>
+          <p>We'll process this within 3-5 business days via Paystack transfer to your provided account details.</p>
+          <p style="color: #4A6080; font-size: 13px;">Questions? Reply to this email or WhatsApp Bernard directly.</p>
+        </div>
+      `,
+    });
+
+    return { success: true, message: 'Withdrawal request submitted. You will be paid within 3-5 business days.' };
   }
 }
