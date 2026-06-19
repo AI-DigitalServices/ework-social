@@ -228,12 +228,12 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const isVideo = firstMedia?.match(/\.(mp4|mov|avi|webm)$/i);
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-0 md:p-4">
       {/* Wide split-panel modal */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '95vh' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden" style={{ height: '95vh' }}>
 
         {/* ── LEFT: Composer ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100 overflow-y-auto">
+        <div className="flex flex-col min-w-0 border-b md:border-b-0 md:border-r border-slate-100 overflow-y-auto" style={{ flex: "1 1 auto", minHeight: 0 }}>
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
@@ -565,7 +565,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
         </div>
 
         {/* ── RIGHT: Live Phone Preview ───────────────────────────────────────── */}
-        <div className="w-80 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
+        <div className="hidden md:flex w-80 flex-shrink-0 bg-slate-50 flex-col items-center pt-4 pb-4 px-3">
           {/* Header */}
           <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />
