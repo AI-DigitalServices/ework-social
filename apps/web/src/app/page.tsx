@@ -122,6 +122,20 @@ export default function LandingPage() {
           .mobile-menu.open { display: flex; }
         }
         .site-nav { padding: 0 48px; }
+        .section-pad { padding-left: 48px; padding-right: 48px; }
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .grid-4col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .hero-inner { padding: 0 48px; }
+        @media (max-width: 768px) {
+          .site-nav { padding: 0 16px !important; }
+          .section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+          .grid-2col { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .grid-4col { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+          .hero-inner { padding: 0 20px !important; }
+        }
+        @media (max-width: 480px) {
+          .grid-4col { grid-template-columns: 1fr !important; }
+        }
         @media (max-width: 640px) {
           .site-nav { padding: 0 16px !important; }
         }
@@ -206,7 +220,7 @@ export default function LandingPage() {
       {/* HERO */}
       <section className="grid-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 110, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', filter: 'blur(130px)', background: 'radial-gradient(circle, #2563EB, #1E3A8A)', opacity: 0.12, top: -150, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }} />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', width: '100%', textAlign: 'center' }}>
+        <div className="hero-inner" style={{ maxWidth: 1200, margin: '0 auto', width: '100%', textAlign: 'center' }}>
 
           <div className={`fade-in ${isVisible ? 'show' : ''}`} style={{ transitionDelay: '0.1s', marginBottom: 32 }}>
             <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(48px, 7vw, 86px)', fontWeight: 700, lineHeight: 1.05, letterSpacing: '-2px', color: '#FFFFFF', marginBottom: 0 }}>
@@ -239,7 +253,7 @@ export default function LandingPage() {
                 <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840' }} />
                 <span style={{ marginLeft: 14, fontSize: 12, color: '#4A6080', fontWeight: 500 }}>app.eworksocial.com/dashboard</span>
               </div>
-              <div style={{ padding: 28, display: 'grid', gridTemplateColumns: '190px 1fr', gap: 24, textAlign: 'left' as const }}>
+              <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'minmax(120px, 190px) 1fr', gap: 16, textAlign: 'left' as const, flexWrap: 'wrap' }}>
                 <div style={{ borderRight: '1px solid #1A2840', paddingRight: 22 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
                     <img src="/icon.png" alt="eWork Social" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
@@ -315,7 +329,7 @@ export default function LandingPage() {
       </div>
 
       {/* FEATURES */}
-      <section id="features" style={{ padding: '110px 48px', maxWidth: 1200, margin: '0 auto' }}>
+      <section id="features" className="section-pad" style={{ paddingTop: 110, paddingBottom: 110, maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 72 }}>
           <span className="section-label">Features</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1.1, color: '#F0F6FF' }}>
@@ -342,7 +356,7 @@ export default function LandingPage() {
       </section>
 
       {/* PLATFORMS */}
-      <section id="platforms" style={{ padding: '90px 48px', background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
+      <section id="platforms" className="section-pad" style={{ paddingTop: 90, paddingBottom: 90, background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <span className="section-label">Platforms</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, letterSpacing: '-1px', marginBottom: 16, color: '#F0F6FF' }}>Post everywhere at once</h2>
@@ -360,7 +374,7 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" style={{ padding: '110px 48px', maxWidth: 1200, margin: '0 auto' }}>
+      <section id="pricing" className="section-pad" style={{ paddingTop: 110, paddingBottom: 110, maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <span className="section-label">Pricing</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', color: '#F0F6FF' }}>
@@ -424,9 +438,9 @@ export default function LandingPage() {
       </section>
 
       {/* BUILT FOR EVERYONE SECTION */}
-      <section style={{ padding: '80px 48px', background: '#070B12', borderTop: '1px solid #1A2840' }}>
+      <section className="section-pad" style={{ paddingTop: 80, paddingBottom: 80, background: '#070B12', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+          <div className="grid-2col">
             <div>
               <div className="africa-badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
                 🌐 Built for Everyone, Everywhere
@@ -438,7 +452,7 @@ export default function LandingPage() {
                 eWork Social works for agencies, freelancers, and in-house teams anywhere in the world — with multi-currency billing, local payment options, timezone-aware scheduling, and no limits on where you operate.
               </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid-4col">
               {[
                 { icon: '💳', label: 'Multi-Currency', desc: 'USD, NGN, KES, GHS, ZAR & more', color: '#10B981' },
                 { icon: '🕐', label: 'Timezone Aware', desc: 'Auto-detects your region', color: '#3B82F6' },
@@ -458,7 +472,7 @@ export default function LandingPage() {
 
 
       {/* TESTIMONIALS */}
-      <section style={{ padding: '100px 48px', background: '#070B12', borderTop: '1px solid #1A2840' }}>
+      <section className="section-pad" style={{ paddingTop: 100, paddingBottom: 100, background: '#070B12', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <span className="section-label">Early Feedback</span>
