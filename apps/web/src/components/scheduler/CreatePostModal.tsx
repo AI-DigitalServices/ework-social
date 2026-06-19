@@ -663,8 +663,6 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
           onClose={() => setShowAiDrawer(false)}
         />
       )}
-        </div>
-      </div>
     </div>
   );
 }
