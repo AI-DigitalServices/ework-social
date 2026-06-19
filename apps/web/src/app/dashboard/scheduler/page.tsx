@@ -62,7 +62,7 @@ export default function SchedulerPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Post Scheduler</h1>
           <p className="text-slate-500 text-sm mt-1">Create and schedule posts across your connected accounts</p>
@@ -108,7 +108,7 @@ export default function SchedulerPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {[
           { label: 'Total Posts', value: stats.total, icon: FileText, color: 'text-slate-600', bg: 'bg-slate-50' },
           { label: 'Scheduled', value: stats.scheduled, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -129,7 +129,7 @@ export default function SchedulerPage() {
 
       {/* Connected accounts bar */}
       {accounts.length > 0 && (
-        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 overflow-x-auto">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Posting to:</p>
           <div className="flex flex-wrap gap-2">
             {accounts.map(account => (

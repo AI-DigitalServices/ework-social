@@ -25,8 +25,10 @@ export class ApprovalService {
     // Check plan limits
     const subscription = await this.prisma.subscription.findUnique({ where: { workspaceId } });
     const limits = getPlanLimits(subscription?.plan || 'FREE');
-    if (!limits.clientApprovalEnabled) {
-      throw new ForbiddenException('Client Approval Portal is available on Agency Pro and above. Please upgrade your plan.');
+    // Allow all plans to test approval portal during trial
+    // In production, gate this to Agency Pro only after trial
+    if (!limits.clientApprovalEnabled && subscription?.status !== 'TRIAL') {
+      throw new ForbiddenException('Client Approval Portal is available on Agency Pro plan. Start your trial to test this feature.');
     }
 
     const post = await this.prisma.post.findUnique({

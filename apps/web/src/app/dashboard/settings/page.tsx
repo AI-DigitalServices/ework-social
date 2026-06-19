@@ -92,7 +92,7 @@ function SettingsContent() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 overflow-x-auto w-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (

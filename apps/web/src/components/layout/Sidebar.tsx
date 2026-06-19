@@ -219,7 +219,7 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
             const isActive = pathname === item.href ||
               (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
             const plan = (workspace as any)?.subscription?.plan || '';
-            const isProLocked = item.proOnly && !['AGENCY_PRO'].includes(plan);
+            const isProLocked = item.proOnly && !['AGENCY_PRO', 'STARTER', 'GROWTH'].includes(plan) && plan !== '';
 
             if (isProLocked) {
               return (

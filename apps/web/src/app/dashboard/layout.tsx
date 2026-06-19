@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <Header />
-      <main className="lg:ml-64 min-h-screen" style={{ paddingTop: topPadding, paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
+      <main className="lg:ml-64 min-h-screen" style={{ paddingTop: topPadding, paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden', maxWidth: '100vw' }}>
         {children}
       </main>
     </div>
