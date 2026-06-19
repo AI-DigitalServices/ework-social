@@ -234,9 +234,9 @@ export default function ReferralTab() {
         </p>
         <div className="grid grid-cols-3 gap-2 text-xs text-blue-700">
           {[
-            { plan: 'Starter', amount: `₦${Math.round(5000 * commissionRate / 100).toLocaleString()}/mo` },
-            { plan: 'Growth', amount: `₦${Math.round(12000 * commissionRate / 100).toLocaleString()}/mo` },
-            { plan: 'Agency Pro', amount: `₦${Math.round(30000 * commissionRate / 100).toLocaleString()}/mo` },
+            { plan: 'Starter', amount: `₦${Math.round(2500 * commissionRate / 100).toLocaleString()}/mo` },
+            { plan: 'Growth', amount: `₦${Math.round(6000 * commissionRate / 100).toLocaleString()}/mo` },
+            { plan: 'Agency Pro', amount: `₦${Math.round(15000 * commissionRate / 100).toLocaleString()}/mo` },
           ].map((r, i) => (
             <div key={i} className="bg-white rounded-lg p-3 text-center">
               <p className="font-bold text-base text-blue-800">{r.amount}</p>

@@ -6,10 +6,12 @@ import * as crypto from 'crypto';
 // Commission structure
 // Founding Partner: 30% for 24 months
 // Standard: 20% for 12 months then 10% residual
+// Founding member pricing (50% off standard rates)
+// Commission is calculated on what the referred user actually pays
 const NAIRA_PLAN_PRICES: Record<string, number> = {
-  STARTER: 5000,
-  GROWTH: 12000,
-  AGENCY_PRO: 30000,
+  STARTER: 2500,    // ₦5,000 × 50% off
+  GROWTH: 6000,     // ₦12,000 × 50% off
+  AGENCY_PRO: 15000, // ₦30,000 × 50% off
 };
 
 function getCommissionRate(isFoundingPartner: boolean): number {
