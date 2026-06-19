@@ -6,10 +6,31 @@ import { deletePostAction, retryPostAction, publishNowAction } from '@/actions/s
 import EditPostModal from '@/components/scheduler/EditPostModal';
 import SendApprovalModal from '@/components/scheduler/SendApprovalModal';
 
-const platformIcons: Record<string, string> = {
-  FACEBOOK: '📘', INSTAGRAM: '📸', TWITTER: '🐦',
-  LINKEDIN: '💼', TIKTOK: '🎵', YOUTUBE: '▶️', THREADS: '🧵',
+const PLATFORM_META: Record<string, { color: string; letter: string }> = {
+  FACEBOOK:  { color: '#1877F2', letter: 'f'  },
+  INSTAGRAM: { color: '#E1306C', letter: '✦'  },
+  TWITTER:   { color: '#1DA1F2', letter: '𝕏'  },
+  LINKEDIN:  { color: '#0077B5', letter: 'in' },
+  TIKTOK:    { color: '#000000', letter: 'tt' },
+  YOUTUBE:   { color: '#FF0000', letter: '▶'  },
+  THREADS:   { color: '#000000', letter: 'th' },
+  BLUESKY:   { color: '#0085FF', letter: 'bs' },
 };
+
+function PlatformIcon({ platform }: { platform: string }) {
+  const meta = PLATFORM_META[platform] || { color: '#378ADD', letter: '?' };
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: 8,
+      background: meta.color,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontSize: 11, fontWeight: 900,
+      flexShrink: 0, letterSpacing: '-0.5px',
+    }}>
+      {meta.letter}
+    </div>
+  );
+}
 
 const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
   DRAFT:     { icon: FileText,      color: 'text-slate-500 bg-slate-100',  label: 'Draft' },
@@ -71,7 +92,7 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{platformIcons[post.socialAccount?.platform] || '📱'}</span>
+            <PlatformIcon platform={post.socialAccount?.platform || ''} />
             <div>
               <p className="text-sm font-semibold text-slate-800">{post.socialAccount?.accountName}</p>
               <p className="text-xs text-slate-400">{post.socialAccount?.platform}</p>

@@ -40,7 +40,7 @@ export default function RegisterPage() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .reg-wrap { display: flex; min-height: 100vh; }
         .reg-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; overflow: hidden; background-image: linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px); background-size: 64px 64px; }
-        .reg-right { width: 100%; max-width: 520px; display: flex; align-items: center; justify-content: center; padding: 40px 48px; background: #070B12; border-left: 1px solid #1A2840; }
+        .reg-right { width: 480px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 40px 48px; background: #070B12; border-left: 1px solid #1A2840; }
         .field-input { width: 100%; padding: 13px 16px; background: #0C1524; border: 1px solid #1A2840; border-radius: 10px; color: #E8F0FA; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .field-input::placeholder { color: #3A506B; }
         .field-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
@@ -95,8 +95,8 @@ export default function RegisterPage() {
         <div className="reg-right">
           <div className="reg-form-inner" style={{ width: '100%', maxWidth: 400 }}>
             {/* Mobile logo - only shows on mobile */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }} className="mobile-logo">
-              <style>{`.mobile-logo { display: none; } @media(max-width:768px){ .mobile-logo { display: flex !important; } }`}</style>
+            <div style={{ display: 'none' }} className="mobile-logo">
+              <style>{`@media(max-width:768px){ .mobile-logo { display: flex !important; align-items: center; gap: 10px; margin-bottom: 32px; justify-content: center; } }`}</style>
               <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
               <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 20, color: '#fff' }}>eWork Social</span>
             </div>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                 <span style={{ fontSize: 18 }}>🏆</span>
                 <div>
                   <p style={{ color: '#F59E0B', fontSize: 12, fontWeight: 700, margin: 0 }}>Founding Member Pricing Available</p>
-                  <p style={{ color: '#4A6080', fontSize: 11, margin: 0 }}>Lock in ₦15,000/month forever — only 44 spots left</p>
+                  <p style={{ color: '#4A6080', fontSize: 11, margin: 0 }}>Locked in at 50% off Agency Pro — forever. Only 44 spots left.</p>
                 </div>
               </div>
 
