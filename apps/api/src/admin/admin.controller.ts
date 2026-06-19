@@ -62,7 +62,7 @@ export class AdminController {
 
   @Post('request-withdrawal')
   @UseGuards(JwtGuard)
-  async requestWithdrawal(@Request() req: any, @Body() body: { amount: number; paymentDetails: string }) {
+  async requestWithdrawal(@Req() req: any, @Body() body: { amount: number; paymentDetails: string }) {
     return this.referralService.requestWithdrawal(req.user.sub, body.amount, body.paymentDetails);
   }
 
