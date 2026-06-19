@@ -230,11 +230,10 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-4">
       {/* Wide split-panel modal */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden" style={{ height: '95vh', display: 'flex', flexDirection: 'column' }}>
-        <div className="flex flex-col md:flex-row overflow-hidden" style={{ flex: 1, minHeight: 0 }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '95vh' }}>
 
         {/* ── LEFT: Composer ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col min-w-0 border-b md:border-b-0 md:border-r border-slate-100 overflow-y-auto" style={{ flex: "1 1 0", minHeight: 0 }}>
+        <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100 overflow-y-auto">
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
