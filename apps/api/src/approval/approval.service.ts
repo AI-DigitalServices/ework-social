@@ -27,7 +27,7 @@ export class ApprovalService {
     const limits = getPlanLimits(subscription?.plan || 'FREE');
     // Allow all plans to test approval portal during trial
     // In production, gate this to Agency Pro only after trial
-    if (!limits.clientApprovalEnabled && subscription?.status !== 'TRIAL') {
+    if (!limits.clientApprovalEnabled) {
       throw new ForbiddenException('Client Approval Portal is available on Agency Pro plan. Start your trial to test this feature.');
     }
 
