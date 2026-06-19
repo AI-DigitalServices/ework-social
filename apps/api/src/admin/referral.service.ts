@@ -62,15 +62,12 @@ export class ReferralService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Check if this user is a founding partner
+    // Check if this user is a founding partner via explicit flag
     const referrerUser = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { referralCode: true, createdAt: true },
+      select: { referralCode: true, isFoundingPartner: true },
     });
-    // Founding partner = joined before July 2026
-    const isFoundingPartner = referrerUser
-      ? new Date(referrerUser.createdAt) < new Date('2026-07-01')
-      : false;
+    const isFoundingPartner = referrerUser?.isFoundingPartner ?? false;
 
     const commissionRate = getCommissionRate(isFoundingPartner);
 

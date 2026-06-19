@@ -24,9 +24,10 @@ model User {
   workspaces    WorkspaceMember[]
   ownedWorkspaces  Workspace[]
   sentInvites      WorkspaceInvite[]
-  referralCode     String?   @unique
-  referredById     String?
-  referredBy       User?     @relation(name: "UserReferrals", fields: [referredById], references: [id])
+  referralCode        String?   @unique
+  referredById        String?
+  referredBy          User?     @relation(name: "UserReferrals", fields: [referredById], references: [id])
+  isFoundingPartner   Boolean   @default(false)
   referrals        User[]    @relation(name: "UserReferrals")
   notifications    Notification[]
   assignedClients  Client[]  @relation("AssignedClients")
