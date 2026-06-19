@@ -1,4 +1,5 @@
 'use client';
+import { Calendar, Users, BarChart3, MessageSquareReply } from 'lucide-react';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -71,13 +72,13 @@ export default function RegisterPage() {
               Join agencies across Africa and beyond. Your 7-day free trial includes all Pro features — no credit card required.
             </p>
             {[
-              { icon: '📅', text: 'Schedule posts across Facebook, Instagram and more' },
-              { icon: '👥', text: 'CRM and lead pipeline for all your clients' },
-              { icon: '📊', text: 'Analytics dashboard with engagement tracking' },
-              { icon: '🤖', text: 'Auto-responder with keyword triggers' },
+              { Icon: Calendar, text: 'Schedule posts across Facebook, Instagram and more' },
+              { Icon: Users, text: 'CRM and lead pipeline for all your clients' },
+              { Icon: BarChart3, text: 'Analytics dashboard with engagement tracking' },
+              { Icon: MessageSquareReply, text: 'Auto-responder with keyword triggers' },
             ].map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-                <div style={{ width: 38, height: 38, background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{f.icon}</div>
+                <div style={{ width: 38, height: 38, background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><f.Icon size={18} color="#4D8FE8" /></div>
                 <span style={{ color: '#8BA0BC', fontSize: 15 }}>{f.text}</span>
               </div>
             ))}
@@ -100,8 +101,18 @@ export default function RegisterPage() {
               <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 20, color: '#fff' }}>eWork Social</span>
             </div>
 
-            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 26, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>Create your account</h2>
-            <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 32 }}>7-day free trial · No credit card required</p>
+            {/* Social proof bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '8px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
+              <div style={{ display: 'flex' }}>
+                {['B','A','S','D'].map((l,i) => (
+                  <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: ['#3B82F6','#10B981','#F59E0B','#8B5CF6'][i], border: '2px solid #070B12', marginLeft: i > 0 ? -8 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>{l}</div>
+                ))}
+              </div>
+              <span style={{ color: '#10B981', fontSize: 12, fontWeight: 600 }}>6 agencies joined this week</span>
+            </div>
+
+            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 26, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>Start your free trial</h2>
+            <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 32 }}>7-day free trial · No credit card required · Cancel anytime</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {[
@@ -121,6 +132,15 @@ export default function RegisterPage() {
                   {error}
                 </div>
               )}
+
+              {/* Founding member badge */}
+              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18 }}>🏆</span>
+                <div>
+                  <p style={{ color: '#F59E0B', fontSize: 12, fontWeight: 700, margin: 0 }}>Founding Member Pricing Available</p>
+                  <p style={{ color: '#4A6080', fontSize: 11, margin: 0 }}>Lock in ₦15,000/month forever — only 44 spots left</p>
+                </div>
+              </div>
 
               <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
                 {loading ? 'Creating your account...' : 'Start Free Trial →'}

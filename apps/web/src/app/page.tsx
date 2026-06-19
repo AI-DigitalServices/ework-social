@@ -1,4 +1,5 @@
 'use client';
+import { Calendar, Users, BarChart3, MessageSquareReply, CreditCard, Globe, Zap, Shield, CheckCircle, ArrowRight, Star } from 'lucide-react';
 import { useState } from 'react';
 import { joinWaitlistAction, getWaitlistCountAction } from '@/actions/waitlist.actions';
 
@@ -259,9 +260,15 @@ export default function LandingPage() {
                     <img src="/icon.png" alt="eWork Social" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
                     <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 13 }}>eWork Social</span>
                   </div>
-                  {[['📊', 'Dashboard'], ['📅', 'Scheduler'], ['👥', 'CRM'], ['📈', 'Analytics'], ['🤖', 'Auto-Responder']].map(([icon, label], i) => (
+                  {[
+                    { Icon: BarChart3, label: 'Dashboard' },
+                    { Icon: Calendar, label: 'Scheduler' },
+                    { Icon: Users, label: 'CRM' },
+                    { Icon: BarChart3, label: 'Analytics' },
+                    { Icon: MessageSquareReply, label: 'Auto-Responder' },
+                  ].map(({ Icon, label }, i) => (
                     <div key={label} style={{ padding: '9px 12px', borderRadius: 8, marginBottom: 3, fontSize: 13, background: i === 0 ? 'rgba(37,99,235,0.18)' : 'transparent', color: i === 0 ? '#7EB3F7' : '#4A6080', display: 'flex', alignItems: 'center', gap: 8, fontWeight: i === 0 ? 600 : 400 }}>
-                      {icon} {label}
+                      <Icon size={14} /> {label}
                     </div>
                   ))}
                 </div>
@@ -301,25 +308,25 @@ export default function LandingPage() {
         <div className="ticker-wrap">
           <div className="ticker">
             {[
-              { icon: '📅', label: 'Smart Scheduling', color: '#3B82F6' },
-              { icon: '👥', label: 'CRM Pipeline', color: '#10B981' },
-              { icon: '📊', label: 'Analytics Dashboard', color: '#F59E0B' },
-              { icon: '🤖', label: 'Auto-Responder', color: '#A78BFA' },
-              { icon: '💳', label: 'Paystack Billing', color: '#F472B6' },
-              { icon: '🌍', label: 'Global-Ready', color: '#34D399' },
-              { icon: '⚡', label: 'BullMQ Queue', color: '#FB923C' },
-              { icon: '🔒', label: 'Multi-Tenant Security', color: '#818CF8' },
-              { icon: '📅', label: 'Smart Scheduling', color: '#3B82F6' },
-              { icon: '👥', label: 'CRM Pipeline', color: '#10B981' },
-              { icon: '📊', label: 'Analytics Dashboard', color: '#F59E0B' },
-              { icon: '🤖', label: 'Auto-Responder', color: '#A78BFA' },
-              { icon: '💳', label: 'Paystack Billing', color: '#F472B6' },
-              { icon: '🌍', label: 'Global-Ready', color: '#34D399' },
-              { icon: '⚡', label: 'BullMQ Queue', color: '#FB923C' },
-              { icon: '🔒', label: 'Multi-Tenant Security', color: '#818CF8' },
+              { Icon: Calendar, label: 'Smart Scheduling', color: '#3B82F6' },
+              { Icon: Users, label: 'CRM Pipeline', color: '#10B981' },
+              { Icon: BarChart3, label: 'Analytics Dashboard', color: '#F59E0B' },
+              { Icon: MessageSquareReply, label: 'Auto-Responder', color: '#A78BFA' },
+              { Icon: CreditCard, label: 'Paystack Billing', color: '#F472B6' },
+              { Icon: Globe, label: 'Global-Ready', color: '#34D399' },
+              { Icon: Zap, label: 'AI-Powered', color: '#FB923C' },
+              { Icon: Shield, label: 'Multi-Tenant Security', color: '#818CF8' },
+              { Icon: Calendar, label: 'Smart Scheduling', color: '#3B82F6' },
+              { Icon: Users, label: 'CRM Pipeline', color: '#10B981' },
+              { Icon: BarChart3, label: 'Analytics Dashboard', color: '#F59E0B' },
+              { Icon: MessageSquareReply, label: 'Auto-Responder', color: '#A78BFA' },
+              { Icon: CreditCard, label: 'Paystack Billing', color: '#F472B6' },
+              { Icon: Globe, label: 'Global-Ready', color: '#34D399' },
+              { Icon: Zap, label: 'AI-Powered', color: '#FB923C' },
+              { Icon: Shield, label: 'Multi-Tenant Security', color: '#818CF8' },
             ].map((item, i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '0 30px', fontSize: 15, fontWeight: 600, color: item.color }}>
-                <span style={{ fontSize: 19 }}>{item.icon}</span>
+                <item.Icon size={16} style={{ flexShrink: 0 }} />
                 {item.label}
                 <span style={{ color: '#1E2D42', marginLeft: 6, fontSize: 12 }}>◆</span>
               </span>
@@ -339,15 +346,15 @@ export default function LandingPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
           {[
-            { icon: '📅', title: 'Smart Scheduler', desc: 'Schedule posts across Facebook, Instagram, LinkedIn and more. Bulk upload, calendar view, and intelligent queue management powered by BullMQ.', color: '#3B82F6' },
-            { icon: '👥', title: 'CRM & Lead Pipeline', desc: 'Full client relationship management with pipeline stages: Lead → Contacted → Proposal → Active. Never miss a follow-up.', color: '#10B981' },
-            { icon: '📊', title: 'Analytics Dashboard', desc: 'Track engagement, reach, clicks, and follower growth across all platforms. Up to 12 months of history on Agency Pro.', color: '#F59E0B' },
-            { icon: '🤖', title: 'Auto-Responder', desc: 'Auto-reply to comments and DMs with keyword triggers and template responses. Automatically update lead stages in CRM.', color: '#8B5CF6' },
-            { icon: '🏢', title: 'Multi-Tenant Workspaces', desc: 'Each client workspace is fully isolated with separate branding, accounts, and permissions. Scale without chaos.', color: '#EC4899' },
-            { icon: '🏷️', title: 'White-Label Ready', desc: 'Agency Pro users get a fully white-labeled dashboard with custom domain support. Resell it as your own product.', color: '#14B8A6' },
+            { Icon: Calendar, title: 'Smart Scheduler', desc: 'Schedule posts across Facebook, Instagram, LinkedIn and more. Bulk upload, calendar view, and intelligent queue management powered by BullMQ.', color: '#3B82F6' },
+            { Icon: Users, title: 'CRM & Lead Pipeline', desc: 'Full client relationship management with pipeline stages: Lead → Contacted → Proposal → Active. Never miss a follow-up.', color: '#10B981' },
+            { Icon: BarChart3, title: 'Analytics Dashboard', desc: 'Track engagement, reach, clicks, and follower growth across all platforms. Up to 12 months of history on Agency Pro.', color: '#F59E0B' },
+            { Icon: MessageSquareReply, title: 'Auto-Responder', desc: 'Auto-reply to comments and DMs with keyword triggers and template responses. Automatically update lead stages in CRM.', color: '#8B5CF6' },
+            { Icon: Shield, title: 'Multi-Tenant Workspaces', desc: 'Each client workspace is fully isolated with separate branding, accounts, and permissions. Scale without chaos.', color: '#EC4899' },
+            { Icon: Globe, title: 'White-Label Ready', desc: 'Agency Pro users get a fully white-labeled dashboard with custom domain support. Resell it as your own product.', color: '#14B8A6' },
           ].map((f, i) => (
             <div key={i} className="feature-card">
-              <div style={{ width: 52, height: 52, background: `${f.color}18`, border: `1px solid ${f.color}30`, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 22 }}>{f.icon}</div>
+              <div style={{ width: 52, height: 52, background: `${f.color}18`, border: `1px solid ${f.color}30`, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}><f.Icon size={24} color={f.color} /></div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: '#E8F0FA', letterSpacing: '-0.3px' }}>{f.title}</h3>
               <p style={{ color: '#6B8299', fontSize: 15, lineHeight: 1.75, fontWeight: 400 }}>{f.desc}</p>
             </div>
@@ -362,11 +369,21 @@ export default function LandingPage() {
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, letterSpacing: '-1px', marginBottom: 16, color: '#F0F6FF' }}>Post everywhere at once</h2>
           <p style={{ color: '#6B8299', fontSize: 16, marginBottom: 52, fontWeight: 400 }}>Connect all your social accounts and manage them from one place</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center' }}>
-            {[['💼', 'LinkedIn', 'Live', '#10B981', '#064E3B'], ['🎵', 'TikTok', 'Live', '#10B981', '#064E3B'], ['🦋', 'Bluesky', 'Live', '#10B981', '#064E3B'], ['▶️', 'YouTube', 'Beta', '#F59E0B', '#451A03'], ['𝕏', 'Twitter / X', 'Growth+', '#3B82F6', '#1E3A5F'], ['📘', 'Facebook', 'Pending', '#F97316', '#431407'], ['📸', 'Instagram', 'Pending', '#F97316', '#431407'], ['📌', 'Pinterest', 'Coming Soon', '#6B8299', '#1A2840'], ['💬', 'WhatsApp', 'Coming Soon', '#6B8299', '#1A2840']].map(([icon, name, status, textColor, bgColor], i) => (
+            {[
+              { color: '#0077B5', letter: 'in', name: 'LinkedIn',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { color: '#000000', letter: 'tt', name: 'TikTok',     status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { color: '#0085FF', letter: 'bs', name: 'Bluesky',    status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { color: '#FF0000', letter: '▶',  name: 'YouTube',    status: 'Beta',        textColor: '#F59E0B', bgColor: '#451A03' },
+              { color: '#1DA1F2', letter: '𝕏',  name: 'Twitter/X',  status: 'Growth+',     textColor: '#3B82F6', bgColor: '#1E3A5F' },
+              { color: '#1877F2', letter: 'f',  name: 'Facebook',   status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
+              { color: '#E1306C', letter: '✦',  name: 'Instagram',  status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
+              { color: '#E60023', letter: 'P',  name: 'Pinterest',  status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
+              { color: '#25D366', letter: 'W',  name: 'WhatsApp',   status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
+            ].map((p, i) => (
               <div key={i} className="platform-pill">
-                <span style={{ fontSize: 18 }}>{icon}</span>
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{name}</span>
-                <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, background: bgColor, color: textColor, fontWeight: 700 }}>{status}</span>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 900, flexShrink: 0 }}>{p.letter}</div>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</span>
+                <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, background: p.bgColor, color: p.textColor, fontWeight: 700 }}>{p.status}</span>
               </div>
             ))}
           </div>
@@ -443,7 +460,7 @@ export default function LandingPage() {
           <div className="grid-2col">
             <div>
               <div className="africa-badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
-                🌐 Built for Everyone, Everywhere
+                <Globe size={14} style={{ marginRight: 6 }} /> Built for Everyone, Everywhere
               </div>
               <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF', marginBottom: 20, lineHeight: 1.2 }}>
                 Built for how<br />modern agencies work
