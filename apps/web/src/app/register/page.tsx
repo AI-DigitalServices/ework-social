@@ -39,7 +39,7 @@ export default function RegisterPage() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Baskerville:wght@700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .reg-wrap { display: flex; min-height: 100vh; }
-        .reg-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; overflow: hidden; background-image: linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px); background-size: 64px 64px; }
+        .reg-left { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 60px; position: relative; overflow: hidden; background-image: linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px); background-size: 64px 64px; }
         .reg-right { width: 480px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 40px 48px; background: #070B12; border-left: 1px solid #1A2840; }
         .field-input { width: 100%; padding: 13px 16px; background: #0C1524; border: 1px solid #1A2840; border-radius: 10px; color: #E8F0FA; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .field-input::placeholder { color: #3A506B; }
@@ -60,11 +60,11 @@ export default function RegisterPage() {
         {/* Left panel - branding - hidden on mobile */}
         <div className="reg-left">
           <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', filter: 'blur(120px)', background: '#2563EB', opacity: 0.1, top: -100, left: -100, pointerEvents: 'none' }} />
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 80 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 80, maxWidth: 560, width: '100%' }}>
             <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
             <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>eWork Social</span>
           </Link>
-          <div style={{ maxWidth: 440 }}>
+          <div style={{ maxWidth: 560, width: '100%' }}>
             <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-1.5px', color: '#F0F6FF', marginBottom: 20 }}>
               Start managing your clients<br /><span style={{ color: '#3B82F6', fontStyle: 'italic' }}>social media</span> today.
             </h1>
