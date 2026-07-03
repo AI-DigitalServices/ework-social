@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiUsageService } from './ai-usage.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { getPlanLimits } from '../common/plan-limits';
 import Anthropic from '@anthropic-ai/sdk';

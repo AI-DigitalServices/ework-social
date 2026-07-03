@@ -1,12 +1,13 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { AiUsageService } from './ai-usage.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('ai')
 @UseGuards(JwtGuard)
 export class AiController {
-  constructor(private aiService: AiService) {}
+  constructor(private aiService: AiService, private aiUsage: AiUsageService) {}
 
   @Post('captions')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
@@ -60,5 +61,10 @@ export class AiController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   getCrmInsights(@Body() body: { workspaceId: string }) {
     return this.aiService.getCrmInsights(body.workspaceId);
+  }
+  @Get('usage')
+  @UseGuards(JwtGuard)
+  getUsage(@Query('workspaceId') workspaceId: string) {
+    return this.aiUsage.getUsage(workspaceId);
   }
 }

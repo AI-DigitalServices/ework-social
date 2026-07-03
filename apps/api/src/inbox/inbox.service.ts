@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
+import { AiUsageService } from '../ai/ai-usage.service';
 
 @Injectable()
 export class InboxService {
   private anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiUsage: AiUsageService,
+  ) {}
 
   async getMessages(workspaceId: string, filters: {
     platform?: string;
@@ -133,6 +137,9 @@ export class InboxService {
   async suggestReply(id: string, workspaceId: string) {
     const msg = await this.prisma.inboxMessage.findUnique({ where: { id } });
     if (!msg || msg.workspaceId !== workspaceId) throw new Error('Message not found');
+
+    // Check + track AI usage
+    await this.aiUsage.checkAndIncrement(workspaceId, 'REPLY_SUGGEST');
 
     const prompt = `You are a professional social media manager for a digital marketing agency.
 A ${msg.platform} user sent this ${msg.type.toLowerCase()} from @${msg.senderName || 'a user'}:

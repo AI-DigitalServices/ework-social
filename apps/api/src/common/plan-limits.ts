@@ -19,6 +19,8 @@ export const PLAN_LIMITS = {
     aiRewriteEnabled: false,
     aiCrmInsightsEnabled: false,
     clientApprovalEnabled: false,
+    aiReplyEnabled: false,
+    aiReplyPerMonth: 0,
   },
   STARTER: {
     maxSocialAccounts: 10,
@@ -40,6 +42,8 @@ export const PLAN_LIMITS = {
     aiRewriteEnabled: false,
     aiCrmInsightsEnabled: false,
     clientApprovalEnabled: false,
+    aiReplyEnabled: true,
+    aiReplyPerMonth: 10,
   },
   GROWTH: {
     maxSocialAccounts: 30,
@@ -61,6 +65,8 @@ export const PLAN_LIMITS = {
     aiRewriteEnabled: true,
     aiCrmInsightsEnabled: false,
     clientApprovalEnabled: false,
+    aiReplyEnabled: true,
+    aiReplyPerMonth: 50,
   },
   AGENCY_PRO: {
     maxSocialAccounts: 100,
@@ -82,6 +88,8 @@ export const PLAN_LIMITS = {
     aiRewriteEnabled: true,
     aiCrmInsightsEnabled: true,
     clientApprovalEnabled: true,
+    aiReplyEnabled: true,
+    aiReplyPerMonth: 999999,
   },
 } as const;
 

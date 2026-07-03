@@ -51,6 +51,7 @@ model Workspace {
   subscription Subscription?
   postApprovals   PostApproval[]
   inboxMessages   InboxMessage[]
+  aiUsage         AiUsage[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -378,4 +379,26 @@ model InboxReply {
 enum InboxMessageType {
   DM
   COMMENT
+}
+
+model AiUsage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  type        AiUsageType
+  month       String   // e.g. "2026-07"
+  count       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, type, month])
+  @@index([workspaceId, month])
+}
+
+enum AiUsageType {
+  CAPTION
+  HASHTAG
+  REWRITE
+  CRM_INSIGHT
+  REPLY_SUGGEST
 }
