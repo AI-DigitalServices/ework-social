@@ -31,6 +31,7 @@ model User {
   referrals        User[]    @relation(name: "UserReferrals")
   notifications    Notification[]
   assignedClients  Client[]  @relation("AssignedClients")
+  assignedMessages InboxMessage[]
   activityLogs     Activity[]
 }
 
@@ -49,6 +50,7 @@ model Workspace {
   invites         WorkspaceInvite[]
   subscription Subscription?
   postApprovals   PostApproval[]
+  inboxMessages   InboxMessage[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -334,4 +336,46 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REVISION_REQUESTED
+}
+
+model InboxMessage {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id])
+  platform        Platform
+  type            InboxMessageType
+  externalId      String          // comment_id or message_id from Meta
+  senderId        String?         // sender's platform ID
+  senderName      String?         // sender's name or username
+  senderAvatar    String?         // profile picture URL
+  content         String          // message/comment text
+  postId          String?         // parent post ID (for comments)
+  postContent     String?         // snippet of the post being commented on
+  isRead          Boolean         @default(false)
+  isResolved      Boolean         @default(false)
+  assignedToId    String?
+  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
+  aiSuggestion    String?         // AI-suggested reply
+  replies         InboxReply[]
+  socialAccountId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([platform, externalId])
+  @@index([workspaceId, isResolved, createdAt])
+}
+
+model InboxReply {
+  id          String       @id @default(cuid())
+  messageId   String
+  message     InboxMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  content     String
+  sentAt      DateTime     @default(now())
+  sentBy      String?      // userId who sent it
+  isAuto      Boolean      @default(false)
+}
+
+enum InboxMessageType {
+  DM
+  COMMENT
 }

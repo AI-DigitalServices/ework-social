@@ -128,14 +128,29 @@ export class WebhookService {
         }
       }
 
-      // Update trigger count
-      await this.prisma.autoResponderRule.update({
-        where: { id: matchingRule.id },
-        data: { triggerCount: { increment: 1 } },
+      // Save to inbox
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'FACEBOOK',
+        type: 'COMMENT',
+        externalId: commentId,
+        senderId: commentData.from?.id,
+        senderName: fromName,
+        content: commentText,
+        postId: commentData.post_id,
+        socialAccountId: account.id,
       });
 
+      // Update trigger count
+      if (matchingRule) {
+        await this.prisma.autoResponderRule.update({
+          where: { id: matchingRule.id },
+          data: { triggerCount: { increment: 1 } },
+        });
+      }
+
       // Update CRM lead stage if configured
-      if (matchingRule.updateLeadStage) {
+      if (matchingRule?.updateLeadStage) {
         await this.updateLeadStage(
           account.workspaceId,
           commentData.from?.id,
@@ -184,10 +199,24 @@ export class WebhookService {
         }
       );
 
-      await this.prisma.autoResponderRule.update({
-        where: { id: matchingRule.id },
-        data: { triggerCount: { increment: 1 } },
+      // Save to inbox
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'FACEBOOK',
+        type: 'DM',
+        externalId: messagingEvent.message?.mid || senderId,
+        senderId,
+        senderName: fromName,
+        content: messageText,
+        socialAccountId: account.id,
       });
+
+      if (matchingRule) {
+        await this.prisma.autoResponderRule.update({
+          where: { id: matchingRule.id },
+          data: { triggerCount: { increment: 1 } },
+        });
+      }
 
       // Try to get sender's name from Facebook Graph API for better CRM contact naming
       let senderName = `Facebook User ${senderId}`;
@@ -255,13 +284,27 @@ export class WebhookService {
         );
       }
 
-      await this.prisma.autoResponderRule.update({
-        where: { id: matchingRule.id },
-        data: { triggerCount: { increment: 1 } },
+      // Save to inbox
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'INSTAGRAM',
+        type: 'COMMENT',
+        externalId: commentId,
+        senderId: commentData.from?.id,
+        senderName: fromName,
+        content: commentText,
+        socialAccountId: account.id,
       });
 
+      if (matchingRule) {
+        await this.prisma.autoResponderRule.update({
+          where: { id: matchingRule.id },
+          data: { triggerCount: { increment: 1 } },
+        });
+      }
+
       // Update CRM lead stage if the rule has that configured
-      if (matchingRule.updateLeadStage && commentData.from?.id) {
+      if (matchingRule?.updateLeadStage && commentData.from?.id) {
         await this.updateLeadStage(
           account.workspaceId,
           commentData.from.id,
@@ -312,13 +355,27 @@ export class WebhookService {
         }
       );
 
-      await this.prisma.autoResponderRule.update({
-        where: { id: matchingRule.id },
-        data: { triggerCount: { increment: 1 } },
+      // Save to inbox
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'INSTAGRAM',
+        type: 'DM',
+        externalId: messageData.message?.mid || senderId,
+        senderId,
+        senderName: messageData.sender?.username || senderId,
+        content: messageText,
+        socialAccountId: account.id,
       });
 
+      if (matchingRule) {
+        await this.prisma.autoResponderRule.update({
+          where: { id: matchingRule.id },
+          data: { triggerCount: { increment: 1 } },
+        });
+      }
+
       // Update CRM lead stage if the rule has that configured
-      if (matchingRule.updateLeadStage && senderId) {
+      if (matchingRule?.updateLeadStage && senderId) {
         await this.updateLeadStage(
           account.workspaceId,
           senderId,
@@ -426,6 +483,51 @@ export class WebhookService {
       const data = JSON.stringify(err?.response?.data ?? '(empty)');
       const msg = err?.message;
       this.logger.error(`handleInstagramDMByMid FAILED — status: ${status}, message: ${msg}, data: ${data}`);
+    }
+  }
+
+  private async saveInboxMessage(data: {
+    workspaceId: string;
+    platform: string;
+    type: string;
+    externalId: string;
+    senderId?: string;
+    senderName?: string;
+    senderAvatar?: string;
+    content: string;
+    postId?: string;
+    postContent?: string;
+    socialAccountId?: string;
+  }) {
+    try {
+      await this.prisma.inboxMessage.upsert({
+        where: {
+          platform_externalId: {
+            platform: data.platform as any,
+            externalId: data.externalId,
+          },
+        },
+        update: {
+          content: data.content,
+          senderName: data.senderName,
+        },
+        create: {
+          workspaceId: data.workspaceId,
+          platform: data.platform as any,
+          type: data.type as any,
+          externalId: data.externalId,
+          senderId: data.senderId,
+          senderName: data.senderName,
+          senderAvatar: data.senderAvatar,
+          content: data.content,
+          postId: data.postId,
+          postContent: data.postContent,
+          socialAccountId: data.socialAccountId,
+        },
+      });
+      this.logger.log(`Inbox: saved ${data.type} from ${data.platform} — ${data.senderName}`);
+    } catch (err: any) {
+      this.logger.error('Failed to save inbox message:', err?.message);
     }
   }
 

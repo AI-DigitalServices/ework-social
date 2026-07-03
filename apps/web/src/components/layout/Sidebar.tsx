@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
   MessageSquareReply, Settings, LogOut, X, Menu,
-  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock,
+  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock, Inbox,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Dashboard',        href: '/dashboard',            icon: LayoutDashboard, proOnly: false },
   { label: 'Scheduler',        href: '/dashboard/scheduler',  icon: CalendarDays,    proOnly: false },
   { label: 'CRM & Clients',    href: '/dashboard/crm',        icon: Users,           proOnly: false },
+  { label: 'Engagement Hub',   href: '/dashboard/inbox',      icon: Inbox,           proOnly: false },
   { label: 'Client Approvals', href: '/dashboard/approvals',  icon: ClipboardCheck,  proOnly: true  },
   { label: 'Analytics',        href: '/dashboard/analytics',  icon: BarChart3,       proOnly: false },
   { label: 'Auto-Responder',   href: '/dashboard/responder',  icon: MessageSquareReply, proOnly: false },
