@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Founding Growth Partner — eWork Social</title>
+<meta name="description" content="Join a select group of agencies, consultants, creators, and community leaders shaping the future of social media operations. Earn recurring revenue. Shape the roadmap."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563EB;--blue-light:#60A5FA;--blue-glow:rgba(37,99,235,0.25);
+  --green:#10B981;--green-light:#34D399;--green-glow:rgba(16,185,129,0.2);
+  --purple:#8B5CF6;--purple-light:#A78BFA;--purple-glow:rgba(139,92,246,0.2);
+  --amber:#F59E0B;--amber-light:#FCD34D;
+  --bg:#060A12;--bg2:#0B1120;--bg3:#0F1A2E;
+  --border:#1A2840;--border2:#243552;
+  --text:#F0F6FF;--text2:#94A3B8;--text3:#4A6080;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── BLOBS ── */
+.blob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:0.35;animation:float 12s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.05)}}
+@keyframes floatR{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(24px) scale(0.97)}}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:68px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,10,18,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(26,40,64,0.6);transition:all 0.3s}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#2563EB,#8B5CF6);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.nav-logo-text{font-family:'Playfair Display',serif;font-weight:700;font-size:17px;color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-link{color:var(--text2);font-size:13.5px;text-decoration:none;transition:color 0.2s}
+.nav-link:hover{color:var(--text)}
+.nav-btn{background:var(--green);color:#fff;font-size:13px;font-weight:700;padding:10px 22px;border-radius:9px;text-decoration:none;transition:all 0.25s;box-shadow:0 0 20px rgba(16,185,129,0.3)}
+.nav-btn:hover{background:#0ea374;transform:translateY(-1px);box-shadow:0 4px 24px rgba(16,185,129,0.4)}
+
+/* ── STICKY CTA ── */
+#sticky-cta{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:6px;transform:translateY(120px);transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+#sticky-cta.visible{transform:translateY(0)}
+.sticky-pill{background:linear-gradient(135deg,var(--green),#059669);color:#fff;font-size:14px;font-weight:700;padding:14px 26px;border-radius:50px;text-decoration:none;box-shadow:0 8px 32px rgba(16,185,129,0.45);display:flex;align-items:center;gap:8px;white-space:nowrap;transition:all 0.25s}
+.sticky-pill:hover{transform:scale(1.04);box-shadow:0 12px 40px rgba(16,185,129,0.55)}
+.sticky-sub{font-size:11px;color:var(--text3);text-align:right;padding-right:4px}
+
+/* ── HERO ── */
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:100px 24px 80px;overflow:hidden}
+.hero-blob-1{width:600px;height:600px;background:var(--blue);top:-120px;left:-150px;animation-duration:14s}
+.hero-blob-2{width:500px;height:500px;background:var(--purple);bottom:-100px;right:-120px;animation:floatR 16s ease-in-out infinite}
+.hero-blob-3{width:300px;height:300px;background:var(--green);top:40%;left:50%;transform:translate(-50%,-50%);animation-duration:10s}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.35);border-radius:999px;padding:7px 18px;margin-bottom:28px}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+.badge-text{font-size:12px;font-weight:600;color:var(--green-light);letter-spacing:0.5px}
+.hero-h1{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,78px);font-weight:800;line-height:1.08;letter-spacing:-1.5px;margin-bottom:22px}
+.hero-h1 em{font-style:italic;background:linear-gradient(135deg,var(--blue-light),var(--purple-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(16px,2vw,19px);color:var(--text2);max-width:560px;margin:0 auto 14px;line-height:1.7;font-weight:500}
+.hero-desc{font-size:15px;color:var(--text3);max-width:520px;margin:0 auto 38px;line-height:1.75}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-green{background:linear-gradient(135deg,var(--green),#059669);color:#fff;font-size:15px;font-weight:700;padding:15px 32px;border-radius:12px;text-decoration:none;transition:all 0.25s;box-shadow:0 0 30px rgba(16,185,129,0.35);display:inline-flex;align-items:center;gap:8px}
+.btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(16,185,129,0.5)}
+.btn-outline{border:1px solid var(--border2);color:var(--text2);font-size:15px;font-weight:600;padding:15px 32px;border-radius:12px;text-decoration:none;transition:all 0.25s;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);backdrop-filter:blur(8px)}
+.btn-outline:hover{border-color:var(--blue-light);color:var(--text);background:rgba(37,99,235,0.08)}
+.hero-scroll{margin-top:52px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text3);font-size:12px;letter-spacing:1px}
+.scroll-arrow{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+/* ── SECTION COMMONS ── */
+section{position:relative;overflow:hidden}
+.section-inner{max-width:1080px;margin:0 auto;padding:96px 32px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.eyebrow-green{color:var(--green-light)}
+.eyebrow-blue{color:var(--blue-light)}
+.eyebrow-purple{color:var(--purple-light)}
+.eyebrow-amber{color:var(--amber-light)}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(30px,4vw,46px);font-weight:700;line-height:1.15;letter-spacing:-0.5px;margin-bottom:16px}
+.section-title span.g-blue{background:linear-gradient(90deg,var(--blue-light),var(--purple-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-title span.g-green{background:linear-gradient(90deg,var(--green-light),var(--blue-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-lead{font-size:17px;color:var(--text2);line-height:1.75;max-width:600px}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent)}
+
+/* ── TRUSTED BY ── */
+#trusted{background:var(--bg2)}
+.trusted-inner{padding:48px 32px;text-align:center}
+.trusted-label{font-size:11px;letter-spacing:3px;color:var(--text3);font-weight:600;margin-bottom:28px}
+.trusted-track{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.trusted-chip{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:999px;padding:10px 22px;font-size:13px;color:var(--text2);font-weight:500;transition:all 0.25s;cursor:default}
+.trusted-chip:hover{border-color:var(--blue-light);color:var(--text);background:rgba(37,99,235,0.08)}
+
+/* ── WHY WE BUILT THIS ── */
+#why{background:var(--bg)}
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-top:56px}
+.why-visual{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:4/3;background:linear-gradient(135deg,var(--bg3),#162040)}
+.why-visual-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px}
+.why-stat-row{display:flex;gap:12px;width:100%}
+.why-stat{flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;backdrop-filter:blur(8px)}
+.why-stat-num{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--blue-light),var(--purple-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.why-stat-label{font-size:11px;color:var(--text3);margin-top:4px}
+.why-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;width:100%;backdrop-filter:blur(8px)}
+.why-card-icon{font-size:24px;flex-shrink:0}
+.why-card-text{font-size:13px;color:var(--text2);line-height:1.5}
+.why-card-text strong{color:var(--text);display:block;margin-bottom:2px}
+.why-text .eyebrow{margin-bottom:10px}
+.why-bullets{margin-top:28px;display:flex;flex-direction:column;gap:16px}
+.why-bullet{display:flex;align-items:flex-start;gap:12px}
+.why-bullet-dot{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.why-bullet-text{font-size:15px;color:var(--text2);line-height:1.6}
+.why-bullet-text strong{color:var(--text)}
+
+/* ── NOT AFFILIATE ── */
+#comparison{background:var(--bg2)}
+.comparison-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:56px}
+.cmp-card{border-radius:20px;padding:32px;position:relative;transition:transform 0.3s}
+.cmp-card:hover{transform:translateY(-4px)}
+.cmp-old{background:rgba(255,255,255,0.03);border:1px solid var(--border)}
+.cmp-middle{background:rgba(255,255,255,0.02);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center}
+.cmp-middle-vs{font-family:'Playfair Display',serif;font-size:42px;color:var(--text3);font-weight:700;opacity:0.4}
+.cmp-new{background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(139,92,246,0.12));border:1px solid rgba(96,165,250,0.4)}
+.cmp-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:4px 12px;border-radius:999px;margin-bottom:18px}
+.cmp-badge-old{background:rgba(255,255,255,0.06);color:var(--text3)}
+.cmp-badge-new{background:linear-gradient(90deg,rgba(37,99,235,0.3),rgba(139,92,246,0.3));color:var(--blue-light)}
+.cmp-title{font-size:17px;font-weight:700;margin-bottom:20px}
+.cmp-item{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px}
+.cmp-x{color:#EF4444;font-size:16px;flex-shrink:0}
+.cmp-check{color:var(--green-light);font-size:16px;flex-shrink:0}
+.cmp-item span{color:var(--text2);line-height:1.4}
+.cmp-item.highlight span{color:var(--text)}
+.cmp-star{position:absolute;top:16px;right:16px;background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px}
+
+/* ── WHO SHOULD JOIN ── */
+#who{background:var(--bg)}
+.who-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:52px}
+.who-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:16px;padding:22px 16px;text-align:center;transition:all 0.3s;cursor:default;position:relative;overflow:hidden}
+.who-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--c1),var(--c2));opacity:0;transition:opacity 0.3s}
+.who-card:hover::before{opacity:0.08}
+.who-card:hover{border-color:var(--c1);transform:translateY(-3px)}
+.who-icon{font-size:28px;margin-bottom:10px;position:relative;z-index:1}
+.who-label{font-size:13px;font-weight:600;color:var(--text);position:relative;z-index:1}
+.who-sub{font-size:11px;color:var(--text3);margin-top:4px;position:relative;z-index:1}
+
+/* ── WHY JOIN ── */
+#benefits{background:var(--bg2);position:relative}
+.benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.benefit-card{border-radius:20px;padding:28px;background:rgba(255,255,255,0.03);border:1px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden}
+.benefit-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c1),var(--c2));opacity:0;transition:opacity 0.3s}
+.benefit-card:hover::after{opacity:1}
+.benefit-card:hover{transform:translateY(-4px);border-color:var(--c1)}
+.benefit-icon-wrap{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:18px;background:linear-gradient(135deg,var(--c1),var(--c2));opacity:0.9}
+.benefit-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.benefit-desc{font-size:13.5px;color:var(--text2);line-height:1.6}
+
+/* ── HOW IT WORKS ── */
+#howitworks{background:var(--bg)}
+.steps-wrap{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;margin-top:56px}
+.steps-list{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:18px;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;left:19px;top:48px;width:2px;height:calc(100% - 16px);background:linear-gradient(to bottom,var(--blue-glow),transparent)}
+.step-num{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;z-index:1;margin-top:4px}
+.step:last-child .step-num{background:linear-gradient(135deg,var(--green),var(--blue-light))}
+.step-content{padding-bottom:36px}
+.step-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.step-desc{font-size:13.5px;color:var(--text2);line-height:1.6}
+.steps-visual{border-radius:24px;background:linear-gradient(135deg,var(--bg3),#0e1f3b);padding:32px;border:1px solid var(--border);position:sticky;top:100px}
+.step-preview{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+.step-preview-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step-preview-dot{width:8px;height:8px;border-radius:50%}
+.step-preview-label{font-size:12px;font-weight:600;color:var(--text2)}
+.step-preview-body{font-size:12px;color:var(--text3);line-height:1.6}
+.step-preview-tag{display:inline-block;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:999px;padding:3px 10px;font-size:10px;color:var(--green-light);font-weight:600;margin-top:8px}
+
+/* ── AUDIENCE BENEFITS ── */
+#audience{background:linear-gradient(135deg,#060E1E,#0B1730)}
+.audience-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:52px}
+.aud-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:18px;padding:24px 14px;text-align:center;transition:all 0.3s}
+.aud-card:hover{background:rgba(37,99,235,0.08);border-color:rgba(96,165,250,0.4);transform:translateY(-3px)}
+.aud-emoji{font-size:28px;margin-bottom:10px}
+.aud-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.aud-desc{font-size:11.5px;color:var(--text3);line-height:1.5}
+
+/* ── PARTNER BENEFITS ── */
+#partner-benefits{background:var(--bg2)}
+.pb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:52px}
+.pb-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:18px;padding:26px;display:flex;align-items:flex-start;gap:14px;transition:all 0.3s}
+.pb-card:hover{border-color:var(--border2);transform:translateY(-2px);background:rgba(255,255,255,0.05)}
+.pb-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pb-text{}
+.pb-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.pb-desc{font-size:12.5px;color:var(--text2);line-height:1.5}
+
+/* ── FAQ ── */
+#faq{background:var(--bg)}
+.faq-list{margin-top:52px;display:flex;flex-direction:column;gap:12px;max-width:760px;margin-left:auto;margin-right:auto}
+.faq-item{border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color 0.3s}
+.faq-item.open{border-color:var(--border2)}
+.faq-question{width:100%;background:rgba(255,255,255,0.03);border:none;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;transition:background 0.2s;gap:12px}
+.faq-question:hover{background:rgba(255,255,255,0.05)}
+.faq-q-text{font-size:15px;font-weight:600;color:var(--text);line-height:1.4}
+.faq-chevron{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.3s,background 0.3s;font-size:12px;color:var(--text2)}
+.faq-item.open .faq-chevron{transform:rotate(180deg);background:rgba(37,99,235,0.2);color:var(--blue-light)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height 0.4s ease,padding 0.3s}
+.faq-answer.open{max-height:300px}
+.faq-answer-inner{padding:0 24px 20px;font-size:14.5px;color:var(--text2);line-height:1.75;border-top:1px solid var(--border)}
+.faq-answer.open .faq-answer-inner{padding-top:18px}
+
+/* ── FINAL CTA ── */
+#final-cta{position:relative;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0B1A3E,#0F0A2A,#081A20);z-index:0}
+.cta-blob-1{width:500px;height:500px;background:var(--blue);top:-100px;left:-100px;animation-duration:12s}
+.cta-blob-2{width:400px;height:400px;background:var(--purple);bottom:-80px;right:-80px;animation:floatR 14s ease-in-out infinite}
+.cta-blob-3{width:300px;height:300px;background:var(--green);top:50%;left:50%;transform:translate(-50%,-50%);animation-duration:9s}
+.cta-inner{position:relative;z-index:1;text-align:center;padding:96px 32px}
+.cta-inner .eyebrow{margin-bottom:18px}
+.cta-h2{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,58px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:18px}
+.cta-h2 em{font-style:italic;background:linear-gradient(90deg,var(--green-light),var(--blue-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta-sub{font-size:17px;color:var(--text2);max-width:500px;margin:0 auto 40px;line-height:1.7}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.cta-spots{margin-top:24px;display:flex;align-items:center;justify-content:center;gap:10px}
+.cta-spots-bar{width:120px;height:6px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden}
+.cta-spots-fill{height:100%;width:30%;background:linear-gradient(90deg,var(--green),var(--blue-light));border-radius:999px}
+.cta-spots-text{font-size:12px;color:var(--text3)}
+.cta-spots-text strong{color:var(--green-light)}
+
+/* ── FOOTER ── */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40px 40px}
+.footer-inner{max-width:1080px;margin:0 auto}
+.footer-top{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;margin-bottom:56px}
+.footer-brand-name{font-family:'Playfair Display',serif;font-weight:700;font-size:20px;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.footer-brand-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.footer-brand-desc{font-size:13.5px;color:var(--text3);line-height:1.7;margin-bottom:20px;max-width:280px}
+.footer-contact-head{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);margin-bottom:14px}
+.footer-contact-links{display:flex;flex-direction:column;gap:10px}
+.footer-contact-link{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text2);font-size:13.5px;transition:color 0.2s}
+.footer-contact-link:hover{color:var(--text)}
+.footer-contact-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.footer-col-head{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text3);margin-bottom:16px;text-transform:uppercase}
+.footer-col-links{display:flex;flex-direction:column;gap:10px}
+.footer-col-link{color:var(--text2);font-size:13.5px;text-decoration:none;transition:color 0.2s}
+.footer-col-link:hover{color:var(--text)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:gap}
+.footer-copy{font-size:12.5px;color:var(--text3)}
+.footer-tagline{font-size:12.5px;color:var(--text3);font-style:italic}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav{padding:0 20px}
+  .why-grid{grid-template-columns:1fr}
+  .comparison-grid{grid-template-columns:1fr}
+  .cmp-middle{display:none}
+  .who-grid{grid-template-columns:repeat(2,1fr)}
+  .benefits-grid{grid-template-columns:1fr 1fr}
+  .steps-wrap{grid-template-columns:1fr}
+  .steps-visual{display:none}
+  .audience-grid{grid-template-columns:repeat(3,1fr)}
+  .pb-grid{grid-template-columns:1fr 1fr}
+  .footer-top{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .section-inner{padding:72px 20px}
+  .who-grid{grid-template-columns:repeat(2,1fr)}
+  .benefits-grid{grid-template-columns:1fr}
+  .audience-grid{grid-template-columns:repeat(2,1fr)}
+  .pb-grid{grid-template-columns:1fr}
+  .footer-top{grid-template-columns:1fr}
+  .footer-bottom{flex-direction:column;gap:8px;text-align:center}
+  nav .nav-link{display:none}
+  #sticky-cta{bottom:16px;right:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY CTA -->
+<div id="sticky-cta">
+  <span class="sticky-sub">15 founding spots remaining</span>
+  <a href="#apply" class="sticky-pill">
+    <span>🚀</span> Apply Now
+  </a>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="https://www.eworksocial.com" class="nav-logo">
+    <div class="nav-logo-icon">⚡</div>
+    <span class="nav-logo-text">eWork Social</span>
+  </a>
+  <div class="nav-right">
+    <a href="#why" class="nav-link">Why Join</a>
+    <a href="#howitworks" class="nav-link">How It Works</a>
+    <a href="#faq" class="nav-link">FAQ</a>
+    <a href="#apply" class="nav-btn">Apply Now →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="blob hero-blob-1"></div>
+  <div class="blob hero-blob-2"></div>
+  <div class="blob hero-blob-3"></div>
+
+  <div style="position:relative;z-index:1;max-width:780px">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      <span class="badge-text">FOUNDING COHORT · 15 SPOTS REMAINING</span>
+    </div>
+
+    <h1 class="hero-h1">
+      Become a Founding<br/>
+      <em>Growth Partner</em>
+    </h1>
+
+    <p class="hero-sub">
+      Help businesses simplify social media operations while growing your own business, audience, and recurring revenue.
+    </p>
+    <p class="hero-desc">
+      Instead of simply recommending another software tool, join a select group of agencies, consultants, creators, educators, and community leaders shaping the future of social media operations with eWork Social.
+    </p>
+
+    <div class="hero-btns">
+      <a href="#apply" class="btn-green">🟢 Apply Now — It's Free</a>
+      <a href="https://calendly.com/eworksocial" target="_blank" class="btn-outline">📞 Book a Discovery Call</a>
+    </div>
+
+    <div class="hero-scroll">
+      <span>LEARN MORE</span>
+      <a href="#trusted" class="scroll-arrow" style="color:var(--text3);text-decoration:none">↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- TRUSTED BY -->
+<div id="trusted" style="background:var(--bg2)">
+  <div class="trusted-inner">
+    <div class="trusted-label">BUILT FOR PEOPLE LIKE YOU</div>
+    <div class="trusted-track">
+      <div class="trusted-chip">🏢 Agency Owners</div>
+      <div class="trusted-chip">📊 Marketing Consultants</div>
+      <div class="trusted-chip">📱 Social Media Managers</div>
+      <div class="trusted-chip">🎥 Content Creators</div>
+      <div class="trusted-chip">🎓 Educators</div>
+      <div class="trusted-chip">👥 Community Leaders</div>
+      <div class="trusted-chip">🚀 Startup Coaches</div>
+      <div class="trusted-chip">⚡ Founders</div>
+    </div>
+  </div>
+</div>
+
+<!-- WHY WE BUILT THIS -->
+<section id="why">
+  <div class="section-inner">
+    <div class="why-grid">
+      <div class="why-visual">
+        <div class="why-visual-inner">
+          <div class="why-stat-row">
+            <div class="why-stat">
+              <div class="why-stat-num">100+</div>
+              <div class="why-stat-label">Client Workspaces</div>
+            </div>
+            <div class="why-stat">
+              <div class="why-stat-num">30%</div>
+              <div class="why-stat-label">Recurring Commission</div>
+            </div>
+          </div>
+          <div class="why-card">
+            <div class="why-card-icon">🏆</div>
+            <div class="why-card-text">
+              <strong>Founding Partner Status</strong>
+              Permanent recognition + roadmap influence for life
+            </div>
+          </div>
+          <div class="why-card">
+            <div class="why-card-icon">🎁</div>
+            <div class="why-card-text">
+              <strong>Free Agency Pro ($29/mo)</strong>
+              Full access to the platform — yours forever
+            </div>
+          </div>
+          <div class="why-card">
+            <div class="why-card-icon">📲</div>
+            <div class="why-card-text">
+              <strong>Direct Founder Access</strong>
+              WhatsApp + email with Bernard directly
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="why-text">
+        <div class="eyebrow eyebrow-purple">WHY WE BUILT THIS</div>
+        <h2 class="section-title">We believe the <span class="g-blue">right people</span> should share in what they help build</h2>
+        <p class="section-lead">The people closest to growing businesses — agencies, consultants, creators, and community leaders — are best positioned to help them discover better tools.</p>
+        <div class="why-bullets">
+          <div class="why-bullet">
+            <div class="why-bullet-dot">✓</div>
+            <p class="why-bullet-text"><strong>Not another affiliate link.</strong> We want partners who use the product, believe in the mission, and share it because it genuinely helps their audience.</p>
+          </div>
+          <div class="why-bullet">
+            <div class="why-bullet-dot">✓</div>
+            <p class="why-bullet-text"><strong>Founding partners shape the roadmap.</strong> Your feedback directly influences what we build next. This is a genuine seat at the table.</p>
+          </div>
+          <div class="why-bullet">
+            <div class="why-bullet-dot">✓</div>
+            <p class="why-bullet-text"><strong>Everyone in your audience wins.</strong> They get 50% lifetime discounts, priority onboarding, and founder support when they join through you.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THIS ISN'T AN AFFILIATE PROGRAM -->
+<section id="comparison">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="eyebrow eyebrow-amber" style="text-align:center">THE DIFFERENCE</div>
+      <h2 class="section-title">This isn't an <span class="g-blue">affiliate program</span></h2>
+      <p class="section-lead" style="margin:0 auto">Most affiliate programs are transactional. We're building something different — a collaborative ecosystem where partners grow alongside the platform.</p>
+    </div>
+
+    <div class="comparison-grid">
+      <!-- Old -->
+      <div class="cmp-card cmp-old">
+        <div class="cmp-badge cmp-badge-old">TRADITIONAL AFFILIATE</div>
+        <div class="cmp-title" style="color:var(--text2)">Standard Referral Program</div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>One-time or small commission</span></div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>No relationship with the company</span></div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>No product input or influence</span></div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>Generic promo links & banners</span></div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>No support for your audience</span></div>
+        <div class="cmp-item"><span class="cmp-x">✕</span><span>Replaceable at any time</span></div>
+      </div>
+
+      <!-- VS -->
+      <div class="cmp-card cmp-middle">
+        <div class="cmp-middle-vs">VS</div>
+      </div>
+
+      <!-- New -->
+      <div class="cmp-card cmp-new">
+        <span class="cmp-star">⭐ RECOMMENDED</span>
+        <div class="cmp-badge cmp-badge-new">FOUNDING GROWTH PARTNER</div>
+        <div class="cmp-title" style="color:var(--blue-light)">Partnership That Grows With You</div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>30% <strong>recurring</strong> commission for life</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Direct access to the founder</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Shape the product roadmap</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Co-marketing & content collaboration</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>50% discount for your audience — forever</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Founding Partner badge & recognition</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO SHOULD JOIN -->
+<section id="who">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="eyebrow eyebrow-green" style="text-align:center">WHO QUALIFIES</div>
+      <h2 class="section-title">Who should <span class="g-green">join?</span></h2>
+      <p class="section-lead" style="margin:0 auto">If you work with businesses, creators, or professionals who manage social media — this was built for you.</p>
+    </div>
+
+    <div class="who-grid">
+      <div class="who-card" style="--c1:#2563EB;--c2:#8B5CF6"><div class="who-icon">🏢</div><div class="who-label">Agency Owners</div><div class="who-sub">Managing multiple clients</div></div>
+      <div class="who-card" style="--c1:#10B981;--c2:#2563EB"><div class="who-icon">📊</div><div class="who-label">Marketing Consultants</div><div class="who-sub">Strategy & execution</div></div>
+      <div class="who-card" style="--c1:#F59E0B;--c2:#EF4444"><div class="who-icon">📱</div><div class="who-label">Social Media Managers</div><div class="who-sub">Content & community</div></div>
+      <div class="who-card" style="--c1:#8B5CF6;--c2:#EC4899"><div class="who-icon">🎥</div><div class="who-label">Creators</div><div class="who-sub">YouTube, IG, TikTok</div></div>
+      <div class="who-card" style="--c1:#EC4899;--c2:#F59E0B"><div class="who-icon">🎓</div><div class="who-label">Educators</div><div class="who-sub">Courses & training</div></div>
+      <div class="who-card" style="--c1:#10B981;--c2:#8B5CF6"><div class="who-icon">👥</div><div class="who-label">Community Leaders</div><div class="who-sub">Facebook, Discord, WhatsApp</div></div>
+      <div class="who-card" style="--c1:#2563EB;--c2:#10B981"><div class="who-icon">🚀</div><div class="who-label">Startup Ecosystems</div><div class="who-sub">Incubators & hubs</div></div>
+      <div class="who-card" style="--c1:#F59E0B;--c2:#8B5CF6"><div class="who-icon">🧠</div><div class="who-label">Business Coaches</div><div class="who-sub">Helping clients scale</div></div>
+      <div class="who-card" style="--c1:#EF4444;--c2:#2563EB"><div class="who-icon">⚙️</div><div class="who-label">Automation Experts</div><div class="who-sub">n8n, Make, Zapier</div></div>
+      <div class="who-card" style="--c1:#10B981;--c2:#EC4899"><div class="who-icon">📈</div><div class="who-label">Growth Advisors</div><div class="who-sub">Scaling brands</div></div>
+      <div class="who-card" style="--c1:#8B5CF6;--c2:#F59E0B"><div class="who-icon">💼</div><div class="who-label">Freelancers</div><div class="who-sub">Independent operators</div></div>
+      <div class="who-card" style="--c1:#2563EB;--c2:#EF4444"><div class="who-icon">⚡</div><div class="who-label">Operations Specialists</div><div class="who-sub">Process & workflow</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY PARTNERS JOIN -->
+<section id="benefits">
+  <div class="blob" style="width:400px;height:400px;background:var(--purple);top:-80px;right:-80px;opacity:0.15;animation-duration:13s"></div>
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="eyebrow eyebrow-purple" style="text-align:center">PARTNER PERKS</div>
+      <h2 class="section-title">Why partners <span class="g-blue">love it</span></h2>
+      <p class="section-lead" style="margin:0 auto">Every perk is designed to help you grow — not just send a referral link and hope for the best.</p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-card" style="--c1:#F59E0B;--c2:#EF4444">
+        <div class="benefit-icon-wrap" style="--c1:rgba(245,158,11,0.4);--c2:rgba(239,68,68,0.2)">👑</div>
+        <div class="benefit-title">Free Agency Pro</div>
+        <div class="benefit-desc">Full platform access worth $29/month — free for all founding partners. Use every feature, manage real clients.</div>
+      </div>
+      <div class="benefit-card" style="--c1:#10B981;--c2:#2563EB">
+        <div class="benefit-icon-wrap" style="--c1:rgba(16,185,129,0.4);--c2:rgba(37,99,235,0.2)">💰</div>
+        <div class="benefit-title">Recurring Revenue</div>
+        <div class="benefit-desc">30% monthly commission on every subscriber you refer — for as long as they remain a customer. No cap, no expiry.</div>
+      </div>
+      <div class="benefit-card" style="--c1:#2563EB;--c2:#8B5CF6">
+        <div class="benefit-icon-wrap" style="--c1:rgba(37,99,235,0.4);--c2:rgba(139,92,246,0.2)">📲</div>
+        <div class="benefit-title">Founder Access</div>
+        <div class="benefit-desc">Direct WhatsApp and email line to Bernard. Real conversations, real responses — not a ticket system.</div>
+      </div>
+      <div class="benefit-card" style="--c1:#8B5CF6;--c2:#EC4899">
+        <div class="benefit-icon-wrap" style="--c1:rgba(139,92,246,0.4);--c2:rgba(236,72,153,0.2)">🗺️</div>
+        <div class="benefit-title">Roadmap Influence</div>
+        <div class="benefit-desc">Your feedback shapes what gets built next. Founding partners get a real vote in product direction — not just a survey.</div>
+      </div>
+      <div class="benefit-card" style="--c1:#EC4899;--c2:#F59E0B">
+        <div class="benefit-icon-wrap" style="--c1:rgba(236,72,153,0.4);--c2:rgba(245,158,11,0.2)">🎯</div>
+        <div class="benefit-title">Co-Marketing</div>
+        <div class="benefit-desc">We promote you in return. Partner spotlights, social shares, newsletter features, and joint content opportunities.</div>
+      </div>
+      <div class="benefit-card" style="--c1:#10B981;--c2:#F59E0B">
+        <div class="benefit-icon-wrap" style="--c1:rgba(16,185,129,0.4);--c2:rgba(245,158,11,0.2)">🚀</div>
+        <div class="benefit-title">Early Feature Access</div>
+        <div class="benefit-desc">Unified Inbox, AI content tools, advanced analytics — you get beta access before anyone else. Test and give feedback first.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="howitworks">
+  <div class="section-inner">
+    <div>
+      <div class="eyebrow eyebrow-blue">THE PROCESS</div>
+      <h2 class="section-title">How it <span class="g-blue">works</span></h2>
+      <p class="section-lead">Seven simple steps from application to earning. The whole process takes less than a week.</p>
+    </div>
+
+    <div class="steps-wrap">
+      <div class="steps-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Apply</div>
+            <div class="step-desc">Fill in the short application below. Tell us who you are, who you serve, and why you're interested. No pitch deck needed.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Discovery Call</div>
+            <div class="step-desc">We jump on a 20-min video call. No hard sell — just a genuine conversation about your audience and how we can help each other.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Get Approved</div>
+            <div class="step-desc">You'll receive a welcome email within 24 hours with your founding partner status confirmed and next steps.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Receive Your Partner Kit</div>
+            <div class="step-desc">Branded assets, exclusive referral link with tracking dashboard, talking points, and your unique audience discount code.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Use eWork Social</div>
+            <div class="step-desc">Your free Agency Pro account goes live. Start managing your own social media on the platform — authentic experience matters.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <div class="step-title">Share Naturally</div>
+            <div class="step-desc">Share with your audience the way you normally would — posts, newsletters, podcasts, client conversations. No scripts required.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:linear-gradient(135deg,var(--green),var(--blue-light))">7</div>
+          <div class="step-content">
+            <div class="step-title" style="color:var(--green-light)">Earn Together 🎉</div>
+            <div class="step-desc">30% recurring monthly commission flows in. Track referrals, conversions, and earnings in your partner dashboard in real-time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps-visual">
+        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--text3);margin-bottom:20px">PARTNER DASHBOARD PREVIEW</div>
+        <div class="step-preview">
+          <div class="step-preview-head">
+            <div class="step-preview-dot" style="background:var(--green)"></div>
+            <div class="step-preview-label">Monthly Earnings</div>
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;background:linear-gradient(90deg,var(--green-light),var(--blue-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">$247<span style="font-size:14px;font-weight:400;color:var(--text3)"> / this month</span></div>
+          <div class="step-preview-body">from 12 active referrals · ↑ 18% vs last month</div>
+          <div class="step-preview-tag">✓ Payment pending — 1st of month</div>
+        </div>
+        <div class="step-preview">
+          <div class="step-preview-head">
+            <div class="step-preview-dot" style="background:var(--blue-light)"></div>
+            <div class="step-preview-label">Your Referral Link</div>
+          </div>
+          <div class="step-preview-body" style="font-family:monospace;font-size:11px;background:rgba(255,255,255,0.04);padding:8px;border-radius:6px;color:var(--blue-light)">eworksocial.com/ref/yourname</div>
+          <div class="step-preview-body" style="margin-top:8px">Your audience gets 50% off. You earn 30% monthly.</div>
+        </div>
+        <div class="step-preview">
+          <div class="step-preview-head">
+            <div class="step-preview-dot" style="background:var(--purple-light)"></div>
+            <div class="step-preview-label">Founding Partner Status</div>
+          </div>
+          <div class="step-preview-body">🏆 Cohort 1 · Founding Member<br/>Roadmap access · Direct line to Bernard</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- YOUR AUDIENCE BENEFITS -->
+<section id="audience">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="eyebrow eyebrow-green" style="text-align:center">WHAT YOUR AUDIENCE GETS</div>
+      <h2 class="section-title">Your audience benefits <span class="g-green">too</span></h2>
+      <p class="section-lead" style="margin:0 auto">Every person you send to eWork Social gets an experience that reflects well on you — not just a signup page.</p>
+    </div>
+
+    <div class="audience-grid">
+      <div class="aud-card">
+        <div class="aud-emoji">💸</div>
+        <div class="aud-title">50% Lifetime Discount</div>
+        <div class="aud-desc">Locked in at founding member price — forever, not just the first month</div>
+      </div>
+      <div class="aud-card">
+        <div class="aud-emoji">🚀</div>
+        <div class="aud-title">Priority Onboarding</div>
+        <div class="aud-desc">White-glove setup call and dedicated onboarding support</div>
+      </div>
+      <div class="aud-card">
+        <div class="aud-emoji">📲</div>
+        <div class="aud-title">Founder Support</div>
+        <div class="aud-desc">Your referrals get direct access to Bernard — not a support bot</div>
+      </div>
+      <div class="aud-card">
+        <div class="aud-emoji">⚡</div>
+        <div class="aud-title">Early Features</div>
+        <div class="aud-desc">Access to beta features before the general public</div>
+      </div>
+      <div class="aud-card">
+        <div class="aud-emoji">🏘️</div>
+        <div class="aud-title">Exclusive Community</div>
+        <div class="aud-desc">Partner community with peer support, resources, and templates</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNER BENEFITS DETAIL -->
+<section id="partner-benefits">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="eyebrow eyebrow-amber" style="text-align:center">IN YOUR PARTNER KIT</div>
+      <h2 class="section-title">Everything you <span class="g-blue">receive</span></h2>
+    </div>
+
+    <div class="pb-grid">
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(245,158,11,0.15)">👑</div>
+        <div class="pb-text">
+          <div class="pb-title">Free Agency Pro</div>
+          <div class="pb-desc">Full platform access — $29/month value — at no cost. Manage real client accounts on eWork Social from day one.</div>
+        </div>
+      </div>
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(16,185,129,0.15)">📦</div>
+        <div class="pb-text">
+          <div class="pb-title">Partner Resource Kit</div>
+          <div class="pb-desc">Branded graphics, caption templates, talking points, email swipe copy — everything you need to share confidently.</div>
+        </div>
+      </div>
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(37,99,235,0.15)">💰</div>
+        <div class="pb-text">
+          <div class="pb-title">Recurring Commissions</div>
+          <div class="pb-desc">30% of every monthly payment from your referrals — paid monthly, tracked in real-time, no minimum payout.</div>
+        </div>
+      </div>
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(139,92,246,0.15)">📣</div>
+        <div class="pb-text">
+          <div class="pb-title">Co-Marketing Support</div>
+          <div class="pb-desc">We feature our partners. Expect newsletter shoutouts, social media reposts, and co-branded content opportunities.</div>
+        </div>
+      </div>
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(236,72,153,0.15)">🧪</div>
+        <div class="pb-text">
+          <div class="pb-title">Beta Feature Access</div>
+          <div class="pb-desc">You see new features first. AI writing tools, Unified Inbox, advanced analytics — partners get early access before launch.</div>
+        </div>
+      </div>
+      <div class="pb-card">
+        <div class="pb-icon" style="background:rgba(16,185,129,0.15)">🏅</div>
+        <div class="pb-text">
+          <div class="pb-title">Founding Partner Badge</div>
+          <div class="pb-desc">Permanent recognition as a Cohort 1 founding partner — on your profile, in the community, and in our public partner directory.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="eyebrow eyebrow-blue" style="text-align:center">COMMON QUESTIONS</div>
+      <h2 class="section-title">Before you <span class="g-blue">apply</span></h2>
+      <p class="section-lead" style="margin:0 auto">Everything you need to know to make an informed decision.</p>
+    </div>
+
+    <div class="faq-list" id="faq-list">
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">Do I need to have a large community or audience?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">No. Audience size is not the primary qualifier. We're looking for people with genuine relationships and credibility in their space — whether that's 200 people in a WhatsApp group or 20,000 LinkedIn followers. What matters is that your audience trusts you and manages social media in some capacity.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">How do commissions work exactly?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">You receive a unique referral link. When someone signs up through your link and converts to a paid plan, you earn 30% of their monthly subscription — every month, for as long as they remain a paying customer. If they upgrade their plan, your commission goes up. Payments are made monthly via bank transfer, Paystack, or PayPal.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">Who qualifies to be a Founding Growth Partner?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Anyone who works with or serves businesses, creators, or professionals who manage social media. This includes agency owners, freelance social media managers, marketing consultants, educators, community leaders, startup coaches, content creators, and automation specialists. If you're unsure, apply anyway — we'll have an honest conversation about fit on the discovery call.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">Can agencies join as partners?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Absolutely — agencies are our ideal partners. If you're running a digital marketing or social media agency, you're the target user for eWork Social AND the best person to recommend it to other agency owners, in-house teams, and business owners. Your Agency Pro account will be set up immediately so you can use it with real clients right away.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">Is there any cost to join the partner program?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Zero. There is no joining fee, no monthly fee, and no minimum referral requirement. The program is entirely free. You receive a complimentary Agency Pro account (worth $29/month) the moment you're approved — and you start earning commissions from your very first referral.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">How many founding partners will there be?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">We're limiting Founding Cohort 1 to 50 partners globally. This is intentional — we want a tight group where every founding partner gets genuine founder attention, roadmap input, and meaningful co-marketing. Once 50 spots are filled, the programme closes. A waitlist will open for Cohort 2 with different terms.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">Do I have to use eWork Social myself?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes — and that's a feature, not a requirement. We believe authentic recommendation comes from genuine use. Your free Agency Pro account lets you manage your own social media on the platform. When you share it, you're sharing something you actually use — and your audience can feel that difference.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span class="faq-q-text">What happens if eWork Social introduces new plans or increases prices?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Founding partners are protected. Your commission rate is locked at 30% regardless of future pricing changes. Your audience's 50% discount is honoured permanently. These are founding-member guarantees, not marketing copy.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA / APPLY -->
+<section id="final-cta">
+  <div class="cta-bg"></div>
+  <div class="blob cta-blob-1"></div>
+  <div class="blob cta-blob-2"></div>
+  <div class="blob cta-blob-3" style="opacity:0.2"></div>
+
+  <div class="cta-inner" id="apply">
+    <div class="eyebrow eyebrow-green">READY TO GROW TOGETHER?</div>
+    <h2 class="cta-h2">Become one of our<br/><em>Founding Growth Partners</em></h2>
+    <p class="cta-sub">15 of 50 founding spots remaining. Apply in under 2 minutes — no pitch deck, no formalities.</p>
+
+    <div class="cta-btns">
+      <a href="https://forms.gle/your-form-link" target="_blank" class="btn-green" style="font-size:16px;padding:17px 36px">🟢 Apply Now — Free to Join</a>
+      <a href="https://calendly.com/eworksocial" target="_blank" class="btn-outline" style="font-size:16px;padding:17px 36px">📞 Book a Discovery Call</a>
+    </div>
+
+    <div class="cta-spots">
+      <div class="cta-spots-bar"><div class="cta-spots-fill"></div></div>
+      <span class="cta-spots-text"><strong>35/50</strong> spots claimed · Cohort 1 closes when full</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand-name">
+          <div class="footer-brand-icon">⚡</div>
+          eWork Social
+        </div>
+        <p class="footer-brand-desc">The all-in-one social media management platform built for agencies, consultants, and creators who manage multiple clients.</p>
+
+        <div class="footer-contact-head">QUESTIONS? REACH BERNARD DIRECTLY</div>
+        <div class="footer-contact-links">
+          <a href="https://calendly.com/eworksocial" target="_blank" class="footer-contact-link">
+            <div class="footer-contact-icon" style="background:rgba(37,99,235,0.15)">📅</div>
+            Schedule a discovery call
+          </a>
+          <a href="mailto:info.oshapify@gmail.com" class="footer-contact-link">
+            <div class="footer-contact-icon" style="background:rgba(16,185,129,0.15)">✉️</div>
+            info.oshapify@gmail.com
+          </a>
+          <a href="https://linkedin.com/in/bernardoshapi" target="_blank" class="footer-contact-link">
+            <div class="footer-contact-icon" style="background:rgba(96,165,250,0.15)">💼</div>
+            Connect on LinkedIn
+          </a>
+          <a href="https://wa.me/your-number" target="_blank" class="footer-contact-link">
+            <div class="footer-contact-icon" style="background:rgba(34,197,94,0.15)">💬</div>
+            WhatsApp — say hello
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-head">Platform</div>
+        <div class="footer-col-links">
+          <a href="https://www.eworksocial.com" class="footer-col-link">Home</a>
+          <a href="https://www.eworksocial.com/#features" class="footer-col-link">Features</a>
+          <a href="https://www.eworksocial.com/#pricing" class="footer-col-link">Pricing</a>
+          <a href="https://www.eworksocial.com/blog" class="footer-col-link">Blog</a>
+          <a href="https://app.eworksocial.com/register" class="footer-col-link">Start Free Trial</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-head">Partner Program</div>
+        <div class="footer-col-links">
+          <a href="#why" class="footer-col-link">Why Join</a>
+          <a href="#benefits" class="footer-col-link">Partner Benefits</a>
+          <a href="#howitworks" class="footer-col-link">How It Works</a>
+          <a href="#faq" class="footer-col-link">FAQ</a>
+          <a href="#apply" class="footer-col-link">Apply Now</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-head">Legal</div>
+        <div class="footer-col-links">
+          <a href="https://www.eworksocial.com/privacy" class="footer-col-link">Privacy Policy</a>
+          <a href="https://www.eworksocial.com/terms" class="footer-col-link">Terms of Service</a>
+        </div>
+
+        <div class="footer-col-head" style="margin-top:28px">People Buy Founders</div>
+        <p style="font-size:12.5px;color:var(--text3);line-height:1.7;font-style:italic">"I'm Bernard — a Digital Marketing Manager & AI automation strategist building eWork Social because I lived the chaos of managing multiple clients across five tools. I'm building the tool I always needed."</p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 eWork Social · A product of <strong>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</div>
+      <div class="footer-tagline">Built for agencies, everywhere 🌍</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Sticky CTA
+const stickyCta = document.getElementById('sticky-cta');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 400) stickyCta.classList.add('visible');
+  else stickyCta.classList.remove('visible');
+});
+
+// FAQ Accordion
+document.querySelectorAll('.faq-question').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const answer = item.querySelector('.faq-answer');
+    const isOpen = item.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.faq-item').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.faq-answer').classList.remove('open');
+    });
+
+    // Open clicked if it was closed
+    if (!isOpen) {
+      item.classList.add('open');
+      answer.classList.add('open');
+    }
+  });
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Intersection observer for section animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.style.opacity = '1';
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.benefit-card, .who-card, .aud-card, .pb-card, .faq-item').forEach(el => {
+  el.style.transition = 'opacity 0.6s ease, transform 0.3s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
