@@ -4,152 +4,650 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import {
-  MessageSquare, Mail, CheckCircle, RefreshCw,
-  Send, Sparkles, Filter, Instagram, Facebook,
-  Clock, User, ChevronDown
+  MessageSquare, CheckCircle, RefreshCw, Send, Sparkles,
+  Tag, Users, Link2, X, ChevronDown, Search, Plus,
+  Inbox, Zap, Instagram, Twitter, Facebook, AtSign,
+  Clock, TrendingUp, Eye, ArrowRight,
 } from 'lucide-react';
 
-const PLATFORM_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  INSTAGRAM: { bg: '#E1306C', text: '#fff', label: 'Instagram' },
-  FACEBOOK:  { bg: '#1877F2', text: '#fff', label: 'Facebook' },
+/* ─────────────── platform config ───────────────────────────── */
+
+const PLATFORM: Record<string, { gradient: string; glow: string; dot: string; icon: React.ReactNode; label: string }> = {
+  INSTAGRAM: {
+    gradient: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+    glow: 'rgba(225,48,108,0.35)',
+    dot: '#E1306C',
+    icon: <Instagram size={10} />,
+    label: 'Instagram',
+  },
+  FACEBOOK: {
+    gradient: 'linear-gradient(135deg, #1877F2, #0a5bd4)',
+    glow: 'rgba(24,119,242,0.35)',
+    dot: '#1877F2',
+    icon: <Facebook size={10} />,
+    label: 'Facebook',
+  },
+  TWITTER: {
+    gradient: 'linear-gradient(135deg, #1DA1F2, #0d8bd9)',
+    glow: 'rgba(29,161,242,0.35)',
+    dot: '#1DA1F2',
+    icon: <Twitter size={10} />,
+    label: 'X / Twitter',
+  },
+  THREADS: {
+    gradient: 'linear-gradient(135deg, #333, #111)',
+    glow: 'rgba(0,0,0,0.3)',
+    dot: '#333',
+    icon: <AtSign size={10} />,
+    label: 'Threads',
+  },
 };
 
-const TYPE_META: Record<string, { label: string; icon: any }> = {
-  DM:      { label: 'Direct Message', icon: Mail },
-  COMMENT: { label: 'Comment',        icon: MessageSquare },
+const TAG_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  'Lead':        { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)',  text: '#3B82F6', dot: '#3B82F6' },
+  'VIP Client':  { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',  text: '#D97706', dot: '#F59E0B' },
+  'Support':     { bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)',  text: '#7C3AED', dot: '#8B5CF6' },
+  'Opportunity': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)',  text: '#059669', dot: '#10B981' },
+  'Spam':        { bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.3)',   text: '#DC2626', dot: '#EF4444' },
+  'Follow Up':   { bg: 'rgba(236,72,153,0.12)', border: 'rgba(236,72,153,0.3)',  text: '#DB2777', dot: '#EC4899' },
 };
+
+const AVAILABLE_TAGS = Object.keys(TAG_COLORS);
 
 function formatTime(iso: string) {
   const d = new Date(iso);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
+  const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1)  return 'Just now';
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24)  return `${hrs}h`;
   return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
 }
 
-function PlatformBadge({ platform }: { platform: string }) {
-  const meta = PLATFORM_COLORS[platform] || { bg: '#378ADD', text: '#fff', label: platform };
+/* ─────────────── shimmer skeleton ──────────────────────────── */
+
+function Shimmer({ w, h, r = 8 }: { w: string | number; h: number; r?: number }) {
   return (
-    <span style={{
-      background: meta.bg, color: meta.text,
-      fontSize: 10, fontWeight: 700, padding: '2px 8px',
-      borderRadius: 999, letterSpacing: 0.5,
-    }}>{meta.label}</span>
+    <div style={{
+      width: w, height: h, borderRadius: r,
+      background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.4s infinite',
+    }} />
   );
 }
 
-function MessageCard({ msg, isSelected, onClick }: { msg: any; isSelected: boolean; onClick: () => void }) {
-  const TypeIcon = TYPE_META[msg.type]?.icon || MessageSquare;
+function SkeletonCard() {
   return (
-    <div
-      onClick={onClick}
-      className="cursor-pointer transition-all"
-      style={{
-        padding: '14px 16px',
-        background: isSelected ? 'rgba(37,99,235,0.08)' : msg.isRead ? '#fff' : 'rgba(37,99,235,0.04)',
-        borderLeft: `3px solid ${isSelected ? '#2563EB' : msg.isRead ? 'transparent' : '#2563EB'}`,
-        borderBottom: '1px solid #F1F5F9',
-      }}
-    >
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div style={{
-          width: 38, height: 38, borderRadius: '50%',
-          background: PLATFORM_COLORS[msg.platform]?.bg || '#378ADD',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: 14, fontWeight: 700, flexShrink: 0,
-        }}>
-          {(msg.senderName || '?').charAt(0).toUpperCase()}
+    <div style={{ padding: '14px 16px', borderBottom: '1px solid #F1F5F9', display: 'flex', gap: 12 }}>
+      <Shimmer w={40} h={40} r={20} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Shimmer w={90} h={12} />
+          <Shimmer w={56} h={12} r={20} />
         </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-800 text-sm">
-                {msg.senderName || 'Unknown'}
-              </span>
-              <PlatformBadge platform={msg.platform} />
-              <span style={{
-                display: 'flex', alignItems: 'center', gap: 3,
-                color: '#94A3B8', fontSize: 11,
-              }}>
-                <TypeIcon size={10} />
-                {TYPE_META[msg.type]?.label}
-              </span>
-            </div>
-            <span className="text-slate-400 text-xs flex-shrink-0">{formatTime(msg.createdAt)}</span>
-          </div>
-          <p className="text-slate-500 text-xs line-clamp-2">{msg.content}</p>
-          {msg.isResolved && (
-            <span className="inline-flex items-center gap-1 mt-1 text-green-600 text-xs font-medium">
-              <CheckCircle size={10} /> Resolved
-            </span>
-          )}
-        </div>
-
-        {/* Unread dot */}
-        {!msg.isRead && (
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', flexShrink: 0, marginTop: 4 }} />
-        )}
+        <Shimmer w="80%" h={11} />
+        <Shimmer w="45%" h={10} r={20} />
       </div>
     </div>
   );
 }
 
+/* ─────────────── empty state ────────────────────────────────── */
+
+function EmptyState({ filtered }: { filtered: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40, textAlign: 'center' }}>
+      {/* Animated rings */}
+      <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 28 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '2px solid',
+            borderColor: i === 0 ? 'rgba(99,102,241,0.5)' : i === 1 ? 'rgba(139,92,246,0.3)' : 'rgba(167,139,250,0.15)',
+            animation: `ping ${1.4 + i * 0.4}s ease-out infinite`,
+            animationDelay: `${i * 0.3}s`,
+          }} />
+        ))}
+        <div style={{
+          position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)',
+          width: 56, height: 56, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
+        }}>
+          <Inbox size={24} color="#fff" />
+        </div>
+      </div>
+
+      <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1E293B', marginBottom: 8 }}>
+        {filtered ? 'No messages match' : 'Your inbox is ready'}
+      </h3>
+      <p style={{ fontSize: 13, color: '#94A3B8', maxWidth: 240, lineHeight: 1.6, marginBottom: 20 }}>
+        {filtered
+          ? 'Try adjusting your filters or search to find what you\'re looking for.'
+          : 'Messages from Instagram, Facebook, and Twitter will appear here the moment they arrive.'}
+      </p>
+
+      {!filtered && (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {['Instagram', 'Facebook', 'X / Twitter'].map((p, i) => {
+            const colors = [
+              'linear-gradient(135deg, #f09433, #dc2743, #bc1888)',
+              'linear-gradient(135deg, #1877F2, #0a5bd4)',
+              'linear-gradient(135deg, #1DA1F2, #0d8bd9)',
+            ];
+            return (
+              <div key={p} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 999,
+                background: colors[i], color: '#fff',
+                fontSize: 11, fontWeight: 700,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                animation: `float ${2 + i * 0.3}s ease-in-out infinite alternate`,
+                animationDelay: `${i * 0.2}s`,
+              }}>
+                <Zap size={10} /> {p}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────── no-thread-selected state ───────────────────── */
+
+function NoThreadSelected() {
+  const tips = [
+    { icon: <Tag size={16} />, text: 'Tag conversations as Lead, VIP, or Support', color: '#3B82F6' },
+    { icon: <Link2 size={16} />, text: 'Link messages directly to CRM contacts', color: '#10B981' },
+    { icon: <Sparkles size={16} />, text: 'Get AI-suggested replies in one click', color: '#8B5CF6' },
+    { icon: <Users size={16} />, text: 'Assign threads to team members', color: '#F59E0B' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+      {/* Hero icon */}
+      <div style={{
+        width: 80, height: 80, borderRadius: 24,
+        background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 24, boxShadow: '0 16px 48px rgba(99,102,241,0.35)',
+        animation: 'float 3s ease-in-out infinite alternate',
+      }}>
+        <MessageSquare size={36} color="#fff" />
+      </div>
+
+      <h3 style={{ fontSize: 20, fontWeight: 800, color: '#1E293B', marginBottom: 8 }}>
+        Select a conversation
+      </h3>
+      <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 32, textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>
+        Click any message on the left to open the thread, reply, tag it, or connect it to your CRM.
+      </p>
+
+      {/* Feature tip cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 320 }}>
+        {tips.map((tip, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: 14,
+            background: '#FAFBFF',
+            border: '1px solid #EEF2FF',
+            animation: `slideUp 0.4s ease both`,
+            animationDelay: `${i * 0.08}s`,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: `${tip.color}18`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: tip.color, flexShrink: 0,
+            }}>
+              {tip.icon}
+            </div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#475569', lineHeight: 1.4 }}>{tip.text}</p>
+            <ArrowRight size={12} color="#CBD5E1" style={{ marginLeft: 'auto', flexShrink: 0 }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────── platform badge ─────────────────────────────── */
+
+function PlatformBadge({ platform }: { platform: string }) {
+  const p = PLATFORM[platform];
+  if (!p) return <span style={{ fontSize: 10, fontWeight: 700, background: '#E2E8F0', color: '#64748B', padding: '2px 8px', borderRadius: 999 }}>{platform}</span>;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      background: p.gradient, color: '#fff',
+      fontSize: 10, fontWeight: 700, padding: '2px 9px',
+      borderRadius: 999, letterSpacing: 0.2, boxShadow: `0 2px 6px ${p.glow}`,
+    }}>
+      {p.icon} {p.label}
+    </span>
+  );
+}
+
+/* ─────────────── avatar ─────────────────────────────────────── */
+
+function Avatar({ name, platform, size = 40 }: { name?: string; platform: string; size?: number }) {
+  const p = PLATFORM[platform];
+  const initial = (name || '?').charAt(0).toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size / 2,
+      background: p?.gradient || 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontSize: size * 0.35, fontWeight: 800,
+      flexShrink: 0, boxShadow: `0 4px 12px ${p?.glow || 'rgba(99,102,241,0.3)'}`,
+      position: 'relative',
+    }}>
+      {initial}
+      {/* Platform dot */}
+      <div style={{
+        position: 'absolute', bottom: 0, right: 0,
+        width: size * 0.3, height: size * 0.3, borderRadius: '50%',
+        background: p?.dot || '#6366F1',
+        border: '2px solid #fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.12,
+      }} />
+    </div>
+  );
+}
+
+/* ─────────────── tag chip ───────────────────────────────────── */
+
+function TagChip({ tag, onRemove }: { tag: string; onRemove?: () => void }) {
+  const c = TAG_COLORS[tag] || { bg: '#f1f5f9', border: '#e2e8f0', text: '#64748b', dot: '#94a3b8' };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: c.bg, border: `1px solid ${c.border}`,
+      color: c.text, fontSize: 10, fontWeight: 700,
+      padding: '3px 9px', borderRadius: 999,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
+      {tag}
+      {onRemove && (
+        <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text, padding: 0, lineHeight: 1, opacity: 0.7 }}>×</button>
+      )}
+    </span>
+  );
+}
+
+/* ─────────────── message card ───────────────────────────────── */
+
+function MessageCard({ msg, isSelected, onClick }: { msg: any; isSelected: boolean; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  const p = PLATFORM[msg.platform];
+  const unread = !msg.isRead;
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '14px 16px',
+        cursor: 'pointer',
+        background: isSelected
+          ? 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%)'
+          : hovered ? '#FAFBFF' : unread ? 'rgba(99,102,241,0.03)' : '#fff',
+        borderLeft: `3px solid ${isSelected ? '#6366F1' : unread ? (p?.dot || '#6366F1') : 'transparent'}`,
+        borderBottom: '1px solid #F1F5F9',
+        transition: 'all 0.15s ease',
+        position: 'relative',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ position: 'relative' }}>
+          <Avatar name={msg.senderName} platform={msg.platform} size={40} />
+          {unread && (
+            <div style={{
+              position: 'absolute', top: -2, right: -2,
+              width: 10, height: 10, borderRadius: '50%',
+              background: p?.dot || '#6366F1',
+              border: '2px solid #fff',
+              animation: 'pulseGlow 2s infinite',
+            }} />
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+            <span style={{ fontWeight: unread ? 800 : 600, fontSize: 13, color: '#1E293B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
+              {msg.senderName || 'Unknown'}
+            </span>
+            <span style={{ fontSize: 11, color: '#94A3B8', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Clock size={9} /> {formatTime(msg.createdAt)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <PlatformBadge platform={msg.platform} />
+            {msg.type === 'COMMENT' && (
+              <span style={{ fontSize: 10, background: '#FEF3C7', color: '#D97706', padding: '1px 7px', borderRadius: 999, fontWeight: 700 }}>Comment</span>
+            )}
+          </div>
+
+          <p style={{ fontSize: 12, color: unread ? '#334155' : '#64748B', fontWeight: unread ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4, marginBottom: 6 }}>
+            {msg.content}
+          </p>
+
+          {/* Tags + CRM badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            {msg.tags?.slice(0, 2).map((t: string) => <TagChip key={t} tag={t} />)}
+            {msg.crmClient && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', padding: '2px 7px', borderRadius: 999, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Link2 size={9} /> {msg.crmClient.name}
+              </span>
+            )}
+            {msg.isResolved && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 3 }}>
+                <CheckCircle size={9} /> Done
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Hover slide-in arrow */}
+      {(hovered || isSelected) && (
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', opacity: isSelected ? 1 : 0.4 }}>
+          <ArrowRight size={14} color={isSelected ? '#6366F1' : '#94A3B8'} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────── stat card ──────────────────────────────────── */
+
+function StatCard({ label, value, icon, gradient, sub }: { label: string; value: number; icon: React.ReactNode; gradient: string; sub?: string }) {
+  return (
+    <div style={{
+      background: '#fff', borderRadius: 16, padding: '16px 18px',
+      border: '1px solid #EEF2FF',
+      boxShadow: '0 2px 12px rgba(99,102,241,0.06)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* BG glow blob */}
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: gradient, opacity: 0.1 }} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: 28, fontWeight: 900, color: '#1E293B', letterSpacing: '-1.5px', lineHeight: 1 }}>{value.toLocaleString()}</p>
+          <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, marginTop: 4 }}>{label}</p>
+          {sub && <p style={{ fontSize: 10, color: '#CBD5E1', marginTop: 2 }}>{sub}</p>}
+        </div>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', flexShrink: 0,
+          boxShadow: `0 4px 14px rgba(0,0,0,0.15)`,
+        }}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────── tag picker ─────────────────────────────────── */
+
+function TagPicker({ currentTags, onSave }: { currentTags: string[]; onSave: (tags: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>(currentTags);
+  useEffect(() => setSelected(currentTags), [currentTags]);
+  const toggle = (t: string) => setSelected(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const save = () => { onSave(selected); setOpen(false); };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '7px 12px', borderRadius: 10,
+        border: '1.5px solid #E2E8F0', background: '#FAFBFF',
+        color: '#64748B', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+        transition: 'all 0.15s',
+      }}>
+        <Tag size={12} /> Tags <ChevronDown size={10} />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
+          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.12)', padding: 10, minWidth: 185,
+          animation: 'dropIn 0.15s ease',
+        }}>
+          <p style={{ fontSize: 10, fontWeight: 800, color: '#94A3B8', padding: '4px 8px 8px', letterSpacing: 1, textTransform: 'uppercase' }}>Apply Tags</p>
+          {AVAILABLE_TAGS.map(tag => {
+            const c = TAG_COLORS[tag];
+            const active = selected.includes(tag);
+            return (
+              <button key={tag} onClick={() => toggle(tag)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 10px', borderRadius: 10, border: 'none',
+                background: active ? c.bg : 'none', cursor: 'pointer',
+                transition: 'all 0.12s',
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: active ? c.text : '#475569', flex: 1, textAlign: 'left' }}>{tag}</span>
+                {active && <CheckCircle size={12} style={{ color: c.dot }} />}
+              </button>
+            );
+          })}
+          <div style={{ borderTop: '1px solid #F1F5F9', marginTop: 8, paddingTop: 8, display: 'flex', gap: 8 }}>
+            <button onClick={save} style={{ flex: 1, padding: '8px', borderRadius: 9, background: 'linear-gradient(135deg,#6366F1,#8B5CF6)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Save</button>
+            <button onClick={() => setOpen(false)} style={{ padding: '8px 12px', borderRadius: 9, background: '#F1F5F9', color: '#64748B', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>✕</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────── CRM link picker ────────────────────────────── */
+
+function CrmLinkPicker({ currentClient, workspaceId, messageId, onLinked, onCreateNew }: {
+  currentClient: any; workspaceId: string; messageId: string;
+  onLinked: (c: any) => void; onCreateNew: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.get('/inbox/clients', { params: { workspaceId } }); setClients(r.data || []); } catch {}
+    setLoading(false);
+  };
+
+  const link = async (clientId: string | null) => {
+    const r = await api.patch(`/inbox/${messageId}/crm-link`, { workspaceId, clientId });
+    onLinked(r.data?.crmClient || null); setOpen(false);
+  };
+
+  const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => { setOpen(v => !v); if (!open) load(); }} style={{
+        display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10,
+        border: currentClient ? '1.5px solid rgba(16,185,129,0.4)' : '1.5px solid #E2E8F0',
+        background: currentClient ? 'rgba(16,185,129,0.08)' : '#FAFBFF',
+        color: currentClient ? '#059669' : '#64748B',
+        fontSize: 11, fontWeight: 700, cursor: 'pointer',
+      }}>
+        <Link2 size={12} /> {currentClient ? currentClient.name : 'Link to CRM'}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
+          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.12)', padding: 12, width: 250,
+          animation: 'dropIn 0.15s ease',
+        }}>
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." autoFocus
+              style={{ width: '100%', paddingLeft: 30, paddingRight: 12, paddingTop: 8, paddingBottom: 8, border: '1.5px solid #E2E8F0', borderRadius: 9, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+            {loading ? <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>Loading...</p>
+              : filtered.length === 0 ? <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>No clients found</p>
+              : filtered.map(c => (
+                <button key={c.id} onClick={() => link(c.id)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 6px', borderRadius: 9, border: 'none', background: 'none', cursor: 'pointer',
+                }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#6366F1,#8B5CF6)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {c.name.charAt(0)}
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>{c.name}</p>
+                    <p style={{ fontSize: 10, color: '#94A3B8' }}>{c.stage}</p>
+                  </div>
+                </button>
+              ))}
+          </div>
+          <div style={{ borderTop: '1px solid #F1F5F9', marginTop: 8, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button onClick={() => { onCreateNew(); setOpen(false); }} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+              borderRadius: 9, border: '1.5px dashed rgba(16,185,129,0.4)',
+              background: 'rgba(16,185,129,0.05)', color: '#059669', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}>
+              <Plus size={12} /> Create new CRM contact
+            </button>
+            {currentClient && (
+              <button onClick={() => link(null)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, border: 'none', background: 'rgba(239,68,68,0.06)', color: '#DC2626', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>
+                <X size={11} /> Unlink
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────── assign picker ──────────────────────────────── */
+
+function AssignPicker({ currentAssignee, workspaceId, messageId, onAssigned }: {
+  currentAssignee: any; workspaceId: string; messageId: string; onAssigned: (u: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const load = async () => { try { const r = await api.get('/inbox/members', { params: { workspaceId } }); setMembers(r.data || []); } catch {} };
+  const assign = async (userId: string | null) => { const r = await api.patch(`/inbox/${messageId}/assign`, { workspaceId, userId }); onAssigned(r.data?.assignedTo || null); setOpen(false); };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => { setOpen(v => !v); if (!open) load(); }} style={{
+        display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10,
+        border: currentAssignee ? '1.5px solid rgba(139,92,246,0.4)' : '1.5px solid #E2E8F0',
+        background: currentAssignee ? 'rgba(139,92,246,0.08)' : '#FAFBFF',
+        color: currentAssignee ? '#7C3AED' : '#64748B',
+        fontSize: 11, fontWeight: 700, cursor: 'pointer',
+      }}>
+        <Users size={12} /> {currentAssignee ? currentAssignee.name.split(' ')[0] : 'Assign'}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
+          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.12)', padding: 10, minWidth: 190,
+          animation: 'dropIn 0.15s ease',
+        }}>
+          {members.length === 0
+            ? <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>No team members yet</p>
+            : members.map(m => (
+              <button key={m.id} onClick={() => assign(m.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderRadius: 9, border: 'none', background: 'none', cursor: 'pointer' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5CF6,#EC4899)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {m.name?.charAt(0)}
+                </div>
+                <div style={{ textAlign: 'left', flex: 1 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>{m.name}</p>
+                  <p style={{ fontSize: 10, color: '#94A3B8' }}>{m.email}</p>
+                </div>
+                {currentAssignee?.id === m.id && <CheckCircle size={12} style={{ color: '#8B5CF6' }} />}
+              </button>
+            ))}
+          {currentAssignee && (
+            <button onClick={() => assign(null)} style={{ width: '100%', marginTop: 6, padding: '7px', borderRadius: 9, border: 'none', background: 'rgba(239,68,68,0.06)', color: '#DC2626', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}>Unassign</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────── global keyframes injected once ─────────────── */
+
+const STYLES = `
+@keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+@keyframes ping { 0% { transform: scale(1); opacity: 0.6 } 100% { transform: scale(2.4); opacity: 0 } }
+@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5) } 50% { box-shadow: 0 0 0 5px rgba(99,102,241,0) } }
+@keyframes float { from { transform: translateY(0) } to { transform: translateY(-6px) } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes dropIn { from { opacity: 0; transform: translateY(-6px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+@keyframes liveBlip { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+`;
+
+/* ─────────────── main page ──────────────────────────────────── */
+
 export default function InboxPage() {
   const { workspace } = useAuthStore();
-  const [messages, setMessages] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>({});
-  const [selected, setSelected] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [replying, setReplying] = useState(false);
+  const [messages, setMessages]   = useState<any[]>([]);
+  const [stats, setStats]         = useState<any>({});
+  const [selected, setSelected]   = useState<any>(null);
+  const [loading, setLoading]     = useState(true);
+  const [replying, setReplying]   = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [filter, setFilter] = useState({ platform: '', type: '', isResolved: 'false' });
-  const [toast, setToast] = useState<string | null>(null);
+  const [search, setSearch]       = useState('');
+  const [filter, setFilter]       = useState({ platform: '', type: '', isResolved: 'false', tag: '' });
+  const [toast, setToast]         = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
   const replyRef = useRef<HTMLTextAreaElement>(null);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
   const loadMessages = useCallback(async () => {
     if (!workspace?.id) return;
-    setLoading(true);
     try {
       const params: any = { workspaceId: workspace.id };
       if (filter.platform) params.platform = filter.platform;
       if (filter.type) params.type = filter.type;
       if (filter.isResolved !== '') params.isResolved = filter.isResolved;
+      if (filter.tag) params.tag = filter.tag;
+      if (search) params.search = search;
       const [msgRes, statsRes] = await Promise.all([
         api.get('/inbox', { params }),
         api.get('/inbox/stats', { params: { workspaceId: workspace.id } }),
       ]);
       setMessages(msgRes.data.messages || []);
       setStats(statsRes.data || {});
-    } catch (err) {
-      console.error('Failed to load inbox:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspace?.id, filter]);
+      setLastRefresh(new Date());
+    } catch (err) { console.error('Inbox load error:', err); }
+    finally { setLoading(false); }
+  }, [workspace?.id, filter, search]);
 
-  useEffect(() => { loadMessages(); }, [loadMessages]);
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(loadMessages, 30000);
-    return () => clearInterval(interval);
-  }, [loadMessages]);
+  useEffect(() => { setLoading(true); loadMessages(); }, [loadMessages]);
+  useEffect(() => { const i = setInterval(loadMessages, 30000); return () => clearInterval(i); }, [loadMessages]);
 
   const selectMessage = async (msg: any) => {
-    setSelected(msg);
-    setReplyText('');
+    setSelected(msg); setReplyText('');
     if (!msg.isRead) {
       await api.patch(`/inbox/${msg.id}/read?workspaceId=${workspace?.id}`);
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
@@ -160,21 +658,14 @@ export default function InboxPage() {
     if (!replyText.trim() || !selected) return;
     setReplying(true);
     try {
-      await api.post(`/inbox/${selected.id}/reply`, {
-        workspaceId: workspace?.id,
-        content: replyText,
-      });
+      await api.post(`/inbox/${selected.id}/reply`, { workspaceId: workspace?.id, content: replyText });
       setReplyText('');
-      setSelected((prev: any) => ({ ...prev, isResolved: true }));
-      setMessages(prev => prev.map(m =>
-        m.id === selected.id ? { ...m, isResolved: true, isRead: true } : m
-      ));
-      showToast('Reply sent successfully!');
+      setSelected((p: any) => ({ ...p, isResolved: true }));
+      setMessages(prev => prev.map(m => m.id === selected.id ? { ...m, isResolved: true, isRead: true } : m));
+      showToast('Reply sent successfully ✓');
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'Failed to send reply');
-    } finally {
-      setReplying(false);
-    }
+      showToast(err?.response?.data?.message || 'Failed to send reply', 'error');
+    } finally { setReplying(false); }
   };
 
   const handleSuggest = async () => {
@@ -184,260 +675,432 @@ export default function InboxPage() {
       const res = await api.post(`/inbox/${selected.id}/suggest?workspaceId=${workspace?.id}`);
       setReplyText(res.data.suggestion);
       replyRef.current?.focus();
-    } catch {
-      showToast('AI suggestion failed');
-    } finally {
-      setSuggesting(false);
-    }
+    } catch { showToast('AI suggestion failed', 'error'); }
+    finally { setSuggesting(false); }
   };
 
   const handleResolve = async (msg: any) => {
     await api.patch(`/inbox/${msg.id}/resolve?workspaceId=${workspace?.id}`);
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isResolved: true } : m));
-    if (selected?.id === msg.id) setSelected((prev: any) => ({ ...prev, isResolved: true }));
-    showToast('Marked as resolved');
+    if (selected?.id === msg.id) setSelected((p: any) => ({ ...p, isResolved: true }));
+    showToast('Marked as resolved ✓');
   };
 
-  const STAT_CARDS = [
-    { label: 'Total',    value: stats.total   || 0, color: '#2563EB' },
-    { label: 'Unread',   value: stats.unread  || 0, color: '#F59E0B' },
-    { label: 'DMs',      value: stats.dms     || 0, color: '#8B5CF6' },
-    { label: 'Comments', value: stats.comments|| 0, color: '#10B981' },
+  const handleTagsSave = async (tags: string[]) => {
+    if (!selected) return;
+    await api.patch(`/inbox/${selected.id}/tags`, { workspaceId: workspace?.id, tags });
+    setSelected((p: any) => ({ ...p, tags }));
+    setMessages(prev => prev.map(m => m.id === selected.id ? { ...m, tags } : m));
+    showToast('Tags updated ✓');
+  };
+
+  const handleCrmLinked = (crmClient: any) => {
+    setSelected((p: any) => ({ ...p, crmClient }));
+    setMessages(prev => prev.map(m => m.id === selected?.id ? { ...m, crmClient } : m));
+    showToast(crmClient ? `Linked to ${crmClient.name} ✓` : 'CRM link removed');
+  };
+
+  const handleCreateCrm = async () => {
+    if (!selected) return;
+    try {
+      const res = await api.post(`/inbox/${selected.id}/create-crm-contact`, { workspaceId: workspace?.id });
+      const c = { id: res.data.id, name: res.data.name, stage: res.data.stage };
+      setSelected((p: any) => ({ ...p, crmClient: c }));
+      setMessages(prev => prev.map(m => m.id === selected.id ? { ...m, crmClient: c } : m));
+      showToast(`CRM contact "${res.data.name}" created ✓`);
+    } catch { showToast('Failed to create CRM contact', 'error'); }
+  };
+
+  const handleAssigned = (assignedTo: any) => {
+    setSelected((p: any) => ({ ...p, assignedTo }));
+    setMessages(prev => prev.map(m => m.id === selected?.id ? { ...m, assignedTo } : m));
+    showToast(assignedTo ? `Assigned to ${assignedTo.name} ✓` : 'Unassigned');
+  };
+
+  const isFiltered = !!(filter.platform || filter.type || filter.tag || search || filter.isResolved === 'true');
+
+  const STATS = [
+    { label: 'Total Messages', value: stats.total || 0, icon: <Inbox size={16} />, gradient: 'linear-gradient(135deg,#6366F1,#8B5CF6)' },
+    { label: 'Unread', value: stats.unread || 0, icon: <Eye size={16} />, gradient: 'linear-gradient(135deg,#F59E0B,#EF4444)', sub: 'needs attention' },
+    { label: 'DMs', value: stats.dms || 0, icon: <MessageSquare size={16} />, gradient: 'linear-gradient(135deg,#8B5CF6,#EC4899)' },
+    { label: 'Comments', value: stats.comments || 0, icon: <TrendingUp size={16} />, gradient: 'linear-gradient(135deg,#10B981,#0EA5E9)' },
   ];
 
   return (
-    <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <>
+      <style>{STYLES}</style>
 
       {/* Toast */}
       {toast && (
         <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 9999,
-          background: '#10B981', color: '#fff',
-          padding: '10px 18px', borderRadius: 10,
-          fontWeight: 600, fontSize: 13,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-        }}>{toast}</div>
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: toast.type === 'success' ? 'linear-gradient(135deg,#10B981,#059669)' : 'linear-gradient(135deg,#EF4444,#DC2626)',
+          color: '#fff', padding: '12px 20px', borderRadius: 14,
+          fontWeight: 700, fontSize: 13,
+          boxShadow: `0 8px 32px ${toast.type === 'success' ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`,
+          animation: 'slideUp 0.2s ease',
+        }}>
+          {toast.msg}
+        </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Engagement Hub</h2>
-          <p className="text-slate-500 text-sm mt-0.5">
-            All your DMs and comments in one place
-          </p>
-        </div>
-        <button onClick={loadMessages} className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm hover:bg-slate-50 transition">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-      </div>
+      <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 flex-shrink-0">
-        {STAT_CARDS.map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-100 p-4">
-            <p style={{ fontSize: 26, fontWeight: 800, color: s.color, letterSpacing: '-1px' }}>{s.value}</p>
-            <p className="text-slate-500 text-xs mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2 mb-4 flex-wrap flex-shrink-0">
-        {[
-          { key: 'platform', options: [['', 'All Platforms'], ['INSTAGRAM', 'Instagram'], ['FACEBOOK', 'Facebook']] },
-          { key: 'type',     options: [['', 'All Types'], ['DM', 'DMs'], ['COMMENT', 'Comments']] },
-          { key: 'isResolved', options: [['false', 'Open'], ['true', 'Resolved'], ['', 'All']] },
-        ].map(f => (
-          <select
-            key={f.key}
-            value={filter[f.key as keyof typeof filter]}
-            onChange={e => setFilter(prev => ({ ...prev, [f.key]: e.target.value }))}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {f.options.map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </select>
-        ))}
-      </div>
-
-      {/* Main — message list + thread view */}
-      <div className="flex gap-4 flex-1 min-h-0">
-
-        {/* Message List */}
-        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden flex-shrink-0" style={{ width: 340 }}>
-          <div className="border-b border-slate-100 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-700">
-              {messages.length} message{messages.length !== 1 ? 's' : ''}
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+              }}>
+                <Inbox size={18} color="#fff" />
+              </div>
+              <h2 style={{ fontSize: 22, fontWeight: 900, color: '#1E293B', letterSpacing: '-0.5px' }}>Engagement Hub</h2>
+              {/* Live dot */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 999, padding: '3px 10px' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', animation: 'liveBlip 1.5s infinite' }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#059669' }}>LIVE</span>
+              </div>
+            </div>
+            <p style={{ fontSize: 12, color: '#94A3B8' }}>
+              All DMs & comments unified · refreshed {formatTime(lastRefresh.toISOString())}
             </p>
           </div>
-          <div className="overflow-y-auto" style={{ height: 'calc(100% - 48px)' }}>
-            {loading ? (
-              <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
-                Loading messages...
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center px-6">
-                <MessageSquare className="w-10 h-10 text-slate-200 mb-3" />
-                <p className="text-slate-500 text-sm font-medium">No messages yet</p>
-                <p className="text-slate-400 text-xs mt-1">
-                  Messages from Facebook and Instagram will appear here
-                </p>
-              </div>
-            ) : (
-              messages.map(msg => (
-                <MessageCard
-                  key={msg.id}
-                  msg={msg}
-                  isSelected={selected?.id === msg.id}
-                  onClick={() => selectMessage(msg)}
-                />
-              ))
-            )}
-          </div>
+
+          <button
+            onClick={() => { setLoading(true); loadMessages(); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '9px 16px', borderRadius: 12,
+              border: '1.5px solid #E2E8F0', background: '#fff',
+              color: '#64748B', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              transition: 'all 0.15s',
+            }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
         </div>
 
-        {/* Thread / Reply View */}
-        <div className="bg-white rounded-xl border border-slate-100 flex-1 flex flex-col overflow-hidden">
-          {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-blue-500" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Select a message</h3>
-              <p className="text-slate-400 text-sm">
-                Click any message on the left to view and reply
-              </p>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16, flexShrink: 0 }}>
+          {STATS.map(s => <StatCard key={s.label} {...s} />)}
+        </div>
+
+        {/* Filters row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', flexShrink: 0 }}>
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search conversations..."
+              style={{
+                paddingLeft: 34, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
+                border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 13,
+                color: '#334155', background: '#fff', outline: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                width: 210,
+              }}
+            />
+          </div>
+
+          {[
+            { key: 'platform', opts: [['', 'All Platforms'], ['INSTAGRAM', '📷 Instagram'], ['FACEBOOK', '📘 Facebook'], ['TWITTER', '𝕏 Twitter']] },
+            { key: 'type',     opts: [['', 'All Types'], ['DM', '💬 DMs'], ['COMMENT', '💭 Comments']] },
+            { key: 'isResolved', opts: [['false', '🟢 Open'], ['true', '✓ Resolved'], ['', 'All Status']] },
+            { key: 'tag',      opts: [['', 'All Tags'], ...AVAILABLE_TAGS.map(t => [t, t])] },
+          ].map(f => (
+            <select
+              key={f.key}
+              value={filter[f.key as keyof typeof filter]}
+              onChange={e => setFilter(prev => ({ ...prev, [f.key]: e.target.value }))}
+              style={{
+                padding: '9px 12px', borderRadius: 12, fontSize: 13,
+                border: '1.5px solid #E2E8F0', background: '#fff', color: '#334155',
+                outline: 'none', cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+              }}
+            >
+              {f.opts.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+            </select>
+          ))}
+
+          {isFiltered && (
+            <button
+              onClick={() => { setFilter({ platform: '', type: '', isResolved: 'false', tag: '' }); setSearch(''); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '9px 14px', borderRadius: 12,
+                border: '1.5px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)',
+                color: '#DC2626', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
+        </div>
+
+        {/* Main split pane */}
+        <div style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0 }}>
+
+          {/* List panel */}
+          <div style={{
+            width: 345, flexShrink: 0, background: '#fff', borderRadius: 18,
+            border: '1px solid #EEF2FF', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(99,102,241,0.07)',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            {/* List header */}
+            <div style={{
+              padding: '14px 18px', borderBottom: '1px solid #F1F5F9',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #FAFBFF, #F5F3FF)',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#374151' }}>
+                {loading ? 'Loading...' : `${messages.length} conversation${messages.length !== 1 ? 's' : ''}`}
+              </span>
+              {stats.unread > 0 && (
+                <span style={{
+                  background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                  color: '#fff', fontSize: 11, fontWeight: 800,
+                  padding: '2px 10px', borderRadius: 999,
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
+                }}>
+                  {stats.unread} unread
+                </span>
+              )}
             </div>
-          ) : (
-            <>
-              {/* Thread header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    background: PLATFORM_COLORS[selected.platform]?.bg || '#378ADD',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 16, fontWeight: 700,
-                  }}>
-                    {(selected.senderName || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-800">{selected.senderName || 'Unknown'}</p>
-                    <div className="flex items-center gap-2">
-                      <PlatformBadge platform={selected.platform} />
-                      <span className="text-slate-400 text-xs">{TYPE_META[selected.type]?.label}</span>
-                      <span className="text-slate-400 text-xs">{formatTime(selected.createdAt)}</span>
-                    </div>
-                  </div>
-                </div>
-                {!selected.isResolved && (
-                  <button
-                    onClick={() => handleResolve(selected)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-green-200 text-green-600 rounded-lg text-xs font-medium hover:bg-green-50 transition"
-                  >
-                    <CheckCircle size={12} /> Mark Resolved
-                  </button>
-                )}
-                {selected.isResolved && (
-                  <span className="flex items-center gap-1 text-green-600 text-xs font-semibold">
-                    <CheckCircle size={12} /> Resolved
-                  </span>
-                )}
-              </div>
 
-              {/* Message content */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-                {/* Original message */}
-                <div className="flex gap-3">
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: PLATFORM_COLORS[selected.platform]?.bg || '#378ADD',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {(selected.senderName || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-none px-4 py-3 max-w-md">
-                      <p className="text-slate-800 text-sm leading-relaxed">{selected.content}</p>
-                    </div>
-                    <p className="text-slate-400 text-xs mt-1 ml-1">{formatTime(selected.createdAt)}</p>
-                  </div>
-                </div>
+            {/* Message list */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : messages.length === 0 ? (
+                <EmptyState filtered={isFiltered} />
+              ) : (
+                messages.map(msg => (
+                  <MessageCard key={msg.id} msg={msg} isSelected={selected?.id === msg.id} onClick={() => selectMessage(msg)} />
+                ))
+              )}
+            </div>
+          </div>
 
-                {/* Replies */}
-                {selected.replies?.map((reply: any) => (
-                  <div key={reply.id} className="flex gap-3 justify-end">
-                    <div>
-                      <div className="bg-blue-600 rounded-2xl rounded-tr-none px-4 py-3 max-w-md">
-                        <p className="text-white text-sm leading-relaxed">{reply.content}</p>
+          {/* Thread panel */}
+          <div style={{
+            flex: 1, background: '#fff', borderRadius: 18,
+            border: '1px solid #EEF2FF', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(99,102,241,0.07)',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            {!selected ? (
+              <NoThreadSelected />
+            ) : (
+              <>
+                {/* Thread header */}
+                <div style={{
+                  padding: '16px 20px', borderBottom: '1px solid #F1F5F9', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #FAFBFF, #F5F3FF)',
+                }}>
+                  {/* Sender row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <Avatar name={selected.senderName} platform={selected.platform} size={44} />
+                      <div>
+                        <p style={{ fontWeight: 800, fontSize: 15, color: '#1E293B', marginBottom: 4 }}>{selected.senderName || 'Unknown'}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <PlatformBadge platform={selected.platform} />
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>{selected.type === 'DM' ? 'Direct Message' : 'Comment'}</span>
+                          <span style={{ fontSize: 11, color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <Clock size={10} /> {formatTime(selected.createdAt)}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-slate-400 text-xs mt-1 text-right mr-1">{formatTime(reply.sentAt)}</p>
                     </div>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: '#2563EB',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
-                    }}>A</div>
-                  </div>
-                ))}
-              </div>
 
-              {/* Reply box */}
-              {!selected.isResolved && (
-                <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0">
-                  {/* AI suggestion button */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <button
-                      onClick={handleSuggest}
-                      disabled={suggesting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 text-violet-600 rounded-lg text-xs font-semibold hover:bg-violet-100 transition disabled:opacity-50"
-                    >
-                      <Sparkles size={12} />
-                      {suggesting ? 'Generating...' : 'AI Suggest Reply'}
-                    </button>
-                    {selected.aiSuggestion && !replyText && (
-                      <button
-                        onClick={() => setReplyText(selected.aiSuggestion)}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        Use last suggestion
+                    {selected.isResolved ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.1)', border: '1.5px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '6px 14px', color: '#059669', fontWeight: 800, fontSize: 12 }}>
+                        <CheckCircle size={13} /> Resolved
+                      </div>
+                    ) : (
+                      <button onClick={() => handleResolve(selected)} style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                        borderRadius: 12, border: '1.5px solid rgba(16,185,129,0.35)',
+                        background: 'rgba(16,185,129,0.06)', color: '#059669',
+                        fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s',
+                      }}>
+                        <CheckCircle size={13} /> Mark resolved
                       </button>
                     )}
                   </div>
 
-                  <div className="flex gap-3">
-                    <textarea
-                      ref={replyRef}
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      placeholder={`Reply to ${selected.senderName || 'this message'}...`}
-                      rows={3}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply();
-                      }}
-                      className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={handleReply}
-                      disabled={replying || !replyText.trim()}
-                      className="px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 self-end py-3 text-sm font-semibold"
-                    >
-                      <Send size={14} />
-                      {replying ? 'Sending...' : 'Send'}
-                    </button>
+                  {/* Action bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <TagPicker currentTags={selected.tags || []} onSave={handleTagsSave} />
+                    <CrmLinkPicker currentClient={selected.crmClient} workspaceId={workspace?.id || ''} messageId={selected.id} onLinked={handleCrmLinked} onCreateNew={handleCreateCrm} />
+                    <AssignPicker currentAssignee={selected.assignedTo} workspaceId={workspace?.id || ''} messageId={selected.id} onAssigned={handleAssigned} />
+
+                    {/* Active tags display */}
+                    {selected.tags?.map((t: string) => (
+                      <TagChip key={t} tag={t} onRemove={() => handleTagsSave(selected.tags.filter((x: string) => x !== t))} />
+                    ))}
+
+                    {/* Assigned to badge */}
+                    {selected.assignedTo && (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', padding: '3px 10px', borderRadius: 999 }}>
+                        → {selected.assignedTo.name}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-slate-400 text-xs mt-2">⌘ + Enter to send</p>
+
+                  {/* Post context (for comments) */}
+                  {selected.postContent && (
+                    <div style={{
+                      marginTop: 10, padding: '10px 14px',
+                      background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)',
+                      borderRadius: 10, borderLeft: '3px solid #6366F1',
+                    }}>
+                      <p style={{ fontSize: 10, fontWeight: 800, color: '#6366F1', marginBottom: 3, letterSpacing: 0.5, textTransform: 'uppercase' }}>Commenting on:</p>
+                      <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{selected.postContent}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </>
-          )}
+
+                {/* Message thread */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, background: '#FAFBFF' }}>
+                  {/* Original message */}
+                  <div style={{ display: 'flex', gap: 12, animation: 'fadeIn 0.2s ease' }}>
+                    <Avatar name={selected.senderName} platform={selected.platform} size={36} />
+                    <div style={{ maxWidth: '70%' }}>
+                      <div style={{
+                        background: '#fff', border: '1px solid #EEF2FF',
+                        borderRadius: '18px 18px 18px 4px',
+                        padding: '12px 16px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      }}>
+                        <p style={{ fontSize: 14, color: '#1E293B', lineHeight: 1.6 }}>{selected.content}</p>
+                      </div>
+                      <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 4, marginLeft: 4 }}>{formatTime(selected.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  {/* Replies */}
+                  {selected.replies?.map((reply: any, i: number) => (
+                    <div key={reply.id} style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease', animationDelay: `${i * 0.05}s` }}>
+                      <div style={{ maxWidth: '70%', textAlign: 'right' }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                          borderRadius: '18px 18px 4px 18px',
+                          padding: '12px 16px',
+                          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
+                        }}>
+                          <p style={{ fontSize: 14, color: '#fff', lineHeight: 1.6 }}>{reply.content}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4, marginRight: 4 }}>
+                          <p style={{ fontSize: 11, color: '#94A3B8' }}>{formatTime(reply.sentAt)}</p>
+                          {reply.isAuto && <span style={{ fontSize: 10, background: 'rgba(139,92,246,0.1)', color: '#8B5CF6', padding: '2px 7px', borderRadius: 999, fontWeight: 700 }}>Auto</span>}
+                        </div>
+                      </div>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%',
+                        background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: 14, fontWeight: 800, flexShrink: 0,
+                        boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                      }}>A</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reply box */}
+                {!selected.isResolved && (
+                  <div style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', flexShrink: 0, background: '#fff' }}>
+                    {/* AI button */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <button
+                        onClick={handleSuggest}
+                        disabled={suggesting}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 7,
+                          padding: '8px 16px', borderRadius: 10,
+                          background: suggesting ? '#F5F3FF' : 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(99,102,241,0.12))',
+                          border: '1.5px solid rgba(139,92,246,0.35)',
+                          color: '#7C3AED', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          opacity: suggesting ? 0.7 : 1,
+                        }}
+                      >
+                        <Sparkles size={13} style={{ animation: suggesting ? 'spin 1s linear infinite' : 'none' }} />
+                        {suggesting ? 'Generating AI reply...' : '✨ AI Suggest Reply'}
+                      </button>
+                      {selected.aiSuggestion && !replyText && (
+                        <button onClick={() => setReplyText(selected.aiSuggestion)}
+                          style={{ fontSize: 12, color: '#6366F1', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                          Use last suggestion
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <textarea
+                        ref={replyRef}
+                        value={replyText}
+                        onChange={e => setReplyText(e.target.value)}
+                        placeholder={`Reply to ${selected.senderName || 'this message'}...`}
+                        rows={3}
+                        onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply(); }}
+                        style={{
+                          flex: 1, padding: '12px 16px',
+                          border: '1.5px solid #E2E8F0', borderRadius: 14,
+                          fontSize: 14, color: '#1E293B', resize: 'none', outline: 'none',
+                          lineHeight: 1.5, background: '#FAFBFF',
+                          transition: 'border-color 0.15s, box-shadow 0.15s',
+                          fontFamily: 'inherit',
+                        }}
+                        onFocus={e => { e.target.style.borderColor = '#6366F1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
+                        onBlur={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; }}
+                      />
+                      <button
+                        onClick={handleReply}
+                        disabled={replying || !replyText.trim()}
+                        style={{
+                          padding: '12px 18px', borderRadius: 14,
+                          background: replyText.trim() ? 'linear-gradient(135deg,#6366F1,#8B5CF6)' : '#E2E8F0',
+                          color: replyText.trim() ? '#fff' : '#94A3B8',
+                          border: 'none', cursor: replyText.trim() ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          fontWeight: 800, fontSize: 13,
+                          boxShadow: replyText.trim() ? '0 4px 16px rgba(99,102,241,0.35)' : 'none',
+                          transition: 'all 0.15s',
+                          alignSelf: 'flex-end',
+                        }}
+                      >
+                        <Send size={14} /> {replying ? 'Sending...' : 'Send'}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: 11, color: '#CBD5E1', marginTop: 6 }}>⌘ + Enter to send</p>
+                  </div>
+                )}
+
+                {/* Resolved state */}
+                {selected.isResolved && (
+                  <div style={{
+                    padding: '16px 20px', borderTop: '1px solid #F1F5F9', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    background: 'linear-gradient(135deg, rgba(16,185,129,0.05), rgba(5,150,105,0.05))',
+                  }}>
+                    <CheckCircle size={16} color="#10B981" />
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#059669' }}>Conversation resolved</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
