@@ -25,13 +25,15 @@ export class AiService {
     const plan = await this.planGuard.getWorkspacePlan(workspaceId);
     const limits = getPlanLimits(plan);
 
-    if (limits.aiCaptionsPerMonth === 0) {
+    if (limits.aiCaptionsPerMonth < 5) {
+      // FREE plan gets 3 taste captions but no full AI feature access
+      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
       throw new ForbiddenException(
-        'AI features are not available on your FREE plan. Upgrade to Starter or above.'
+        `AI captions require the Starter plan or above. Upgrade at /dashboard/settings?tab=plan`
       );
     }
 
-    if (limits.aiCaptionsPerMonth === 999999) return; // Unlimited — Agency Pro
+    if (limits.aiCaptionsPerMonth >= 999999) return; // Unlimited — Agency Pro
 
     // Count AI uses this month via notifications as a proxy
     // In production you'd add an AiUsage table — for now we use a simple approach

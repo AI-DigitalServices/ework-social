@@ -2,6 +2,7 @@ import { Controller, Post, Delete, Get, Body, Query, UseGuards, Request } from '
 import { TwitterPollerService } from './twitter-poller.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('twitter')
 @UseGuards(JwtGuard)
@@ -9,6 +10,7 @@ export class TwitterController {
   constructor(
     private poller: TwitterPollerService,
     private prisma: PrismaService,
+    private planGuard: PlanGuardService,
   ) {}
 
   /**
@@ -38,6 +40,8 @@ export class TwitterController {
     @Body() body: { workspaceId: string; handle: string },
     @Request() req: any,
   ) {
+    // 🔒 Growth+ required for Twitter inbox
+    await this.planGuard.checkTwitterAccess(body.workspaceId);
     const handle = body.handle.replace('@', '').trim().toLowerCase();
 
     if (!handle) throw new Error('Twitter handle is required');

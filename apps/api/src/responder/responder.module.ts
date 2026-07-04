@@ -5,9 +5,10 @@ import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { CommonModule } from '../common/common.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, CommonModule],
   controllers: [ResponderController, WebhookController],
   providers: [ResponderService, WebhookService],
   exports: [ResponderService, WebhookService],

@@ -5,11 +5,15 @@ import {
 import { ResponderService } from './responder.service';
 import { CreateRuleDto } from './dto/create-rule.dto';
 import { JwtGuard } from '../auth/jwt.guard';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('responder')
 @UseGuards(JwtGuard)
 export class ResponderController {
-  constructor(private responderService: ResponderService) {}
+  constructor(
+    private responderService: ResponderService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   @Get('rules')
   getRules(@Query('workspaceId') workspaceId: string) {
@@ -17,7 +21,9 @@ export class ResponderController {
   }
 
   @Post('rules')
-  createRule(@Body() dto: CreateRuleDto) {
+  async createRule(@Body() dto: CreateRuleDto) {
+    // 🔒 Starter+ required; enforces per-plan rule count cap
+    await this.planGuard.checkAutoResponderRuleLimit(dto.workspaceId);
     return this.responderService.createRule(dto);
   }
 

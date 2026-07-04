@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { getPlanLimits } from './plan-limits';
+import { getPlanLimits, getPlanDisplayName, FEATURE_MIN_PLAN } from './plan-limits';
 
 @Injectable()
 export class PlanGuardService {
@@ -11,18 +11,32 @@ export class PlanGuardService {
     return sub?.plan || 'FREE';
   }
 
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  private upgradeMessage(feature: string, plan: string): string {
+    const minPlan = FEATURE_MIN_PLAN[feature];
+    const minPlanName = minPlan ? getPlanDisplayName(minPlan) : 'a higher';
+    return `This feature requires the ${minPlanName} plan or above. Upgrade at /dashboard/settings?tab=plan`;
+  }
+
+  private startOfMonth(): Date {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  // ── Quantity limits ──────────────────────────────────────────────────────
+
   async checkPostLimit(workspaceId: string): Promise<void> {
     const plan = await this.getWorkspacePlan(workspaceId);
     const limits = getPlanLimits(plan);
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
     const count = await this.prisma.post.count({
-      where: { workspaceId, createdAt: { gte: startOfMonth } },
+      where: { workspaceId, createdAt: { gte: this.startOfMonth() } },
     });
     if (count >= limits.maxPostsPerMonth) {
       throw new ForbiddenException(
-        `Your ${plan} plan allows ${limits.maxPostsPerMonth} posts/month. Upgrade for more.`
+        `Your ${getPlanDisplayName(plan)} plan allows ${limits.maxPostsPerMonth} posts/month. Upgrade for more.`
       );
     }
   }
@@ -33,7 +47,7 @@ export class PlanGuardService {
     const count = await this.prisma.socialAccount.count({ where: { workspaceId, isActive: true } });
     if (count >= limits.maxSocialAccounts) {
       throw new ForbiddenException(
-        `Your ${plan} plan allows ${limits.maxSocialAccounts} social accounts. Upgrade to add more.`
+        `Your ${getPlanDisplayName(plan)} plan allows ${limits.maxSocialAccounts} social accounts. Upgrade to add more.`
       );
     }
   }
@@ -44,7 +58,7 @@ export class PlanGuardService {
     const count = await this.prisma.workspaceMember.count({ where: { workspaceId } });
     if (count >= limits.maxTeamMembers) {
       throw new ForbiddenException(
-        `Your ${plan} plan allows ${limits.maxTeamMembers} team member(s). Upgrade to add more.`
+        `Your ${getPlanDisplayName(plan)} plan allows ${limits.maxTeamMembers} team member(s). Upgrade to add more.`
       );
     }
   }
@@ -55,49 +69,99 @@ export class PlanGuardService {
     const count = await this.prisma.client.count({ where: { workspaceId } });
     if (count >= limits.maxClients) {
       throw new ForbiddenException(
-        `Your ${plan} plan allows ${limits.maxClients} clients. Upgrade to add more.`
+        `Your ${getPlanDisplayName(plan)} plan allows ${limits.maxClients} clients. Upgrade to add more.`
       );
     }
   }
+
+  async checkAutoResponderRuleLimit(workspaceId: string): Promise<void> {
+    const plan = await this.getWorkspacePlan(workspaceId);
+    const limits = getPlanLimits(plan);
+    if (limits.maxAutoResponderRules === 0) {
+      throw new ForbiddenException(
+        `Auto-responder rules are not available on the ${getPlanDisplayName(plan)} plan. Upgrade to Starter or above.`
+      );
+    }
+    const count = await this.prisma.autoResponderRule.count({ where: { workspaceId } });
+    if (count >= limits.maxAutoResponderRules) {
+      throw new ForbiddenException(
+        `Your ${getPlanDisplayName(plan)} plan allows ${limits.maxAutoResponderRules} auto-responder rules. Upgrade to add more.`
+      );
+    }
+  }
+
+  // ── Feature flags ────────────────────────────────────────────────────────
 
   async checkFeatureAccess(workspaceId: string, feature: string): Promise<void> {
     const plan = await this.getWorkspacePlan(workspaceId);
     const limits = getPlanLimits(plan);
+
     const featureMap: Record<string, boolean> = {
-      bulkScheduling: limits.bulkSchedulingEnabled,
-      perPlatformEditor: limits.perPlatformEditorEnabled,
-      whiteLabel: limits.whiteLabelEnabled,
-      apiAccess: limits.apiAccessEnabled,
-      twitter: limits.twitterEnabled,
+      bulkScheduling:       limits.bulkSchedulingEnabled,
+      perPlatformEditor:    limits.perPlatformEditorEnabled,
+      whiteLabel:           limits.whiteLabelEnabled,
+      apiAccess:            limits.apiAccessEnabled,
+      twitter:              limits.twitterEnabled,
+      inboxTags:            limits.inboxTagsEnabled,
+      inboxCrmLink:         limits.inboxCrmLinkEnabled,
+      inboxAssign:          limits.inboxAssignEnabled,
+      clientApproval:       limits.clientApprovalEnabled,
+      aiCrmInsights:        limits.aiCrmInsightsEnabled,
     };
-    if (!featureMap[feature]) {
-      throw new ForbiddenException(
-        `This feature is not available on your ${plan} plan. Please upgrade.`
-      );
+
+    if (featureMap[feature] === false) {
+      throw new ForbiddenException(this.upgradeMessage(feature, plan));
     }
   }
+
+  // ── Convenience single-call checks ──────────────────────────────────────
+
+  async checkTwitterAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'twitter');
+  }
+
+  async checkInboxTagsAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'inboxTags');
+  }
+
+  async checkInboxCrmLinkAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'inboxCrmLink');
+  }
+
+  async checkInboxAssignAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'inboxAssign');
+  }
+
+  async checkClientApprovalAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'clientApproval');
+  }
+
+  // ── Full workspace usage summary ─────────────────────────────────────────
 
   async getWorkspaceLimits(workspaceId: string) {
     const plan = await this.getWorkspacePlan(workspaceId);
     const limits = getPlanLimits(plan);
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const [socialAccounts, postsThisMonth, teamMembers, clients] = await Promise.all([
-      this.prisma.socialAccount.count({ where: { workspaceId, isActive: true } }),
-      this.prisma.post.count({ where: { workspaceId, createdAt: { gte: startOfMonth } } }),
-      this.prisma.workspaceMember.count({ where: { workspaceId } }),
-      this.prisma.client.count({ where: { workspaceId } }),
-    ]);
+
+    const [socialAccounts, postsThisMonth, teamMembers, clients, autoResponderRules] =
+      await Promise.all([
+        this.prisma.socialAccount.count({ where: { workspaceId, isActive: true } }),
+        this.prisma.post.count({ where: { workspaceId, createdAt: { gte: this.startOfMonth() } } }),
+        this.prisma.workspaceMember.count({ where: { workspaceId } }),
+        this.prisma.client.count({ where: { workspaceId } }),
+        this.prisma.autoResponderRule.count({ where: { workspaceId } }),
+      ]);
+
     return {
       plan,
+      planDisplay: getPlanDisplayName(plan),
       limits,
-      usage: { socialAccounts, postsThisMonth, teamMembers, clients },
+      usage: { socialAccounts, postsThisMonth, teamMembers, clients, autoResponderRules },
       percentages: {
-        socialAccounts: Math.round((socialAccounts / limits.maxSocialAccounts) * 100),
-        posts: Math.round((postsThisMonth / limits.maxPostsPerMonth) * 100),
-        teamMembers: Math.round((teamMembers / limits.maxTeamMembers) * 100),
-        clients: limits.maxClients === 999999 ? 0 : Math.round((clients / limits.maxClients) * 100),
+        socialAccounts:    Math.min(100, Math.round((socialAccounts / limits.maxSocialAccounts) * 100)),
+        posts:             Math.min(100, Math.round((postsThisMonth / limits.maxPostsPerMonth) * 100)),
+        teamMembers:       Math.min(100, Math.round((teamMembers / limits.maxTeamMembers) * 100)),
+        clients:           limits.maxClients >= 999999 ? 0 : Math.min(100, Math.round((clients / limits.maxClients) * 100)),
+        autoResponderRules: limits.maxAutoResponderRules >= 999999 ? 0 : Math.min(100, Math.round((autoResponderRules / limits.maxAutoResponderRules) * 100)),
       },
     };
   }

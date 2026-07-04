@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { InboxService } from './inbox.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('inbox')
 @UseGuards(JwtGuard)
 export class InboxController {
-  constructor(private inboxService: InboxService) {}
+  constructor(
+    private inboxService: InboxService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   @Get()
   getMessages(
@@ -57,34 +61,42 @@ export class InboxController {
   }
 
   @Patch(':id/tags')
-  tagMessage(
+  async tagMessage(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; tags: string[] },
   ) {
+    // 🔒 Starter+ required
+    await this.planGuard.checkInboxTagsAccess(body.workspaceId);
     return this.inboxService.tagMessage(id, body.workspaceId, body.tags);
   }
 
   @Patch(':id/crm-link')
-  linkToCrm(
+  async linkToCrm(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; clientId: string | null },
   ) {
+    // 🔒 Starter+ required
+    await this.planGuard.checkInboxCrmLinkAccess(body.workspaceId);
     return this.inboxService.linkToCrm(id, body.workspaceId, body.clientId);
   }
 
   @Post(':id/create-crm-contact')
-  createCrmContact(
+  async createCrmContact(
     @Param('id') id: string,
     @Body() body: { workspaceId: string },
   ) {
+    // 🔒 Starter+ required (same gate as CRM link)
+    await this.planGuard.checkInboxCrmLinkAccess(body.workspaceId);
     return this.inboxService.createCrmContactFromMessage(id, body.workspaceId);
   }
 
   @Patch(':id/assign')
-  assignMessage(
+  async assignMessage(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; userId: string | null },
   ) {
+    // 🔒 Growth+ required (needs team members)
+    await this.planGuard.checkInboxAssignAccess(body.workspaceId);
     return this.inboxService.assignMessage(id, body.workspaceId, body.userId);
   }
 
