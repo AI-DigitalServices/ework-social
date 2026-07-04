@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import PlatformIcon from '@/components/ui/PlatformIcon';
-import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle, Twitter, AtSign, Zap } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
 
 const platforms = [
-  { id: 'facebook', name: 'Facebook', description: 'Pages, posts, analytics & auto-responder', icon: '📘', phase: 1, apiPlatform: 'FACEBOOK' },
-  { id: 'instagram', name: 'Instagram', description: 'Feed, Reels, Stories & DM auto-responder', icon: '📸', phase: 1, apiPlatform: 'INSTAGRAM' },
-  { id: 'linkedin', name: 'LinkedIn', description: 'Company pages & personal profiles', icon: '💼', phase: 1, apiPlatform: 'LINKEDIN' },
-  { id: 'bluesky', name: 'Bluesky', description: 'Posts, threads & growing global audience', icon: '🦋', phase: 1, apiPlatform: 'BLUESKY' },
-  { id: 'twitter', name: 'Twitter / X', description: 'Tweets, threads & analytics', icon: '🐦', phase: 2, apiPlatform: 'TWITTER' },
-  { id: 'tiktok', name: 'TikTok', description: 'Video posts & analytics', icon: '🎵', phase: 1, apiPlatform: 'TIKTOK' },
-  { id: 'youtube', name: 'YouTube', description: 'Videos, shorts & channel analytics', icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE' },
-  { id: 'pinterest', name: 'Pinterest', description: 'Pins, boards & analytics', icon: '📌', phase: 3, apiPlatform: 'PINTEREST' },
-  { id: 'threads', name: 'Threads', description: 'Posts, replies & growing Meta audience', icon: '🧵', phase: 1, apiPlatform: 'THREADS' },
-  { id: 'whatsapp', name: 'WhatsApp Business', description: 'Broadcasts & auto-responder', icon: '💬', phase: 3, apiPlatform: 'WHATSAPP' },
-  { id: 'telegram', name: 'Telegram', description: 'Channel posts & bot auto-responder', icon: '✈️', phase: 4, apiPlatform: 'TELEGRAM' },
-  { id: 'reddit', name: 'Reddit', description: 'Subreddit posts & community management', icon: '🤖', phase: 4, apiPlatform: 'REDDIT' },
+  { id: 'facebook',  name: 'Facebook',          description: 'Pages, posts, analytics & auto-responder',       icon: '📘', phase: 1, apiPlatform: 'FACEBOOK'  },
+  { id: 'instagram', name: 'Instagram',          description: 'Feed, Reels, Stories & DM auto-responder',       icon: '📸', phase: 1, apiPlatform: 'INSTAGRAM' },
+  { id: 'linkedin',  name: 'LinkedIn',           description: 'Company pages & personal profiles',              icon: '💼', phase: 1, apiPlatform: 'LINKEDIN'  },
+  { id: 'bluesky',   name: 'Bluesky',            description: 'Posts, threads & growing global audience',       icon: '🦋', phase: 1, apiPlatform: 'BLUESKY'   },
+  { id: 'twitter',   name: 'Twitter / X',        description: '@Mentions pulled into inbox every 10 min — free', icon: '𝕏', phase: 1, apiPlatform: 'TWITTER'  },
+  { id: 'tiktok',    name: 'TikTok',             description: 'Video posts & analytics',                        icon: '🎵', phase: 1, apiPlatform: 'TIKTOK'    },
+  { id: 'youtube',   name: 'YouTube',            description: 'Videos, shorts & channel analytics',             icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE'   },
+  { id: 'threads',   name: 'Threads',            description: 'Posts, replies & growing Meta audience',         icon: '🧵', phase: 1, apiPlatform: 'THREADS'   },
+  { id: 'pinterest', name: 'Pinterest',          description: 'Pins, boards & analytics',                       icon: '📌', phase: 3, apiPlatform: 'PINTEREST' },
+  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Broadcasts & auto-responder',                    icon: '💬', phase: 3, apiPlatform: 'WHATSAPP'  },
+  { id: 'telegram',  name: 'Telegram',           description: 'Channel posts & bot auto-responder',             icon: '✈️', phase: 4, apiPlatform: 'TELEGRAM'  },
+  { id: 'reddit',    name: 'Reddit',             description: 'Subreddit posts & community management',         icon: '🤖', phase: 4, apiPlatform: 'REDDIT'    },
 ];
 
 const platformColors: Record<string, { border: string; bg: string; text: string; badge: string }> = {
@@ -52,6 +52,82 @@ interface ConnectedAccount {
   createdAt: string;
 }
 
+/* ── Twitter handle connect modal ────────────────────────── */
+function TwitterConnectModal({ onClose, onConnected }: { onClose: () => void; onConnected: () => void }) {
+  const { workspace } = useAuthStore();
+  const [handle, setHandle] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const connect = async () => {
+    const clean = handle.replace('@', '').trim();
+    if (!clean) { setError('Please enter your Twitter/X handle'); return; }
+    setLoading(true); setError('');
+    try {
+      await api.post('/twitter/connect', { workspaceId: workspace?.id, handle: clean });
+      onConnected();
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Connection failed. Check your handle and try again.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 420, boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(29,161,242,0.4)' }}>
+            <span style={{ color: '#fff', fontSize: 22, fontWeight: 900 }}>𝕏</span>
+          </div>
+          <div>
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1E293B' }}>Connect Twitter / X</h3>
+            <p style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>@Mentions will appear in your Engagement Hub</p>
+          </div>
+        </div>
+
+        {/* Free tier badge */}
+        <div style={{ background: 'linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.08))', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Zap size={14} color="#10B981" />
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Free Tier — No cost</p>
+            <p style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Polls your @mentions every 10 minutes using Twitter API v2 free plan (500k reads/month)</p>
+          </div>
+        </div>
+
+        {/* Handle input */}
+        <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 8 }}>Your Twitter / X Handle</label>
+        <div style={{ position: 'relative', marginBottom: 6 }}>
+          <AtSign size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+          <input
+            value={handle}
+            onChange={e => setHandle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && connect()}
+            placeholder="yourhandle  (without @)"
+            autoFocus
+            style={{ width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 11, paddingBottom: 11, border: `1.5px solid ${error ? '#EF4444' : '#E2E8F0'}`, borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#1E293B' }}
+          />
+        </div>
+        {error && <p style={{ fontSize: 12, color: '#DC2626', marginBottom: 14 }}>{error}</p>}
+
+        <p style={{ fontSize: 11, color: '#94A3B8', marginBottom: 20 }}>
+          We'll monitor @{handle.replace('@', '') || 'yourhandle'} for mentions and pull them into your inbox automatically.
+        </p>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            Cancel
+          </button>
+          <button onClick={connect} disabled={loading || !handle.trim()} style={{ flex: 2, padding: '11px', borderRadius: 12, border: 'none', background: handle.trim() ? 'linear-gradient(135deg,#1DA1F2,#0d8bd9)' : '#E2E8F0', color: handle.trim() ? '#fff' : '#94A3B8', fontWeight: 800, fontSize: 13, cursor: handle.trim() ? 'pointer' : 'not-allowed', boxShadow: handle.trim() ? '0 4px 14px rgba(29,161,242,0.4)' : 'none' }}>
+            {loading ? 'Connecting...' : '✓ Connect Account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SocialAccountsTab() {
   const { workspace, token } = useAuthStore();
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
@@ -59,6 +135,7 @@ export default function SocialAccountsTab() {
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBlueskyModal, setShowBlueskyModal] = useState(false);
+  const [showTwitterModal, setShowTwitterModal] = useState(false);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -105,6 +182,7 @@ export default function SocialAccountsTab() {
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
     if (platformId === 'bluesky') { setShowBlueskyModal(true); return; }
+    if (platformId === 'twitter') { setShowTwitterModal(true); return; }
     if (!['facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'threads'].includes(platformId)) return;
     try {
       const authUrlEndpoint = 
@@ -253,6 +331,13 @@ export default function SocialAccountsTab() {
         <BlueskyConnectModal
           onClose={() => setShowBlueskyModal(false)}
           onConnected={() => { loadAccounts(); showToast('success', '🦋 Bluesky connected successfully!'); }}
+        />
+      )}
+
+      {showTwitterModal && (
+        <TwitterConnectModal
+          onClose={() => setShowTwitterModal(false)}
+          onConnected={() => { loadAccounts(); showToast('success', '𝕏 Twitter/X connected! Mentions will appear in your inbox shortly.'); }}
         />
       )}
     </div>

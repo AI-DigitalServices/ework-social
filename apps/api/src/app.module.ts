@@ -21,6 +21,7 @@ import { ApprovalModule } from './approval/approval.module';
 import { InboxModule } from './inbox/inbox.module';
 import { RiscModule } from './risc/risc.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
+import { TwitterModule } from './twitter/twitter.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     InboxModule,
     RiscModule,
     WaitlistModule,
+    TwitterModule,
   ],
   providers: [
     {

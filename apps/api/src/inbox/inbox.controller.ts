@@ -14,6 +14,8 @@ export class InboxController {
     @Query('type') type?: string,
     @Query('isResolved') isResolved?: string,
     @Query('isRead') isRead?: string,
+    @Query('tag') tag?: string,
+    @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -22,6 +24,8 @@ export class InboxController {
       type,
       isResolved: isResolved !== undefined ? isResolved === 'true' : undefined,
       isRead: isRead !== undefined ? isRead === 'true' : undefined,
+      tag,
+      search,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 30,
     });
@@ -32,6 +36,16 @@ export class InboxController {
     return this.inboxService.getStats(workspaceId);
   }
 
+  @Get('clients')
+  getClients(@Query('workspaceId') workspaceId: string) {
+    return this.inboxService.getWorkspaceClients(workspaceId);
+  }
+
+  @Get('members')
+  getMembers(@Query('workspaceId') workspaceId: string) {
+    return this.inboxService.getWorkspaceMembers(workspaceId);
+  }
+
   @Patch(':id/read')
   markRead(@Param('id') id: string, @Query('workspaceId') workspaceId: string) {
     return this.inboxService.markRead(id, workspaceId);
@@ -40,6 +54,38 @@ export class InboxController {
   @Patch(':id/resolve')
   markResolved(@Param('id') id: string, @Query('workspaceId') workspaceId: string) {
     return this.inboxService.markResolved(id, workspaceId);
+  }
+
+  @Patch(':id/tags')
+  tagMessage(
+    @Param('id') id: string,
+    @Body() body: { workspaceId: string; tags: string[] },
+  ) {
+    return this.inboxService.tagMessage(id, body.workspaceId, body.tags);
+  }
+
+  @Patch(':id/crm-link')
+  linkToCrm(
+    @Param('id') id: string,
+    @Body() body: { workspaceId: string; clientId: string | null },
+  ) {
+    return this.inboxService.linkToCrm(id, body.workspaceId, body.clientId);
+  }
+
+  @Post(':id/create-crm-contact')
+  createCrmContact(
+    @Param('id') id: string,
+    @Body() body: { workspaceId: string },
+  ) {
+    return this.inboxService.createCrmContactFromMessage(id, body.workspaceId);
+  }
+
+  @Patch(':id/assign')
+  assignMessage(
+    @Param('id') id: string,
+    @Body() body: { workspaceId: string; userId: string | null },
+  ) {
+    return this.inboxService.assignMessage(id, body.workspaceId, body.userId);
   }
 
   @Post(':id/reply')

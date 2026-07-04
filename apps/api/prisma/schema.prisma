@@ -140,6 +140,7 @@ model Client {
   posts             Post[]
   tasks             Task[]
   activities        Activity[]
+  inboxMessages     InboxMessage[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 }
@@ -354,8 +355,11 @@ model InboxMessage {
   postContent     String?         // snippet of the post being commented on
   isRead          Boolean         @default(false)
   isResolved      Boolean         @default(false)
+  tags            String[]        @default([])   // e.g. ["Lead", "VIP", "Support"]
   assignedToId    String?
   assignedTo      User?           @relation(fields: [assignedToId], references: [id])
+  crmClientId     String?         // linked CRM client record
+  crmClient       Client?         @relation(fields: [crmClientId], references: [id])
   aiSuggestion    String?         // AI-suggested reply
   replies         InboxReply[]
   socialAccountId String?

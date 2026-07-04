@@ -87,6 +87,19 @@ export class WebhookService {
       });
       if (!account) return;
 
+      // Always save to inbox — every comment lands here regardless of auto-responder rules
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'FACEBOOK',
+        type: 'COMMENT',
+        externalId: commentId,
+        senderId: commentData.from?.id,
+        senderName: fromName,
+        content: commentText,
+        postId: commentData.post_id,
+        socialAccountId: account.id,
+      });
+
       // Find matching rules
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
@@ -128,19 +141,6 @@ export class WebhookService {
         }
       }
 
-      // Save to inbox
-      await this.saveInboxMessage({
-        workspaceId: account.workspaceId,
-        platform: 'FACEBOOK',
-        type: 'COMMENT',
-        externalId: commentId,
-        senderId: commentData.from?.id,
-        senderName: fromName,
-        content: commentText,
-        postId: commentData.post_id,
-        socialAccountId: account.id,
-      });
-
       // Update trigger count
       if (matchingRule) {
         await this.prisma.autoResponderRule.update({
@@ -175,6 +175,18 @@ export class WebhookService {
       });
       if (!account) return;
 
+      // Always save to inbox first — every DM lands here
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'FACEBOOK',
+        type: 'DM',
+        externalId: messagingEvent.message?.mid || senderId,
+        senderId,
+        senderName: fromName,
+        content: messageText,
+        socialAccountId: account.id,
+      });
+
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
           workspaceId: account.workspaceId,
@@ -198,18 +210,6 @@ export class WebhookService {
           access_token: accessToken,
         }
       );
-
-      // Save to inbox
-      await this.saveInboxMessage({
-        workspaceId: account.workspaceId,
-        platform: 'FACEBOOK',
-        type: 'DM',
-        externalId: messagingEvent.message?.mid || senderId,
-        senderId,
-        senderName: fromName,
-        content: messageText,
-        socialAccountId: account.id,
-      });
 
       if (matchingRule) {
         await this.prisma.autoResponderRule.update({
@@ -262,6 +262,18 @@ export class WebhookService {
         return;
       }
 
+      // Always save to inbox — every comment regardless of rule match
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'INSTAGRAM',
+        type: 'COMMENT',
+        externalId: commentId,
+        senderId: commentData.from?.id,
+        senderName: fromName,
+        content: commentText,
+        socialAccountId: account.id,
+      });
+
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
           workspaceId: account.workspaceId,
@@ -283,18 +295,6 @@ export class WebhookService {
           { params: { message, access_token: accessToken } }
         );
       }
-
-      // Save to inbox
-      await this.saveInboxMessage({
-        workspaceId: account.workspaceId,
-        platform: 'INSTAGRAM',
-        type: 'COMMENT',
-        externalId: commentId,
-        senderId: commentData.from?.id,
-        senderName: fromName,
-        content: commentText,
-        socialAccountId: account.id,
-      });
 
       if (matchingRule) {
         await this.prisma.autoResponderRule.update({
@@ -331,6 +331,18 @@ export class WebhookService {
       });
       if (!account) return;
 
+      // Always save to inbox — every DM regardless of auto-responder rule match
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: 'INSTAGRAM',
+        type: 'DM',
+        externalId: messageData.message?.mid || senderId,
+        senderId,
+        senderName: messageData.sender?.username || senderId,
+        content: messageText,
+        socialAccountId: account.id,
+      });
+
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
           workspaceId: account.workspaceId,
@@ -355,35 +367,23 @@ export class WebhookService {
         }
       );
 
-      // Save to inbox
-      await this.saveInboxMessage({
-        workspaceId: account.workspaceId,
-        platform: 'INSTAGRAM',
-        type: 'DM',
-        externalId: messageData.message?.mid || senderId,
-        senderId,
-        senderName: messageData.sender?.username || senderId,
-        content: messageText,
-        socialAccountId: account.id,
-      });
-
       if (matchingRule) {
         await this.prisma.autoResponderRule.update({
           where: { id: matchingRule.id },
           data: { triggerCount: { increment: 1 } },
         });
-      }
 
-      // Update CRM lead stage if the rule has that configured
-      if (matchingRule?.updateLeadStage && senderId) {
-        await this.updateLeadStage(
-          account.workspaceId,
-          senderId,
-          senderId,
-          matchingRule.updateLeadStage,
-          'INSTAGRAM_DM',
-          accessToken,
-        );
+        // Update CRM lead stage if the rule has that configured
+        if (matchingRule.updateLeadStage && senderId) {
+          await this.updateLeadStage(
+            account.workspaceId,
+            senderId,
+            senderId,
+            matchingRule.updateLeadStage,
+            'INSTAGRAM_DM',
+            accessToken,
+          );
+        }
       }
     } catch (err: any) {
       this.logger.error('Error handling Instagram DM:', err?.message);
