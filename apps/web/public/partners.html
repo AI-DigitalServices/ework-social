@@ -241,9 +241,47 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
 .footer-copy{font-size:12.5px;color:var(--text3)}
 .footer-tagline{font-size:12.5px;color:var(--text3);font-style:italic}
 
+/* ── WHY EWORK SOCIAL (PRODUCT DIFFERENTIATOR) ── */
+#why-ework{background:var(--bg3)}
+.ework-grid{display:grid;grid-template-columns:1fr 1.7fr;gap:64px;align-items:center;margin-top:48px}
+.ework-features{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ework-feat{display:flex;align-items:flex-start;gap:12px;padding:18px 16px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);transition:all 0.3s;position:relative;overflow:hidden}
+.ework-feat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ef-c1),var(--ef-c2));opacity:0;transition:opacity 0.3s}
+.ework-feat:hover::after{opacity:1}
+.ework-feat:hover{border-color:var(--border2);background:rgba(255,255,255,0.05);transform:translateY(-2px)}
+.ework-feat.wide{grid-column:1/-1}
+.ework-check{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px}
+.ework-feat-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ework-feat-desc{font-size:11.5px;color:var(--text3);line-height:1.5}
+
+/* ── FOUNDER STORY ── */
+#founder{background:linear-gradient(160deg,#07101E,#0D1830)}
+.founder-inner{max-width:920px;margin:0 auto;padding:96px 32px}
+.founder-hd{text-align:center;margin-bottom:52px}
+.founder-card{display:grid;grid-template-columns:200px 1fr;gap:52px;align-items:center;background:rgba(255,255,255,0.025);border:1px solid var(--border2);border-radius:28px;padding:44px 52px;position:relative;overflow:hidden}
+.founder-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:var(--purple);border-radius:50%;filter:blur(80px);opacity:0.12;pointer-events:none}
+.founder-card::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;background:var(--blue);border-radius:50%;filter:blur(70px);opacity:0.1;pointer-events:none}
+.founder-photo-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative;z-index:1}
+.founder-photo-ring{width:192px;height:192px;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--blue-light),var(--purple-light),var(--green-light));animation:spin 8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.founder-photo{width:186px;height:186px;border-radius:50%;background:linear-gradient(135deg,#1A2E5E,#2D1B69);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Playfair Display',serif;font-size:54px;font-weight:700;color:rgba(255,255,255,0.8)}
+.founder-photo img{width:100%;height:100%;object-fit:cover;object-position:center top}
+.founder-name{font-size:14px;font-weight:700;color:var(--text);text-align:center}
+.founder-role{font-size:11px;color:var(--text3);text-align:center;margin-top:2px;line-height:1.5}
+.founder-li{display:inline-flex;align-items:center;gap:5px;color:var(--blue-light);font-size:11px;text-decoration:none;margin-top:6px;transition:color 0.2s}
+.founder-li:hover{color:var(--text)}
+.founder-content{position:relative;z-index:1}
+.founder-qmark{font-family:'Playfair Display',serif;font-size:80px;line-height:0.6;color:var(--blue);opacity:0.35;margin-bottom:20px;display:block}
+.founder-quote{font-size:15.5px;color:var(--text);line-height:1.85;font-style:italic;margin-bottom:22px}
+.founder-attr{font-size:12.5px;color:var(--text2)}
+.founder-attr strong{color:var(--text);font-style:normal}
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
   nav{padding:0 20px}
+  .ework-grid{grid-template-columns:1fr}
+  .founder-card{grid-template-columns:1fr;text-align:center;padding:36px 28px}
+  .founder-photo-wrap{align-items:center}
   .why-grid{grid-template-columns:1fr}
   .comparison-grid{grid-template-columns:1fr}
   .cmp-middle{display:none}
@@ -257,6 +295,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
 }
 @media(max-width:600px){
   .section-inner{padding:72px 20px}
+  .ework-features{grid-template-columns:1fr}
+  .ework-feat.wide{grid-column:1}
+  .founder-inner{padding:72px 20px}
+  .founder-photo-ring{width:160px;height:160px}
+  .founder-photo{width:154px;height:154px;font-size:42px}
   .who-grid{grid-template-columns:repeat(2,1fr)}
   .benefits-grid{grid-template-columns:1fr}
   .audience-grid{grid-template-columns:repeat(2,1fr)}
@@ -305,15 +348,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
     </div>
 
     <h1 class="hero-h1">
-      Become a Founding<br/>
-      <em>Growth Partner</em>
+      Become One of Our<br/>
+      <em>Founding Growth Partners</em>
     </h1>
 
     <p class="hero-sub">
-      Help businesses simplify social media operations while growing your own business, audience, and recurring revenue.
+      Grow your business. Empower your clients.<br/>Shape the future of social media operations.
     </p>
     <p class="hero-desc">
-      Instead of simply recommending another software tool, join a select group of agencies, consultants, creators, educators, and community leaders shaping the future of social media operations with eWork Social.
+      If you're an agency owner, marketing consultant, content creator, or automation specialist helping businesses grow online — this partnership was built for you. Join a select group of founding partners who earn recurring revenue, shape the product roadmap, and grow alongside us from day one.
     </p>
 
     <div class="hero-btns">
@@ -344,6 +387,70 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
     </div>
   </div>
 </div>
+
+<!-- WHY EWORK SOCIAL — PRODUCT DIFFERENTIATOR -->
+<section id="why-ework">
+  <div class="section-inner">
+    <div class="ework-grid">
+      <div>
+        <div class="eyebrow eyebrow-blue">ONE PLATFORM. EVERYTHING.</div>
+        <h2 class="section-title">Everything your clients<br/>need — <span class="g-blue">in one workspace.</span></h2>
+        <p class="section-lead">Stop juggling five different tools. eWork Social brings publishing, AI content, CRM, client approvals, and team workflows into one clean dashboard — built for agencies and consultants.</p>
+      </div>
+      <div class="ework-features">
+        <div class="ework-feat" style="--ef-c1:#2563EB;--ef-c2:#8B5CF6">
+          <div class="ework-check" style="background:rgba(37,99,235,0.18)">📅</div>
+          <div>
+            <div class="ework-feat-name">All-in-One Publishing</div>
+            <div class="ework-feat-desc">Schedule to Instagram, Facebook, Twitter/X, LinkedIn & more from one dashboard</div>
+          </div>
+        </div>
+        <div class="ework-feat" style="--ef-c1:#8B5CF6;--ef-c2:#EC4899">
+          <div class="ework-check" style="background:rgba(139,92,246,0.18)">🤖</div>
+          <div>
+            <div class="ework-feat-name">AI Content Studio</div>
+            <div class="ework-feat-desc">AI captions, hashtags & post rewriting tailored for African audiences</div>
+          </div>
+        </div>
+        <div class="ework-feat" style="--ef-c1:#10B981;--ef-c2:#2563EB">
+          <div class="ework-check" style="background:rgba(16,185,129,0.18)">📇</div>
+          <div>
+            <div class="ework-feat-name">Built-in CRM</div>
+            <div class="ework-feat-desc">Manage clients, track pipeline, log notes — no extra tool needed</div>
+          </div>
+        </div>
+        <div class="ework-feat" style="--ef-c1:#F59E0B;--ef-c2:#EF4444">
+          <div class="ework-check" style="background:rgba(245,158,11,0.18)">✅</div>
+          <div>
+            <div class="ework-feat-name">Client Approval Workflow</div>
+            <div class="ework-feat-desc">Let clients review and approve posts before they go live</div>
+          </div>
+        </div>
+        <div class="ework-feat" style="--ef-c1:#EF4444;--ef-c2:#F59E0B">
+          <div class="ework-check" style="background:rgba(239,68,68,0.18)">⚡</div>
+          <div>
+            <div class="ework-feat-name">Workflow Automation</div>
+            <div class="ework-feat-desc">Auto-responders and smart triggers that work while you sleep</div>
+          </div>
+        </div>
+        <div class="ework-feat" style="--ef-c1:#60A5FA;--ef-c2:#8B5CF6">
+          <div class="ework-check" style="background:rgba(96,165,250,0.18)">👥</div>
+          <div>
+            <div class="ework-feat-name">Team Collaboration</div>
+            <div class="ework-feat-desc">Assign tasks, manage team access, and track everything in one place</div>
+          </div>
+        </div>
+        <div class="ework-feat wide" style="--ef-c1:#10B981;--ef-c2:#34D399">
+          <div class="ework-check" style="background:rgba(16,185,129,0.18)">💳</div>
+          <div>
+            <div class="ework-feat-name">Local Payments — Paystack Supported</div>
+            <div class="ework-feat-desc">Accept and manage payments via Paystack. No foreign card required. Built for African businesses from the ground up.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- WHY WE BUILT THIS -->
 <section id="why">
@@ -379,7 +486,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
             <div class="why-card-icon">📲</div>
             <div class="why-card-text">
               <strong>Direct Founder Access</strong>
-              WhatsApp + email with Bernard directly
+              WhatsApp + email with Oshapi directly
             </div>
           </div>
         </div>
@@ -400,9 +507,38 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
           </div>
           <div class="why-bullet">
             <div class="why-bullet-dot">✓</div>
-            <p class="why-bullet-text"><strong>Everyone in your audience wins.</strong> They get 50% lifetime discounts, priority onboarding, and founder support when they join through you.</p>
+            <p class="why-bullet-text"><strong>Everyone in your audience wins.</strong> They get 50% off their first year, priority onboarding, and direct founder support when they join through you.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDER STORY -->
+<section id="founder">
+  <div class="founder-inner">
+    <div class="founder-hd">
+      <div class="eyebrow eyebrow-purple" style="text-align:center">THE PERSON BEHIND IT</div>
+      <h2 class="section-title" style="text-align:center">Why I built <span class="g-blue">eWork Social</span></h2>
+    </div>
+    <div class="founder-card">
+      <div class="founder-photo-wrap">
+        <!-- 💡 TO ADD YOUR PHOTO: save it as /apps/web/public/founder-oshapi.jpg
+             then replace the div.founder-photo with:
+             <img src="/founder-oshapi.jpg" alt="Oshapi Bernard" class="founder-photo" style="display:block">
+        -->
+        <div class="founder-photo-ring">
+          <div class="founder-photo">OB</div>
+        </div>
+        <div class="founder-name">Oshapi Bernard</div>
+        <div class="founder-role">Founder, eWork Social<br/>Digital Marketing Manager<br/>& AI Automation Strategist</div>
+        <a href="https://www.linkedin.com/in/oshapi-bernard/" target="_blank" class="founder-li">💼 Connect on LinkedIn</a>
+      </div>
+      <div class="founder-content">
+        <span class="founder-qmark">"</span>
+        <p class="founder-quote">I spent years managing social media for multiple clients — jumping between Buffer, a separate CRM, another tool for approvals, and yet another for analytics. The chaos was real. The costs were stacking. I kept thinking: why isn't there one platform that does all of this, built with African businesses and agencies in mind?<br/><br/>So I built it. eWork Social brings publishing, AI content, CRM, client approvals, team workflows, and local payments into one clean workspace. It's not just a product — it's the tool I always needed and couldn't find.</p>
+        <div class="founder-attr">— <strong>Oshapi Bernard</strong>, Founder · <a href="https://www.linkedin.com/in/oshapi-bernard/" target="_blank" style="color:var(--blue-light);text-decoration:none">linkedin.com/in/oshapi-bernard</a></div>
       </div>
     </div>
   </div>
@@ -444,7 +580,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
         <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Direct access to the founder</span></div>
         <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Shape the product roadmap</span></div>
         <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Co-marketing & content collaboration</span></div>
-        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>50% discount for your audience — forever</span></div>
+        <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>50% off for your audience — their first year</span></div>
         <div class="cmp-item highlight"><span class="cmp-check">✓</span><span>Founding Partner badge & recognition</span></div>
       </div>
     </div>
@@ -501,7 +637,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
       <div class="benefit-card" style="--c1:#2563EB;--c2:#8B5CF6">
         <div class="benefit-icon-wrap" style="--c1:rgba(37,99,235,0.4);--c2:rgba(139,92,246,0.2)">📲</div>
         <div class="benefit-title">Founder Access</div>
-        <div class="benefit-desc">Direct WhatsApp and email line to Bernard. Real conversations, real responses — not a ticket system.</div>
+        <div class="benefit-desc">Direct WhatsApp and email line to Oshapi. Real conversations, real responses — not a ticket system.</div>
       </div>
       <div class="benefit-card" style="--c1:#8B5CF6;--c2:#EC4899">
         <div class="benefit-icon-wrap" style="--c1:rgba(139,92,246,0.4);--c2:rgba(236,72,153,0.2)">🗺️</div>
@@ -608,7 +744,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
             <div class="step-preview-dot" style="background:var(--purple-light)"></div>
             <div class="step-preview-label">Founding Partner Status</div>
           </div>
-          <div class="step-preview-body">🏆 Cohort 1 · Founding Member<br/>Roadmap access · Direct line to Bernard</div>
+          <div class="step-preview-body">🏆 Cohort 1 · Founding Member<br/>Roadmap access · Direct line to Oshapi</div>
         </div>
       </div>
     </div>
@@ -627,8 +763,8 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
     <div class="audience-grid">
       <div class="aud-card">
         <div class="aud-emoji">💸</div>
-        <div class="aud-title">50% Lifetime Discount</div>
-        <div class="aud-desc">Locked in at founding member price — forever, not just the first month</div>
+        <div class="aud-title">50% Off — First Year</div>
+        <div class="aud-desc">A significant 50% saving locked in for their entire first year — a meaningful head start</div>
       </div>
       <div class="aud-card">
         <div class="aud-emoji">🚀</div>
@@ -638,7 +774,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
       <div class="aud-card">
         <div class="aud-emoji">📲</div>
         <div class="aud-title">Founder Support</div>
-        <div class="aud-desc">Your referrals get direct access to Bernard — not a support bot</div>
+        <div class="aud-desc">Your referrals get direct access to Oshapi — not a support bot</div>
       </div>
       <div class="aud-card">
         <div class="aud-emoji">⚡</div>
@@ -795,7 +931,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
           <span class="faq-chevron">▾</span>
         </button>
         <div class="faq-answer">
-          <div class="faq-answer-inner">Founding partners are protected. Your commission rate is locked at 30% regardless of future pricing changes. Your audience's 50% discount is honoured permanently. These are founding-member guarantees, not marketing copy.</div>
+          <div class="faq-answer-inner">Founding partners are protected. Your 30% recurring commission rate is locked regardless of future pricing changes — for as long as your referrals remain customers. Your audience's 50% first-year discount is honoured as promised, with a fair ongoing rate after year one. These are founding-member commitments, not marketing copy.</div>
         </div>
       </div>
     </div>
@@ -837,23 +973,23 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
         </div>
         <p class="footer-brand-desc">The all-in-one social media management platform built for agencies, consultants, and creators who manage multiple clients.</p>
 
-        <div class="footer-contact-head">QUESTIONS? REACH BERNARD DIRECTLY</div>
+        <div class="footer-contact-head">QUESTIONS? REACH ME DIRECTLY</div>
         <div class="footer-contact-links">
           <a href="https://calendly.com/eworksocial" target="_blank" class="footer-contact-link">
             <div class="footer-contact-icon" style="background:rgba(37,99,235,0.15)">📅</div>
             Schedule a discovery call
           </a>
-          <a href="mailto:info.oshapify@gmail.com" class="footer-contact-link">
+          <a href="mailto:info@eworksocial.com" class="footer-contact-link">
             <div class="footer-contact-icon" style="background:rgba(16,185,129,0.15)">✉️</div>
-            info.oshapify@gmail.com
+            info@eworksocial.com
           </a>
-          <a href="https://linkedin.com/in/bernardoshapi" target="_blank" class="footer-contact-link">
+          <a href="https://www.linkedin.com/in/oshapi-bernard/" target="_blank" class="footer-contact-link">
             <div class="footer-contact-icon" style="background:rgba(96,165,250,0.15)">💼</div>
             Connect on LinkedIn
           </a>
-          <a href="https://wa.me/your-number" target="_blank" class="footer-contact-link">
+          <a href="https://wa.me/2349080112000" target="_blank" class="footer-contact-link">
             <div class="footer-contact-icon" style="background:rgba(34,197,94,0.15)">💬</div>
-            WhatsApp — say hello
+            WhatsApp — +234-9080112000
           </a>
         </div>
       </div>
@@ -888,7 +1024,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
         </div>
 
         <div class="footer-col-head" style="margin-top:28px">People Buy Founders</div>
-        <p style="font-size:12.5px;color:var(--text3);line-height:1.7;font-style:italic">"I'm Bernard — a Digital Marketing Manager & AI automation strategist building eWork Social because I lived the chaos of managing multiple clients across five tools. I'm building the tool I always needed."</p>
+        <p style="font-size:12.5px;color:var(--text3);line-height:1.7;font-style:italic">"I'm Oshapi — a Digital Marketing Manager & AI Automation Strategist who built eWork Social because I lived the chaos of managing multiple clients across too many tools. This is the platform I always needed."</p>
       </div>
     </div>
 
