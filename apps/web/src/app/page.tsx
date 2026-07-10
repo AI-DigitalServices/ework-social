@@ -362,6 +362,38 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* AI SECTION */}
+      <section style={{ padding: '110px 48px', background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
+          <span className="section-label">AI, Built In</span>
+          <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1.1, color: '#F0F6FF', marginBottom: 18 }}>
+            Real AI. Doing real work.<br />Not a chatbot bolted on top.
+          </h2>
+          <p style={{ color: '#6B8299', fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: '0 auto 64px', fontWeight: 400 }}>
+            Every AI feature in eWork Social runs on Claude, Anthropic's frontier model — the same technology enterprises trust for production-grade work. We didn't add an AI button. We built AI into the workflow itself.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, textAlign: 'left' as const, marginBottom: 40 }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Caption writing that sounds like you</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Describe what you want to say. Claude drafts platform-optimized captions for Instagram, LinkedIn, TikTok, and every platform you manage — in seconds, not staring at a blank box.</p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Reply suggestions that read the message</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>In the Engagement Hub, Claude reads each DM or comment and drafts a contextual reply — not a canned response. You review, edit if needed, and send. AI drafts. You decide.</p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Hashtags and rewrites, on demand</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Stuck on hashtags, or need a caption reworked for a different platform's tone? One click, powered by the same model behind every suggestion in your dashboard.</p>
+            </div>
+          </div>
+
+          <p style={{ color: '#4A6080', fontSize: 13, fontWeight: 500 }}>
+            Powered by Claude, built by Anthropic. eWork Social is not a Claude reseller or a wrapper — Claude works inside features we built specifically for social media agencies.
+          </p>
+        </div>
+      </section>
+
       {/* PLATFORMS */}
       <section id="platforms" className="section-pad" style={{ paddingTop: 90, paddingBottom: 90, background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
@@ -743,23 +775,70 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #1A2840', padding: '44px 48px 32px', background: '#070B12' }}>
+      <footer style={{ borderTop: '1px solid #1A2840', padding: '64px 48px 32px', background: '#070B12' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
-            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-              <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
-              <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px', color: '#fff' }}>eWork Social</span>
-            </a>
-            <div style={{ display: 'flex', gap: 28 }}>
-              <a href="/blog" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Blog</a>
-              <a href="/privacy" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>
-              <a href="/terms" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Terms of Service</a>
-              <a href="/login" style={{ color: '#4A6080', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Sign In</a>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 40, marginBottom: 56 }} className="grid-4col">
+            <div>
+              <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 14 }}>
+                <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
+                <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 17, letterSpacing: '-0.3px', color: '#fff' }}>eWork Social</span>
+              </a>
+              <p style={{ color: '#6B8299', fontSize: 13.5, lineHeight: 1.7, marginBottom: 24, maxWidth: 280 }}>
+                The all-in-one social media management platform built for agencies, consultants, and creators who manage multiple clients.
+              </p>
+              <p style={{ color: '#4A6080', fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', marginBottom: 14 }}>QUESTIONS? REACH US DIRECTLY</p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <a href="https://calendly.com/aiservices-agent/30min" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#8BA0BC', fontSize: 13.5 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(37,99,235,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>📅</span>
+                  Schedule a discovery call
+                </a>
+                <a href="mailto:info@eworksocial.com" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#8BA0BC', fontSize: 13.5 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>✉️</span>
+                  info@eworksocial.com
+                </a>
+                <a href="https://www.linkedin.com/in/oshapi-bernard/" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#8BA0BC', fontSize: 13.5 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(96,165,250,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>💼</span>
+                  Connect on LinkedIn
+                </a>
+                <a href="https://wa.me/2349080112000" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#8BA0BC', fontSize: 13.5 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>💬</span>
+                  WhatsApp — +234 908 011 2000
+                </a>
+              </div>
             </div>
-            <p style={{ color: '#2A3A52', fontSize: 13, fontWeight: 500 }}>© 2026 eWork Social · Built for agencies, everywhere.</p>
+
+            <div>
+              <p style={{ color: '#4A6080', fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const, marginBottom: 16 }}>Platform</p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <a href="/#features" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Features</a>
+                <a href="/#pricing" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Pricing</a>
+                <a href="/#platforms" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Platforms</a>
+                <a href="/blog" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Blog</a>
+                <a href="/register" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Start Free Trial</a>
+              </div>
+            </div>
+
+            <div>
+              <p style={{ color: '#4A6080', fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const, marginBottom: 16 }}>Partners</p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <a href="https://www.eworksocial.com/partners.html" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Growth Partner Network</a>
+                <a href="https://www.eworksocial.com/partners.html#faq" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Partner FAQ</a>
+              </div>
+            </div>
+
+            <div>
+              <p style={{ color: '#4A6080', fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const, marginBottom: 16 }}>Company</p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <a href="/privacy" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Privacy Policy</a>
+                <a href="/terms" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Terms of Service</a>
+                <a href="/login" style={{ color: '#8BA0BC', fontSize: 13.5, textDecoration: 'none' }}>Sign In</a>
+              </div>
+            </div>
           </div>
-          <div style={{ borderTop: '1px solid #111827', paddingTop: 16, textAlign: 'center' }}>
-            <p style={{ color: '#2A3A52', fontSize: 12 }}>eWork Social is a product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</p>
+
+          <div style={{ borderTop: '1px solid #111827', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: 12 }}>
+            <p style={{ color: '#2A3A52', fontSize: 12.5 }}>© 2026 eWork Social · Built for agencies, everywhere.</p>
+            <p style={{ color: '#2A3A52', fontSize: 12 }}>A product of <strong style={{ color: '#3A5070' }}>Jben Logistics</strong> · RC: 1940369 · Lagos, Nigeria</p>
           </div>
         </div>
       </footer>
