@@ -95,9 +95,9 @@ export default function LandingPage() {
 
   const plans = [
     { name: 'Free Trial', price: '0', isFree: true, period: '7 days', popular: false, features: ['5 social accounts', '50 posts/month', '1 workspace', 'Basic CRM', 'Watermark on posts'], cta: 'Start free' },
-    { name: 'Starter', priceKey: 'starter' as const, period: '/month', popular: false, features: ['10 social accounts', '200 posts/month', 'CRM & pipeline', '30-day analytics', 'No watermark'], cta: 'Get Starter' },
-    { name: 'Growth', priceKey: 'growth' as const, period: '/month', popular: true, features: ['30 social accounts', '2,000 posts/month', '5 team members', '6-month analytics', 'Bulk scheduling', 'Twitter/X access'], cta: 'Get Growth' },
-    { name: 'Agency Pro', priceKey: 'pro' as const, period: '/month', popular: false, features: ['100 social accounts', 'Unlimited posts', '15 team members', '12-month analytics', 'White-label dashboard', 'Full API access'], cta: 'Get Agency Pro' },
+    { name: 'Starter', priceKey: 'starter' as const, period: '/month', popular: false, features: ['10 social accounts', '200 posts/month', 'CRM & pipeline', '30-day analytics', '20 AI captions/month', '25 AI replies/month', 'No watermark'], cta: 'Get Starter' },
+    { name: 'Growth', priceKey: 'growth' as const, period: '/month', popular: true, features: ['30 social accounts', '2,000 posts/month', '5 team members', 'Client Approval Portal', 'Twitter/X access', 'Bulk scheduling', '100 AI captions/month', 'AI CRM Insights'], cta: 'Get Growth' },
+    { name: 'Agency Pro', priceKey: 'pro' as const, period: '/month', popular: false, features: ['100 social accounts', 'Unlimited posts', '15 team members', 'Unlimited AI everything', 'White-label dashboard', 'Full API access', 'Full auto-responder'], cta: 'Get Agency Pro' },
   ];
 
   return (
