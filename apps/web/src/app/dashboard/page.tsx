@@ -5,17 +5,17 @@ import { useAuthStore } from '@/store/auth.store';
 import { getDashboardStatsAction, getRecentPostsAction } from '@/actions/analytics.actions';
 import {
   CalendarDays, Users, TrendingUp, Share2, ArrowRight,
-  CheckCircle, Clock, AlertCircle, Zap, X,
+  CheckCircle, Clock, AlertCircle, Zap, X, Link2, Gift, Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 
 const quickActions = [
-  { label: '📅 Schedule a Post', desc: 'Create and schedule content', href: '/dashboard/scheduler', color: 'hover:border-blue-200 hover:bg-blue-50 group-hover:text-blue-700' },
-  { label: '👥 Add a Client', desc: 'Add to your CRM pipeline', href: '/dashboard/crm', color: 'hover:border-green-200 hover:bg-green-50 group-hover:text-green-700' },
-  { label: '📊 View Analytics', desc: 'Track your performance', href: '/dashboard/analytics', color: 'hover:border-purple-200 hover:bg-purple-50 group-hover:text-purple-700' },
-  { label: '🔗 Connect Platform', desc: 'Add social accounts', href: '/dashboard/settings?tab=social', color: 'hover:border-yellow-200 hover:bg-yellow-50 group-hover:text-yellow-700' },
-  { label: '⚡ Set Automation', desc: 'Auto-send pipeline emails', href: '/dashboard/crm?view=automation', color: 'hover:border-pink-200 hover:bg-pink-50 group-hover:text-pink-700' },
-  { label: '🎁 Refer & Earn', desc: 'Get 20% commission', href: '/dashboard/settings?tab=referral', color: 'hover:border-orange-200 hover:bg-orange-50 group-hover:text-orange-700' },
+  { label: 'Schedule a Post', desc: 'Create and schedule content', href: '/dashboard/scheduler', icon: CalendarDays, iconBg: 'bg-blue-500' },
+  { label: 'Add a Client', desc: 'Add to your CRM pipeline', href: '/dashboard/crm', icon: Users, iconBg: 'bg-green-500' },
+  { label: 'View Analytics', desc: 'Track your performance', href: '/dashboard/analytics', icon: TrendingUp, iconBg: 'bg-purple-500' },
+  { label: 'Connect Platform', desc: 'Add social accounts', href: '/dashboard/settings?tab=social', icon: Link2, iconBg: 'bg-amber-500' },
+  { label: 'Set Automation', desc: 'Auto-send pipeline emails', href: '/dashboard/crm?view=automation', icon: Sparkles, iconBg: 'bg-pink-500' },
+  { label: 'Refer & Earn', desc: 'Get 20% commission', href: '/dashboard/settings?tab=referral', icon: Gift, iconBg: 'bg-orange-500' },
 ];
 
 const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
@@ -25,11 +25,31 @@ const statusConfig: Record<string, { icon: any; color: string; label: string }> 
   FAILED: { icon: AlertCircle, color: 'text-red-600 bg-red-100', label: 'Failed' },
 };
 
-const platformIcons: Record<string, string> = {
-  FACEBOOK: '📘', INSTAGRAM: '📸', TWITTER: '🐦',
-  LINKEDIN: '💼', TIKTOK: '🎵', YOUTUBE: '▶️',
-  BLUESKY: '🦋', THREADS: '🧵',
+const PLATFORM_META: Record<string, { color: string; letter: string }> = {
+  FACEBOOK:  { color: '#1877F2', letter: 'f'  },
+  INSTAGRAM: { color: '#E1306C', letter: '✦'  },
+  TWITTER:   { color: '#1DA1F2', letter: '𝕏'  },
+  LINKEDIN:  { color: '#0077B5', letter: 'in' },
+  TIKTOK:    { color: '#000000', letter: 'tt' },
+  YOUTUBE:   { color: '#FF0000', letter: '▶'  },
+  THREADS:   { color: '#000000', letter: 'th' },
+  BLUESKY:   { color: '#0085FF', letter: 'bs' },
 };
+
+function PlatformIcon({ platform, size = 32 }: { platform: string; size?: number }) {
+  const meta = PLATFORM_META[platform] || { color: '#378ADD', letter: '?' };
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size > 24 ? 8 : 6,
+      background: meta.color,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontSize: size * 0.34, fontWeight: 900,
+      flexShrink: 0, letterSpacing: '-0.5px',
+    }}>
+      {meta.letter}
+    </div>
+  );
+}
 
 // Welcome modal — shown once on first login
 function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) {
@@ -161,13 +181,7 @@ export default function DashboardPage() {
       {inactiveAccounts.map((account) => (
         <div key={account.id} className="flex items-center justify-between gap-4 px-5 py-3.5 bg-amber-50 border border-amber-200 rounded-xl">
           <div className="flex items-center gap-3">
-            <span className="text-xl">
-              {account.platform === 'LINKEDIN' ? '💼' :
-               account.platform === 'INSTAGRAM' ? '📸' :
-               account.platform === 'FACEBOOK' ? '📘' :
-               account.platform === 'THREADS' ? '🧵' :
-               account.platform === 'BLUESKY' ? '🦋' : '🔗'}
-            </span>
+            <PlatformIcon platform={account.platform} size={28} />
             <div>
               <p className="text-sm font-semibold text-amber-800">
                 {account.platform} token expired — @{account.accountName}
@@ -225,16 +239,22 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 h-full">
             <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action) => (
-                <Link key={action.label} href={action.href}
-                  className={`flex items-start justify-between p-4 rounded-xl border border-slate-100 transition group ${action.color}`}>
-                  <div>
-                    <p className="font-medium text-slate-700 text-sm">{action.label}</p>
-                    <p className="text-slate-400 text-xs mt-0.5">{action.desc}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5" />
-                </Link>
-              ))}
+              {quickActions.map((action) => {
+                const ActionIcon = action.icon;
+                return (
+                  <Link key={action.label} href={action.href}
+                    className="flex items-start gap-3 p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition group">
+                    <div className={`w-9 h-9 ${action.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <ActionIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-700 text-sm">{action.label}</p>
+                      <p className="text-slate-400 text-xs mt-0.5">{action.desc}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -308,7 +328,7 @@ export default function DashboardPage() {
               const StatusIcon = status.icon;
               return (
                 <div key={post.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl">
-                  <span className="text-xl flex-shrink-0">{platformIcons[post.socialAccount?.platform] || '📱'}</span>
+                  <PlatformIcon platform={post.socialAccount?.platform || ''} size={32} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-700 truncate">{post.content}</p>
                     <p className="text-xs text-slate-400 mt-0.5">{post.socialAccount?.accountName}</p>
