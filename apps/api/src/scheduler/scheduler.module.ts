@@ -5,9 +5,10 @@ import { CommonModule } from '../common/common.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SocialModule } from '../social/social.module';
 import { AuthModule } from '../auth/auth.module';
+import { PostHogModule } from '../analytics/posthog.module';
 
 @Module({
-  imports: [CommonModule, AuthModule, NotificationsModule, SocialModule],
+  imports: [CommonModule, AuthModule, NotificationsModule, SocialModule, PostHogModule],
   controllers: [SchedulerController],
   providers: [SchedulerService],
 })
