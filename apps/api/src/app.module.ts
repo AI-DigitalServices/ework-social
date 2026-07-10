@@ -19,6 +19,7 @@ import { CommonModule } from './common/common.module';
 import { AiModule } from './ai/ai.module';
 import { ApprovalModule } from './approval/approval.module';
 import { InboxModule } from './inbox/inbox.module';
+import { PostHogModule } from './analytics/posthog.module';
 import { RiscModule } from './risc/risc.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { TwitterModule } from './twitter/twitter.module';
@@ -60,6 +61,7 @@ import { TwitterModule } from './twitter/twitter.module';
     AiModule,
     ApprovalModule,
     InboxModule,
+    PostHogModule,
     RiscModule,
     WaitlistModule,
     TwitterModule,

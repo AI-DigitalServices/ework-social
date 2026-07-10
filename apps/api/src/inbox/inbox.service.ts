@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
 import { AiUsageService } from '../ai/ai-usage.service';
+import { PostHogService } from '../analytics/posthog.service';
 
 const INBOX_TAGS = ['Lead', 'VIP Client', 'Support', 'Opportunity', 'Spam', 'Follow Up'];
 
@@ -13,6 +14,7 @@ export class InboxService {
   constructor(
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
+    private posthog: PostHogService,
   ) {}
 
   async getMessages(workspaceId: string, filters: {
@@ -237,6 +239,8 @@ export class InboxService {
       });
     }
 
+    this.posthog.capture(workspaceId, 'inbox_reply_sent', { platform: msg.platform, type: msg.type });
+
     return { success: true };
   }
 
@@ -267,6 +271,8 @@ Only return the reply text, nothing else.`;
       where: { id },
       data: { aiSuggestion: suggestion },
     });
+
+    this.posthog.capture(workspaceId, 'ai_reply_suggested', { platform: msg.platform });
 
     return { suggestion };
   }

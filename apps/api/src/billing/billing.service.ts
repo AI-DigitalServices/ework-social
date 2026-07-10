@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 import axios from 'axios';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class BillingService {
@@ -11,6 +12,7 @@ export class BillingService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    private posthog: PostHogService,
   ) {}
 
   private get headers() {
@@ -165,6 +167,10 @@ export class BillingService {
       update: { plan: plan as any, status: 'ACTIVE', paystackRef: data.reference },
       create: { workspaceId, plan: plan as any, status: 'ACTIVE', paystackRef: data.reference },
     });
+
+    this.posthog.capture(workspaceId, 'subscription_upgraded', { plan });
+
+    return;
   }
 
   private async handleSubscriptionDisabled(data: any) {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
+import { PostHogService } from '../analytics/posthog.service';
 
 // Commission structure
 // Founding Partner: 30% for 24 months
@@ -23,6 +24,7 @@ export class ReferralService {
   constructor(
     private prisma: PrismaService,
     private email: EmailService,
+    private posthog: PostHogService,
   ) {}
 
   async generateReferralCode(userId: string): Promise<string> {
@@ -136,6 +138,8 @@ export class ReferralService {
       where: { id: newUserId },
       data: { referredById: referrer.id },
     });
+
+    this.posthog.capture(newUserId, 'referral_signup_completed', { referrerId: referrer.id });
   }
 
   async requestWithdrawal(userId: string, amount: number, paymentDetails: string) {
@@ -178,6 +182,8 @@ export class ReferralService {
         </div>
       `,
     });
+
+    this.posthog.capture(userId, 'withdrawal_requested', { amount });
 
     return { success: true, message: 'Withdrawal request submitted. You will be paid within 3-5 business days.' };
   }

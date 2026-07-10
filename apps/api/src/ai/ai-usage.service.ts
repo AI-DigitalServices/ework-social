@@ -1,10 +1,11 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getPlanLimits } from '../common/plan-limits';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class AiUsageService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private posthog: PostHogService) {}
 
   private getCurrentMonth(): string {
     const now = new Date();
@@ -50,6 +51,7 @@ export class AiUsageService {
     }
 
     if (limit === 0) {
+      this.posthog.capture(workspaceId, 'ai_feature_blocked_by_plan', { type });
       throw new ForbiddenException(
         `${limitLabel} is not available on your current plan. Please upgrade.`
       );
@@ -62,6 +64,7 @@ export class AiUsageService {
       });
 
       if (usage && usage.count >= limit) {
+        this.posthog.capture(workspaceId, 'ai_usage_limit_reached', { type, limit });
         throw new ForbiddenException(
           `You have reached your ${limitLabel} limit of ${limit} for this month. Upgrade your plan for more.`
         );
@@ -74,6 +77,8 @@ export class AiUsageService {
       update: { count: { increment: 1 } },
       create: { workspaceId, type, month, count: 1 },
     });
+
+    this.posthog.capture(workspaceId, 'ai_feature_used', { type });
   }
 
   async getUsage(workspaceId: string) {

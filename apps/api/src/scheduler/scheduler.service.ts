@@ -5,6 +5,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SocialService } from '../social/social.service';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class SchedulerService {
@@ -15,6 +16,7 @@ export class SchedulerService {
     private planGuard: PlanGuardService,
     private notifications: NotificationsService,
     private socialService: SocialService,
+    private posthog: PostHogService,
   ) {}
 
   async getPosts(workspaceId: string) {
@@ -29,7 +31,7 @@ export class SchedulerService {
     // Plan gating — check post limit before creating
     await this.planGuard.checkPostLimit(dto.workspaceId);
 
-    return this.prisma.post.create({
+    const post = await this.prisma.post.create({
       data: {
         workspaceId: dto.workspaceId,
         socialAccountId: dto.socialAccountId,
@@ -41,6 +43,14 @@ export class SchedulerService {
       },
       include: { socialAccount: true, client: true },
     });
+
+    this.posthog.capture(
+      dto.workspaceId,
+      dto.status === 'SCHEDULED' ? 'post_scheduled' : 'post_created',
+      { platform: post.socialAccount?.platform, status: dto.status }
+    );
+
+    return post;
   }
 
   async updatePost(id: string, dto: Partial<CreatePostDto>) {

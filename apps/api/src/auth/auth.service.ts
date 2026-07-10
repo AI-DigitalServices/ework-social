@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PostHogService } from '../analytics/posthog.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
@@ -21,6 +22,7 @@ export class AuthService {
     private jwt: JwtService,
     private email: EmailService,
     private notifications: NotificationsService,
+    private posthog: PostHogService,
   ) {}
 
   async register(dto: RegisterDto & { referralCode?: string }) {
@@ -72,6 +74,10 @@ export class AuthService {
     } catch (err) {
       console.error('Failed to send verification email:', err);
     }
+
+    this.posthog.capture(user.ownedWorkspaces[0].id, 'user_signed_up', {
+      hasReferral: !!dto.referralCode,
+    });
 
     const tokens = await this.generateTokens(user.id, user.email);
     return {

@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { JwtGuard } from './jwt.guard';
 import { EmailModule } from '../email/email.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PostHogModule } from '../analytics/posthog.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     }),
     EmailModule,
     NotificationsModule,
+    PostHogModule,
   ],
   providers: [AuthService, JwtGuard],
   controllers: [AuthController],

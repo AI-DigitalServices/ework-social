@@ -4,6 +4,7 @@ import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { getPlanLimits } from '../common/plan-limits';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class ApprovalService {
@@ -12,6 +13,7 @@ export class ApprovalService {
     private email: EmailService,
     private config: ConfigService,
     private notifications: NotificationsService,
+    private posthog: PostHogService,
   ) {}
 
   // Agency sends post for client approval
@@ -64,6 +66,8 @@ export class ApprovalService {
     // Send email to client
     const approvalUrl = `${this.config.get('FRONTEND_URL')}/approve/${approval.token}`;
     await this.sendApprovalEmail(clientEmail, clientName, post, approvalUrl);
+
+    this.posthog.capture(workspaceId, 'approval_sent', { platform: post.socialAccount?.platform, clientName });
 
     return { success: true, token: approval.token, approvalUrl };
   }
@@ -139,6 +143,8 @@ export class ApprovalService {
       );
     }
 
+    this.posthog.capture(approval.workspaceId, 'approval_approved', { clientName: approval.clientName });
+
     return { success: true, message: 'Post approved successfully' };
   }
 
@@ -177,6 +183,8 @@ export class ApprovalService {
         `${approval.clientName} requested changes: "${revisionNote?.slice(0, 80)}..."`,
       );
     }
+
+    this.posthog.capture(approval.workspaceId, 'approval_revision_requested', { clientName: approval.clientName });
 
     return { success: true, message: 'Revision request sent to agency' };
   }
