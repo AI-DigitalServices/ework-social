@@ -4,12 +4,14 @@ import { AutomationService } from './automation.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class CrmService {
   constructor(
     private prisma: PrismaService,
     private automation: AutomationService,
+    private posthog: PostHogService,
   ) {}
 
   async getClients(
@@ -112,6 +114,8 @@ export class CrmService {
         metadata: { source: 'MANUAL' },
       },
     });
+
+    this.posthog.capture(dto.workspaceId, 'client_created', { source: dto.source || 'MANUAL' });
 
     return client;
   }

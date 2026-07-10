@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { BskyAgent, RichText } from '@atproto/api';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class SocialService {
@@ -12,6 +13,7 @@ export class SocialService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    private posthog: PostHogService,
   ) {}
 
   // Encrypt token before saving to database
@@ -180,6 +182,7 @@ export class SocialService {
         update: { accountName: page.name, accessToken: this.encryptToken(page.access_token), isActive: true },
         create: { workspaceId, platform: 'FACEBOOK', accountId: page.id, accountName: page.name, accessToken: this.encryptToken(page.access_token), isActive: true },
       });
+      this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'FACEBOOK' });
       connectedAccounts.push(fbAccount);
       console.log('Facebook page saved:', fbAccount.id);
 
@@ -202,6 +205,7 @@ export class SocialService {
             update: { accountName: igDetails.username || igDetails.name, accessToken: this.encryptToken(page.access_token), isActive: true },
             create: { workspaceId, platform: 'INSTAGRAM', accountId: igId, accountName: igDetails.username || igDetails.name, accessToken: this.encryptToken(page.access_token), isActive: true },
           });
+          this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'INSTAGRAM' });
           connectedAccounts.push(igAccount);
           console.log('Instagram saved:', igAccount.id);
 
@@ -485,6 +489,8 @@ export class SocialService {
       create: { workspaceId, platform: 'LINKEDIN', accountId, accountName, accessToken: this.encryptToken(accessToken), isActive: true },
     });
 
+    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'LINKEDIN' });
+
     return { success: true, connectedAccounts: [account], message: 'LinkedIn connected successfully' };
   }
 
@@ -658,6 +664,8 @@ export class SocialService {
       create: { workspaceId, platform: 'YOUTUBE', accountId: channelId, accountName: channelName, accessToken: this.encryptToken(accessToken), refreshToken: this.encryptToken(refreshToken), isActive: true },
     });
 
+    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'YOUTUBE' });
+
     return { success: true, connectedAccounts: [account], message: 'YouTube connected successfully' };
   }
 
@@ -817,6 +825,7 @@ export class SocialService {
       update: { accountName: displayName, accessToken, isActive: true },
       create: { workspaceId, platform: 'TIKTOK', accountId: openId, accountName: displayName, accessToken, isActive: true },
     });
+    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'TIKTOK' });
     return { success: true, connectedAccounts: [account], message: 'TikTok connected successfully' };
   }
 
@@ -864,6 +873,7 @@ export class SocialService {
         update: { accountName: profile.handle, accessToken: this.encryptToken(appPassword), refreshToken: this.encryptToken(identifier), isActive: true },
         create: { workspaceId, platform: 'BLUESKY', accountId: profile.did, accountName: profile.handle, accessToken: this.encryptToken(appPassword), refreshToken: this.encryptToken(identifier), isActive: true },
       });
+      this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'BLUESKY' });
       return { success: true, connectedAccounts: [account], message: `Connected @${profile.handle} on Bluesky` };
     } catch (err: any) {
       throw new Error('Bluesky login failed: ' + (err?.message || 'Invalid credentials'));
@@ -1015,6 +1025,8 @@ export class SocialService {
       create: { workspaceId, platform: 'THREADS', accountId: threadUserId, accountName: username, accessToken: this.encryptToken(longLivedToken), isActive: true },
     });
 
+    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'THREADS' });
+
     return { success: true, connectedAccounts: [account], message: `Connected @${username} on Threads` };
   }
 
@@ -1038,6 +1050,7 @@ export class SocialService {
       create: { workspaceId, platform: 'THREADS', accountId: userId, accountName: username, accessToken: this.encryptToken(rawToken), isActive: true },
     });
 
+    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'THREADS' });
     this.logger.log(`[Threads] Manual token set for user ${userId} (@${username})`);
     return { success: true, accountId: userId, username };
   }

@@ -4,9 +4,10 @@ import { SocialController } from './social.controller';
 import { DataDeletionController } from './data-deletion.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { PostHogModule } from '../analytics/posthog.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, PostHogModule],
   controllers: [SocialController, DataDeletionController],
   providers: [SocialService],
   exports: [SocialService],

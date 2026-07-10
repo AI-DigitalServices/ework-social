@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRuleDto } from './dto/create-rule.dto';
+import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class ResponderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private posthog: PostHogService,
+  ) {}
 
   async getRules(workspaceId: string) {
     return this.prisma.autoResponderRule.findMany({
@@ -14,7 +18,7 @@ export class ResponderService {
   }
 
   async createRule(dto: CreateRuleDto) {
-    return this.prisma.autoResponderRule.create({
+    const rule = await this.prisma.autoResponderRule.create({
       data: {
         workspaceId: dto.workspaceId,
         name: dto.name,
@@ -27,6 +31,13 @@ export class ResponderService {
         updateLeadStage: dto.updateLeadStage,
       },
     });
+
+    this.posthog.capture(dto.workspaceId, 'automation_rule_created', {
+      platform: dto.platform,
+      triggerType: dto.triggerType,
+    });
+
+    return rule;
   }
 
   async toggleRule(id: string) {
