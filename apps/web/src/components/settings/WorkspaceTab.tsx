@@ -14,7 +14,7 @@ const ROLES = [
 
 export default function WorkspaceTab() {
   const router = useRouter();
-  const { user, workspace, token } = useAuthStore();
+  const { user, workspace, token, setWorkspace } = useAuthStore();
   const [name, setName] = useState(workspace?.name || '');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,7 +65,9 @@ export default function WorkspaceTab() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.patch(`/workspace/${workspace!.id}`, { name });
+      const res = await api.patch(`/workspace/${workspace!.id}`, { name });
+      // Update the auth store so sidebar, header, and this form all reflect the new name immediately
+      setWorkspace({ ...(workspace as any), ...res.data });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       showToast('success', 'Workspace name updated!');
