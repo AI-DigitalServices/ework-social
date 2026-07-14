@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
-import { Save, Users, Crown, Plus, X, Trash2, Shield, Eye, Edit } from 'lucide-react';
+import { Save, Users, Crown, Plus, X, Trash2, Shield, Eye, Edit, AlertTriangle } from 'lucide-react';
 import api from '@/lib/api';
 
 const ROLES = [
@@ -12,12 +13,30 @@ const ROLES = [
 ];
 
 export default function WorkspaceTab() {
+  const router = useRouter();
   const { user, workspace, token } = useAuthStore();
   const [name, setName] = useState(workspace?.name || '');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDelete = async () => {
+    if (deleteConfirmText !== workspace?.name) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.delete(`/workspace/${workspace!.id}`);
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      setDeleteError(err?.response?.data?.message || 'Failed to delete workspace');
+      setDeleting(false);
+    }
+  };
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('EDITOR');
@@ -122,6 +141,48 @@ export default function WorkspaceTab() {
             {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-red-100">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800">Danger Zone</h3>
+            <p className="text-slate-500 text-sm mt-0.5">Deleting a workspace is permanent and cannot be undone.</p>
+          </div>
+        </div>
+
+        {!showDeleteConfirm ? (
+          <button onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+            <Trash2 className="w-4 h-4" /> Delete this workspace
+          </button>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-5 space-y-4">
+            <p className="text-red-700 text-sm">
+              This will permanently delete <strong>{workspace?.name}</strong> and all its posts, clients, and connected accounts. Type the workspace name below to confirm.
+            </p>
+            <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={workspace?.name}
+              className="w-full px-4 py-3 rounded-lg border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 text-sm bg-white" />
+            {deleteError && (
+              <p className="text-red-600 text-sm font-medium">{deleteError}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <button onClick={handleDelete} disabled={deleteConfirmText !== workspace?.name || deleting}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                <Trash2 className="w-4 h-4" /> {deleting ? 'Deleting...' : 'Permanently delete'}
+              </button>
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteError(''); }}
+                className="px-5 py-2.5 text-slate-500 text-sm font-medium hover:text-slate-700 transition">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Team members */}
