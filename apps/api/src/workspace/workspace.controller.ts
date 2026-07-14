@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
@@ -17,6 +17,19 @@ export class WorkspaceController {
   createWorkspace(@Body() body: { name: string }, @Req() req: any) {
     if (!body.name?.trim()) throw new BadRequestException('Workspace name is required');
     return this.workspaceService.createWorkspace(req.user.sub, body.name.trim());
+  }
+
+  @Patch(':workspaceId')
+  @UseGuards(JwtGuard)
+  renameWorkspace(@Param('workspaceId') workspaceId: string, @Body() body: { name: string }, @Req() req: any) {
+    if (!body.name?.trim()) throw new BadRequestException('Workspace name is required');
+    return this.workspaceService.renameWorkspace(workspaceId, body.name.trim(), req.user.sub);
+  }
+
+  @Delete(':workspaceId')
+  @UseGuards(JwtGuard)
+  deleteWorkspace(@Param('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.workspaceService.deleteWorkspace(workspaceId, req.user.sub);
   }
 
   @Post('invite')

@@ -210,6 +210,46 @@ export class WorkspaceService {
     return [owner, ...members, ...pending];
   }
 
+  async renameWorkspace(workspaceId: string, newName: string, requesterId: string) {
+    const workspace = await this.prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!workspace) throw new BadRequestException('Workspace not found');
+    if (workspace.ownerId !== requesterId) {
+      throw new ForbiddenException('Only the workspace owner can rename it');
+    }
+    if (!newName?.trim()) throw new BadRequestException('Workspace name is required');
+
+    return this.prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: newName.trim() },
+    });
+  }
+
+  async deleteWorkspace(workspaceId: string, requesterId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      include: { subscription: true },
+    });
+    if (!workspace) throw new BadRequestException('Workspace not found');
+    if (workspace.ownerId !== requesterId) {
+      throw new ForbiddenException('Only the workspace owner can delete it');
+    }
+
+    // Prevent deleting your last remaining workspace
+    const ownedCount = await this.prisma.workspace.count({ where: { ownerId: requesterId } });
+    if (ownedCount <= 1) {
+      throw new ForbiddenException('You cannot delete your only workspace. Create another one first, or contact support to close your account.');
+    }
+
+    // Block deletion of a workspace with an active paid subscription —
+    // require cancellation first so billing doesn't silently break
+    if (workspace.subscription && workspace.subscription.status === 'ACTIVE' && workspace.subscription.plan !== 'FREE') {
+      throw new ForbiddenException('This workspace has an active paid subscription. Please cancel or downgrade it before deleting.');
+    }
+
+    await this.prisma.workspace.delete({ where: { id: workspaceId } });
+    return { success: true, message: 'Workspace deleted successfully' };
+  }
+
   async removeMember(workspaceId: string, userId: string, requesterId: string) {
     const workspace = await this.prisma.workspace.findUnique({ where: { id: workspaceId } });
     if (workspace?.ownerId !== requesterId) throw new ForbiddenException('Only owner can remove members');
