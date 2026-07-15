@@ -610,6 +610,9 @@ export default function InboxPage() {
   const [selected, setSelected]   = useState<any>(null);
   const [loading, setLoading]     = useState(true);
   const [replying, setReplying]   = useState(false);
+  const [hiding, setHiding]       = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [search, setSearch]       = useState('');
@@ -677,6 +680,31 @@ export default function InboxPage() {
       replyRef.current?.focus();
     } catch { showToast('AI suggestion failed', 'error'); }
     finally { setSuggesting(false); }
+  };
+
+  const handleHide = async (msg: any, hidden: boolean) => {
+    setHiding(true);
+    try {
+      await api.patch(`/inbox/${msg.id}/hide`, { workspaceId: workspace?.id, hidden });
+      setSelected((p: any) => ({ ...p, hidden }));
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, hidden } : m));
+      showToast(hidden ? 'Comment hidden ✓' : 'Comment unhidden ✓');
+    } catch (err) {
+      showToast('Failed to update comment visibility');
+    } finally { setHiding(false); }
+  };
+
+  const handleDelete = async (msg: any) => {
+    setDeleting(true);
+    try {
+      await api.delete(`/inbox/${msg.id}`, { params: { workspaceId: workspace?.id } });
+      setMessages(prev => prev.filter(m => m.id !== msg.id));
+      setSelected(null);
+      setShowDeleteConfirm(false);
+      showToast('Comment deleted ✓');
+    } catch (err) {
+      showToast('Failed to delete comment');
+    } finally { setDeleting(false); }
   };
 
   const handleResolve = async (msg: any) => {
@@ -921,6 +949,42 @@ export default function InboxPage() {
                       </div>
                     </div>
 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {selected.type === 'COMMENT' && (
+                      <>
+                        <button onClick={() => handleHide(selected, !selected.hidden)} disabled={hiding} style={{
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                          borderRadius: 12, border: '1.5px solid #E2E8F0',
+                          background: selected.hidden ? 'rgba(245,158,11,0.08)' : '#fff',
+                          color: selected.hidden ? '#D97706' : '#64748B',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: hiding ? 0.6 : 1,
+                        }}>
+                          <Eye size={13} /> {selected.hidden ? 'Unhide' : 'Hide'}
+                        </button>
+                        {!showDeleteConfirm ? (
+                          <button onClick={() => setShowDeleteConfirm(true)} style={{
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                            borderRadius: 12, border: '1.5px solid rgba(239,68,68,0.3)',
+                            background: 'rgba(239,68,68,0.06)', color: '#DC2626',
+                            fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                          }}>
+                            <X size={13} /> Delete
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, color: '#DC2626', fontWeight: 700 }}>Delete permanently?</span>
+                            <button onClick={() => handleDelete(selected)} disabled={deleting} style={{
+                              padding: '6px 12px', borderRadius: 10, border: 'none',
+                              background: '#DC2626', color: '#fff', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                            }}>{deleting ? 'Deleting...' : 'Confirm'}</button>
+                            <button onClick={() => setShowDeleteConfirm(false)} style={{
+                              padding: '6px 12px', borderRadius: 10, border: '1px solid #E2E8F0',
+                              background: '#fff', color: '#64748B', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                            }}>Cancel</button>
+                          </div>
+                        )}
+                      </>
+                    )}
                     {selected.isResolved ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.1)', border: '1.5px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '6px 14px', color: '#059669', fontWeight: 800, fontSize: 12 }}>
                         <CheckCircle size={13} /> Resolved
@@ -935,6 +999,7 @@ export default function InboxPage() {
                         <CheckCircle size={13} /> Mark resolved
                       </button>
                     )}
+                    </div>
                   </div>
 
                   {/* Action bar */}
