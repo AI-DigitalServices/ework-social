@@ -244,6 +244,69 @@ export class InboxService {
     return { success: true };
   }
 
+  async hideComment(id: string, workspaceId: string, hidden: boolean) {
+    const msg = await this.prisma.inboxMessage.findUnique({
+      where: { id },
+      include: { workspace: { include: { socialAccounts: true } } },
+    });
+    if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
+    if (msg.type !== 'COMMENT') throw new Error('Only comments can be hidden');
+
+    const account = msg.workspace.socialAccounts.find(
+      a => a.platform === msg.platform && a.isActive
+    );
+    if (!account) throw new Error('No active social account found for this platform');
+
+    const { createDecipheriv } = require('crypto');
+    const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
+    const [ivHex, encrypted] = account.accessToken!.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = createDecipheriv('aes-256-cbc', key, iv);
+    const accessToken = decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
+
+    await axios.post(
+      `https://graph.facebook.com/v19.0/${msg.externalId}`,
+      null,
+      { params: { hidden, access_token: accessToken } }
+    );
+
+    this.posthog.capture(workspaceId, hidden ? 'comment_hidden' : 'comment_unhidden', { platform: msg.platform });
+
+    return { success: true, hidden };
+  }
+
+  async deleteComment(id: string, workspaceId: string) {
+    const msg = await this.prisma.inboxMessage.findUnique({
+      where: { id },
+      include: { workspace: { include: { socialAccounts: true } } },
+    });
+    if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
+    if (msg.type !== 'COMMENT') throw new Error('Only comments can be deleted');
+
+    const account = msg.workspace.socialAccounts.find(
+      a => a.platform === msg.platform && a.isActive
+    );
+    if (!account) throw new Error('No active social account found for this platform');
+
+    const { createDecipheriv } = require('crypto');
+    const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
+    const [ivHex, encrypted] = account.accessToken!.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = createDecipheriv('aes-256-cbc', key, iv);
+    const accessToken = decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
+
+    await axios.delete(
+      `https://graph.facebook.com/v19.0/${msg.externalId}`,
+      { params: { access_token: accessToken } }
+    );
+
+    await this.prisma.inboxMessage.delete({ where: { id } });
+
+    this.posthog.capture(workspaceId, 'comment_deleted', { platform: msg.platform });
+
+    return { success: true };
+  }
+
   async suggestReply(id: string, workspaceId: string) {
     const msg = await this.prisma.inboxMessage.findUnique({ where: { id } });
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');

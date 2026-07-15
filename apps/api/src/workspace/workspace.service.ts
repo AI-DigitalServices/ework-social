@@ -12,6 +12,19 @@ const WORKSPACE_LIMITS: Record<string, number> = {
   ENTERPRISE:  999,
 };
 
+const PLAN_RANK: Record<string, number> = {
+  FREE: 0, STARTER: 1, GROWTH: 2, AGENCY_PRO: 3, ENTERPRISE: 4,
+};
+
+function getHighestPlan(workspaces: { subscription?: { plan?: string } | null }[]): string {
+  let best = 'FREE';
+  for (const w of workspaces) {
+    const plan = w.subscription?.plan || 'FREE';
+    if ((PLAN_RANK[plan] ?? 0) > (PLAN_RANK[best] ?? 0)) best = plan;
+  }
+  return best;
+}
+
 @Injectable()
 export class WorkspaceService {
   constructor(
@@ -54,8 +67,8 @@ export class WorkspaceService {
       include: { subscription: true },
     });
 
-    // Use the plan of their first (primary) workspace
-    const primaryPlan = ownedWorkspaces[0]?.subscription?.plan || 'FREE';
+    // Use the HIGHEST plan across all owned workspaces — not an arbitrary "first" one
+    const primaryPlan = getHighestPlan(ownedWorkspaces);
     const limit = WORKSPACE_LIMITS[primaryPlan] ?? 1;
 
     if (ownedWorkspaces.length >= limit) {
@@ -74,6 +87,9 @@ export class WorkspaceService {
     const existing = await this.prisma.workspace.findUnique({ where: { slug } });
     const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
+    // New workspaces inherit the owner's highest existing plan — not a fresh FREE tier
+    const inheritedPlan = getHighestPlan(ownedWorkspaces);
+
     const workspace = await this.prisma.workspace.create({
       data: {
         name,
@@ -84,7 +100,7 @@ export class WorkspaceService {
         },
         subscription: {
           create: {
-            plan: 'FREE',
+            plan: inheritedPlan as any,
             status: 'ACTIVE',
           },
         },

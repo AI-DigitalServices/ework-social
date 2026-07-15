@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { InboxService } from './inbox.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
@@ -107,6 +107,22 @@ export class InboxController {
     @Request() req: any,
   ) {
     return this.inboxService.reply(id, body.workspaceId, body.content, req.user.sub);
+  }
+
+  @Patch(':id/hide')
+  hideComment(
+    @Param('id') id: string,
+    @Body() body: { workspaceId: string; hidden: boolean },
+  ) {
+    return this.inboxService.hideComment(id, body.workspaceId, body.hidden);
+  }
+
+  @Delete(':id')
+  deleteComment(
+    @Param('id') id: string,
+    @Query('workspaceId') workspaceId: string,
+  ) {
+    return this.inboxService.deleteComment(id, workspaceId);
   }
 
   @Post(':id/suggest')

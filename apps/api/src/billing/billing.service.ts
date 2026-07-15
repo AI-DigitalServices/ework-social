@@ -168,6 +168,22 @@ export class BillingService {
       create: { workspaceId, plan: plan as any, status: 'ACTIVE', paystackRef: data.reference },
     });
 
+    // Propagate the new plan to every other workspace this owner has —
+    // one subscription should cover all workspaces created under the same account
+    const paidWorkspace = await this.prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (paidWorkspace) {
+      const siblingWorkspaces = await this.prisma.workspace.findMany({
+        where: { ownerId: paidWorkspace.ownerId, id: { not: workspaceId } },
+      });
+      for (const sibling of siblingWorkspaces) {
+        await this.prisma.subscription.upsert({
+          where: { workspaceId: sibling.id },
+          update: { plan: plan as any, status: 'ACTIVE' },
+          create: { workspaceId: sibling.id, plan: plan as any, status: 'ACTIVE' },
+        });
+      }
+    }
+
     this.posthog.capture(workspaceId, 'subscription_upgraded', { plan });
 
     return;
