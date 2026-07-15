@@ -186,6 +186,19 @@ export class SocialService {
       connectedAccounts.push(fbAccount);
       console.log('Facebook page saved:', fbAccount.id);
 
+      // Page-level webhook subscription — required per Meta docs so Facebook
+      // sends feed (comment) and messages (Messenger DM) events to our webhook
+      try {
+        const pageSubRes = await axios.post(
+          `https://graph.facebook.com/v19.0/${page.id}/subscribed_apps`,
+          null,
+          { params: { subscribed_fields: 'feed,messages', access_token: page.access_token } }
+        );
+        console.log('Facebook page webhook subscription result:', JSON.stringify(pageSubRes.data));
+      } catch (subErr: any) {
+        console.error('Facebook page webhook subscription failed:', subErr?.response?.data || subErr?.message);
+      }
+
       // Check for Instagram
       try {
         const igRes = await axios.get(`https://graph.facebook.com/v19.0/${page.id}`, {
