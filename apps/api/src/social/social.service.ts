@@ -186,17 +186,29 @@ export class SocialService {
       connectedAccounts.push(fbAccount);
       console.log('Facebook page saved:', fbAccount.id);
 
-      // Page-level webhook subscription — required per Meta docs so Facebook
-      // sends feed (comment) and messages (Messenger DM) events to our webhook
+      // Page-level webhook subscription — split into separate calls so an
+      // ungranted field (messages, pending pages_messaging) doesn't block
+      // an already-approved one (feed, via pages_read_engagement)
       try {
-        const pageSubRes = await axios.post(
+        const feedSubRes = await axios.post(
           `https://graph.facebook.com/v19.0/${page.id}/subscribed_apps`,
           null,
-          { params: { subscribed_fields: 'feed,messages', access_token: page.access_token } }
+          { params: { subscribed_fields: 'feed', access_token: page.access_token } }
         );
-        console.log('Facebook page webhook subscription result:', JSON.stringify(pageSubRes.data));
+        console.log('Facebook page FEED webhook subscription result:', JSON.stringify(feedSubRes.data));
       } catch (subErr: any) {
-        console.error('Facebook page webhook subscription failed:', subErr?.response?.data || subErr?.message);
+        console.error('Facebook page FEED webhook subscription failed:', subErr?.response?.data || subErr?.message);
+      }
+
+      try {
+        const msgSubRes = await axios.post(
+          `https://graph.facebook.com/v19.0/${page.id}/subscribed_apps`,
+          null,
+          { params: { subscribed_fields: 'messages', access_token: page.access_token } }
+        );
+        console.log('Facebook page MESSAGES webhook subscription result:', JSON.stringify(msgSubRes.data));
+      } catch (subErr: any) {
+        console.error('Facebook page MESSAGES webhook subscription failed (expected until pages_messaging approved):', subErr?.response?.data || subErr?.message);
       }
 
       // Check for Instagram
