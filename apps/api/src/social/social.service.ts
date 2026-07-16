@@ -50,7 +50,8 @@ export class SocialService {
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
-      'pages_manage_metadata',   // required for comments + messages webhook fields
+      'pages_manage_metadata',   // required for comments + messages webhook subscription
+      'pages_messaging',         // required for sending Messenger DM replies via Graph API
       'instagram_basic',
       'instagram_content_publish',
       'instagram_manage_comments',
@@ -208,7 +209,7 @@ export class SocialService {
         );
         console.log('Facebook page MESSAGES webhook subscription result:', JSON.stringify(msgSubRes.data));
       } catch (subErr: any) {
-        console.error('Facebook page MESSAGES webhook subscription failed (expected until pages_messaging approved):', subErr?.response?.data || subErr?.message);
+        console.error('Facebook page MESSAGES webhook subscription failed:', subErr?.response?.data || subErr?.message);
       }
 
       // Check for Instagram
