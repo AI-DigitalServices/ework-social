@@ -12,13 +12,9 @@ export class WebhookService {
 
   async processWebhookEvent(body: any) {
     const { object, entry } = body;
-    this.logger.log(`Webhook received — object: ${object}, entries: ${entry?.length}`);
-
     if (object === 'page') {
       for (const pageEntry of entry) {
         const pageId = pageEntry.id;
-
-        // Handle comments on posts
         if (pageEntry.changes) {
           for (const change of pageEntry.changes) {
             if (change.field === 'feed' && change.value?.item === 'comment') {
@@ -26,8 +22,6 @@ export class WebhookService {
             }
           }
         }
-
-        // Handle DMs (Messenger)
         if (pageEntry.messaging) {
           for (const messagingEvent of pageEntry.messaging) {
             if (messagingEvent.message && !messagingEvent.message.is_echo) {
@@ -40,12 +34,8 @@ export class WebhookService {
 
     if (object === 'instagram') {
       for (const igEntry of entry) {
-        this.logger.log(`Instagram entry id: ${igEntry.id}`);
-
-        // Handle changes (comments, feed events)
         if (igEntry.changes) {
           for (const change of igEntry.changes) {
-            this.logger.log(`Instagram change field: ${change.field}`);
             if (change.field === 'comments') {
               await this.handleInstagramComment(igEntry.id, change.value);
             }
@@ -54,21 +44,13 @@ export class WebhookService {
             }
           }
         }
-
-        // Handle direct messaging events (new DMs come through messaging array)
         if (igEntry.messaging) {
           for (const messagingEvent of igEntry.messaging) {
-            this.logger.log(`Instagram messaging event keys: ${Object.keys(messagingEvent).join(',')}`);
-            // New message (has text)
             if (messagingEvent.message && !messagingEvent.message.is_echo) {
-              this.logger.log(`Instagram DM received: "${messagingEvent.message?.text}"`);
               await this.handleInstagramDM(igEntry.id, messagingEvent);
             }
-            // message_edit with num_edit=0 = new message in v25 API — fetch content via mid
             if (messagingEvent.message_edit && messagingEvent.message_edit.num_edit === 0) {
-              const mid = messagingEvent.message_edit.mid;
-              this.logger.log(`Instagram new DM (message_edit num_edit=0) — fetching content for mid: ${mid}`);
-              await this.handleInstagramDMByMid(igEntry.id, mid);
+              await this.handleInstagramDMByMid(igEntry.id, messagingEvent.message_edit.mid);
             }
           }
         }
@@ -124,7 +106,6 @@ export class WebhookService {
           `https://graph.facebook.com/v19.0/${commentId}/comments`,
           { message, access_token: accessToken }
         );
-        this.logger.log(`Facebook comment reply sent for rule: ${matchingRule.name}`);
       }
 
       // Send DM
@@ -259,16 +240,10 @@ export class WebhookService {
       const commentText = commentData.text || '';
       const fromName = commentData.from?.username || 'there';
 
-      this.logger.log(`Instagram comment — accountId: ${igAccountId}, text: "${commentText}"`);
-
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
-
-      if (!account) {
-        this.logger.warn(`No INSTAGRAM account found for id: ${igAccountId}`);
-        return;
-      }
+      if (!account) return;
 
       // Always save to inbox — every comment regardless of rule match
       await this.saveInboxMessage({
@@ -411,38 +386,30 @@ export class WebhookService {
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
-      if (!account) {
-        this.logger.warn(`handleInstagramDMByMid — no account found for ${igAccountId}`);
-        return;
-      }
+      if (!account) return;
 
       const accessToken = this.decryptToken(account.accessToken!);
 
       // Fetch message content using the message ID
       let messageText = '';
       let senderId = '';
+      let senderUsername = '';
       try {
         const msgRes = await axios.get(`https://graph.facebook.com/v19.0/${mid}`, {
           params: { fields: 'id,message,from,to', access_token: accessToken },
         });
         messageText = msgRes.data.message || '';
         senderId = msgRes.data.from?.id || '';
-        this.logger.log(`Fetched DM content: "${messageText}" from senderId: ${senderId}`);
+        senderUsername = msgRes.data.from?.username || senderId;
       } catch (fetchErr: any) {
-        this.logger.error('Failed to fetch message content via mid:', JSON.stringify(fetchErr?.response?.data ?? fetchErr?.message));
+        this.logger.error('ByMid fetch failed:', JSON.stringify(fetchErr?.response?.data ?? fetchErr?.message));
         return;
       }
 
-      // Skip echoes (message sent by own account)
-      if (!senderId || senderId === igAccountId) {
-        this.logger.log('Skipping — message is echo from own account');
-        return;
-      }
+      // Skip echoes (own account sending)
+      if (!senderId || senderId === igAccountId) return;
 
-      // Save to inbox immediately — the full `message` webhook event fires seconds
-      // after this message_edit.num_edit=0 event and handleInstagramDM will handle
-      // the auto-reply. Saving here gives a faster inbox record.
-      const senderUsername = (msgRes.data.from as any)?.username || senderId;
+      // Save to inbox — auto-reply is handled by the full `message` event that follows
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.INSTAGRAM,
@@ -453,18 +420,8 @@ export class WebhookService {
         content: messageText,
         socialAccountId: account.id,
       });
-
-      // NOTE: Auto-reply is intentionally NOT sent here.
-      // Meta fires two webhook events per Instagram DM:
-      //   1. message_edit.num_edit=0  → this handler (ByMid) — inbox save only
-      //   2. full `message` event     → handleInstagramDM   — auto-reply + recordAutoReply
-      // Sending the reply here would cause every DM to get two identical auto-replies.
-      this.logger.log(`ByMid: inbox saved for mid=${mid}. Auto-reply will be sent by handleInstagramDM.`);
     } catch (err: any) {
-      const status = err?.response?.status;
-      const data = JSON.stringify(err?.response?.data ?? '(empty)');
-      const msg = err?.message;
-      this.logger.error(`handleInstagramDMByMid FAILED — status: ${status}, message: ${msg}, data: ${data}`);
+      this.logger.error(`handleInstagramDMByMid error: ${err?.message}`);
     }
   }
 
@@ -513,7 +470,6 @@ export class WebhookService {
           },
         });
       }
-      this.logger.log(`Inbox: saved ${data.type} from ${data.platform} — ${data.senderName}`);
     } catch (err: any) {
       this.logger.error('Failed to save inbox message:', err?.message);
     }
@@ -593,7 +549,6 @@ export class WebhookService {
             metadata: { source, socialId },
           },
         });
-        this.logger.log(`CRM: updated existing lead "${existing.name}" to stage ${stage}`);
       } else {
         // Attempt contact enrichment via Graph API
         let displayName = name && name !== 'Instagram DM' ? name : `Instagram User ${socialId}`;
@@ -614,7 +569,6 @@ export class WebhookService {
                 profilePictureUrl: profile.profile_picture_url,
               },
             };
-            this.logger.log(`CRM: enriched lead — name: "${displayName}", username: @${profile.username}`);
           } catch (enrichErr: any) {
             this.logger.warn(`CRM: enrichment failed for ${socialId}: ${enrichErr?.message}`);
           }
@@ -642,7 +596,6 @@ export class WebhookService {
           },
         });
 
-        this.logger.log(`CRM: created new lead "${displayName}" at stage ${stage}`);
       }
     } catch (err) {
       this.logger.error('Failed to update lead stage:', err);
@@ -683,7 +636,6 @@ export class WebhookService {
         data: { isRead: true },
       });
 
-      this.logger.log(`Inbox: auto-reply recorded for ${platform} externalId=${externalId}`);
     } catch (err: any) {
       // Non-fatal — auto-reply was sent; failure here is just an inbox recording issue
       this.logger.error('Failed to record auto-reply in inbox:', err?.message);
