@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { createDecipheriv } from 'crypto';
 import axios from 'axios';
 
 @Injectable()
@@ -149,6 +150,9 @@ export class WebhookService {
         });
       }
 
+      // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
+      await this.recordAutoReply('FACEBOOK', commentId, matchingRule.responseMessage.replace('{name}', fromName));
+
       // Update CRM lead stage if configured
       if (matchingRule?.updateLeadStage) {
         await this.updateLeadStage(
@@ -217,6 +221,9 @@ export class WebhookService {
           data: { triggerCount: { increment: 1 } },
         });
       }
+
+      // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
+      await this.recordAutoReply('FACEBOOK', messagingEvent.message?.mid || senderId, message);
 
       // Try to get sender's name from Facebook Graph API for better CRM contact naming
       let senderName = `Facebook User ${senderId}`;
@@ -303,6 +310,9 @@ export class WebhookService {
         });
       }
 
+      // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
+      await this.recordAutoReply('INSTAGRAM', commentId, matchingRule.responseMessage.replace('{name}', fromName));
+
       // Update CRM lead stage if the rule has that configured
       if (matchingRule?.updateLeadStage && commentData.from?.id) {
         await this.updateLeadStage(
@@ -372,6 +382,9 @@ export class WebhookService {
           where: { id: matchingRule.id },
           data: { triggerCount: { increment: 1 } },
         });
+
+        // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
+        await this.recordAutoReply('INSTAGRAM', messageData.message?.mid || senderId, matchingRule.responseMessage.replace('{name}', 'there'));
 
         // Update CRM lead stage if the rule has that configured
         if (matchingRule.updateLeadStage && senderId) {
@@ -466,6 +479,9 @@ export class WebhookService {
         where: { id: matchingRule.id },
         data: { triggerCount: { increment: 1 } },
       });
+
+      // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
+      await this.recordAutoReply('INSTAGRAM', mid, message);
 
       // Update CRM lead stage if the rule has that configured
       if (matchingRule.updateLeadStage) {
@@ -661,9 +677,48 @@ export class WebhookService {
     }
   }
 
+  /**
+   * After an auto-responder fires, record the reply in the InboxReply table
+   * and mark the message as read. We deliberately leave isResolved=false so
+   * the team can still see it, review the auto-reply, and optionally follow up —
+   * without accidentally sending a duplicate response.
+   */
+  private async recordAutoReply(
+    platform: string,
+    externalId: string,
+    responseContent: string,
+  ): Promise<void> {
+    try {
+      const msg = await this.prisma.inboxMessage.findFirst({
+        where: { platform: platform as any, externalId },
+      });
+      if (!msg) return;
+
+      // Record the auto-reply so the inbox shows it was already handled
+      await this.prisma.inboxReply.create({
+        data: {
+          messageId: msg.id,
+          content: responseContent,
+          sentBy: null,   // null = system / auto-responder (sentBy is nullable)
+          isAuto: true,
+        },
+      });
+
+      // Mark read (system processed it) but leave isResolved=false so team can review
+      await this.prisma.inboxMessage.update({
+        where: { id: msg.id },
+        data: { isRead: true },
+      });
+
+      this.logger.log(`Inbox: auto-reply recorded for ${platform} externalId=${externalId}`);
+    } catch (err: any) {
+      // Non-fatal — auto-reply was sent; failure here is just an inbox recording issue
+      this.logger.error('Failed to record auto-reply in inbox:', err?.message);
+    }
+  }
+
   private decryptToken(encryptedToken: string): string {
     try {
-      const { createDecipheriv } = require('crypto');
       const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
       const [ivHex, encrypted] = encryptedToken.split(':');
       const iv = Buffer.from(ivHex, 'hex');
