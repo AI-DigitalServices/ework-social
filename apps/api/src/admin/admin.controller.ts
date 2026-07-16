@@ -55,6 +55,12 @@ export class AdminController {
     return this.adminService.getWaitlist();
   }
 
+  @Get('partners')
+  async getPartners(@Req() req: any) {
+    this.checkAdmin(req);
+    return this.adminService.getPartnerStats();
+  }
+
   @Get('my-referrals')
   async getMyReferrals(@Req() req: any) {
     return this.referralService.getReferralStats(req.user.sub);

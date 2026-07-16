@@ -844,6 +844,8 @@ export const posts: BlogPost[] = [
 ];
 
 
+export const BLOG_POST_COUNT = posts.length;
+
 export function getPost(slug: string): BlogPost | undefined {
   return posts.find(p => p.slug === slug);
 }

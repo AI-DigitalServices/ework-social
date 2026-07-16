@@ -28,6 +28,14 @@ export class AdminService {
       totalClients,
       subscriptions,
       recentUsers,
+      // ── New KPIs ──────────────────────────────────────
+      activeAutoRules,
+      autoTriggerSum,
+      totalInboxMessages,
+      openInboxThreads,
+      totalApprovals,
+      pendingApprovals,
+      crmPipelineBreakdown,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { createdAt: { gte: startOfDay } } }),
@@ -55,6 +63,14 @@ export class AdminService {
           },
         },
       }),
+      // New KPI queries
+      this.prisma.autoResponderRule.count({ where: { isActive: true } }),
+      this.prisma.autoResponderRule.aggregate({ _sum: { triggerCount: true } }),
+      this.prisma.inboxMessage.count(),
+      this.prisma.inboxMessage.count({ where: { isResolved: false } }),
+      this.prisma.postApproval.count(),
+      this.prisma.postApproval.count({ where: { status: 'PENDING' } }),
+      this.prisma.client.groupBy({ by: ['stage'], _count: { stage: true } }),
     ]);
 
     const planBreakdown = {
@@ -94,6 +110,20 @@ export class AdminService {
         totalClients,
         publishSuccessRate: totalPosts > 0 ? Math.round((publishedPosts / totalPosts) * 100) : 0,
       },
+      engagement: {
+        activeAutoRules,
+        totalAutoTriggers: autoTriggerSum._sum.triggerCount ?? 0,
+        totalInboxMessages,
+        openInboxThreads,
+        totalApprovals,
+        pendingApprovals,
+      },
+      crmPipeline: Object.fromEntries(
+        ['LEAD', 'CONTACTED', 'PROPOSAL', 'ACTIVE', 'DORMANT'].map(stage => [
+          stage,
+          crmPipelineBreakdown.find((r: any) => r.stage === stage)?._count?.stage ?? 0,
+        ])
+      ),
       recentUsers: recentUsers.map((u: any) => ({
         id: u.id,
         name: u.name,
@@ -217,10 +247,74 @@ export class AdminService {
       data: {
         plan: plan as any,
         status: isPaid ? 'ACTIVE' : 'CANCELLED',
-        // Clear trial expiry for paid plans so it never interferes
         trialEndsAt: isPaid ? null : undefined,
       },
     });
     return { success: true, workspaceId, plan: updated.plan, status: updated.status };
+  }
+
+  async getPartnerStats() {
+    // All users who have a referral code (active partners)
+    const partners = await this.prisma.user.findMany({
+      where: { referralCode: { not: null } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        referralCode: true,
+        isFoundingPartner: true,
+        createdAt: true,
+        referredUsers: {
+          select: {
+            id: true,
+            createdAt: true,
+            ownedWorkspaces: {
+              select: { subscription: { select: { plan: true } } },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const PLAN_PRICES: Record<string, number> = {
+      STARTER: 2500, GROWTH: 6000, AGENCY_PRO: 15000,
+    };
+
+    const stats = partners.map((p: any) => {
+      const totalReferrals = p.referredUsers.length;
+      const payingReferrals = p.referredUsers.filter((r: any) => {
+        const plan = r.ownedWorkspaces[0]?.subscription?.plan;
+        return plan && ['STARTER', 'GROWTH', 'AGENCY_PRO'].includes(plan);
+      });
+      const commissionRate = p.isFoundingPartner ? 0.30 : 0.20;
+      const estimatedCommission = payingReferrals.reduce((sum: number, r: any) => {
+        const plan = r.ownedWorkspaces[0]?.subscription?.plan;
+        return sum + ((PLAN_PRICES[plan] || 0) * commissionRate);
+      }, 0);
+
+      return {
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        referralCode: p.referralCode,
+        isFoundingPartner: p.isFoundingPartner,
+        totalReferrals,
+        payingReferrals: payingReferrals.length,
+        estimatedCommission: Math.round(estimatedCommission),
+        joinedAt: p.createdAt,
+      };
+    });
+
+    const summary = {
+      totalPartners: stats.length,
+      foundingPartners: stats.filter((p: any) => p.isFoundingPartner).length,
+      totalReferrals: stats.reduce((s: number, p: any) => s + p.totalReferrals, 0),
+      totalPayingReferrals: stats.reduce((s: number, p: any) => s + p.payingReferrals, 0),
+      totalEstimatedCommission: stats.reduce((s: number, p: any) => s + p.estimatedCommission, 0),
+    };
+
+    return { summary, partners: stats };
   }
 }
