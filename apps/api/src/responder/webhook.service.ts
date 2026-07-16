@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Platform, InboxMessageType } from '@prisma/client';
 import { createDecipheriv } from 'crypto';
 import axios from 'axios';
 
@@ -91,8 +92,8 @@ export class WebhookService {
       // Always save to inbox — every comment lands here regardless of auto-responder rules
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
-        platform: 'FACEBOOK',
-        type: 'COMMENT',
+        platform: Platform.FACEBOOK,
+        type: InboxMessageType.COMMENT,
         externalId: commentId,
         senderId: commentData.from?.id,
         senderName: fromName,
@@ -151,7 +152,7 @@ export class WebhookService {
       }
 
       // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-      await this.recordAutoReply('FACEBOOK', commentId, matchingRule.responseMessage.replace('{name}', fromName));
+      await this.recordAutoReply(Platform.FACEBOOK, commentId, matchingRule.responseMessage.replace('{name}', fromName));
 
       // Update CRM lead stage if configured
       if (matchingRule?.updateLeadStage) {
@@ -182,8 +183,8 @@ export class WebhookService {
       // Always save to inbox first — every DM lands here
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
-        platform: 'FACEBOOK',
-        type: 'DM',
+        platform: Platform.FACEBOOK,
+        type: InboxMessageType.DM,
         externalId: messagingEvent.message?.mid || senderId,
         senderId,
         senderName: fromName,
@@ -223,7 +224,7 @@ export class WebhookService {
       }
 
       // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-      await this.recordAutoReply('FACEBOOK', messagingEvent.message?.mid || senderId, message);
+      await this.recordAutoReply(Platform.FACEBOOK, messagingEvent.message?.mid || senderId, message);
 
       // Try to get sender's name from Facebook Graph API for better CRM contact naming
       let senderName = `Facebook User ${senderId}`;
@@ -272,8 +273,8 @@ export class WebhookService {
       // Always save to inbox — every comment regardless of rule match
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
-        platform: 'INSTAGRAM',
-        type: 'COMMENT',
+        platform: Platform.INSTAGRAM,
+        type: InboxMessageType.COMMENT,
         externalId: commentId,
         senderId: commentData.from?.id,
         senderName: fromName,
@@ -311,7 +312,7 @@ export class WebhookService {
       }
 
       // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-      await this.recordAutoReply('INSTAGRAM', commentId, matchingRule.responseMessage.replace('{name}', fromName));
+      await this.recordAutoReply(Platform.INSTAGRAM, commentId, matchingRule.responseMessage.replace('{name}', fromName));
 
       // Update CRM lead stage if the rule has that configured
       if (matchingRule?.updateLeadStage && commentData.from?.id) {
@@ -344,8 +345,8 @@ export class WebhookService {
       // Always save to inbox — every DM regardless of auto-responder rule match
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
-        platform: 'INSTAGRAM',
-        type: 'DM',
+        platform: Platform.INSTAGRAM,
+        type: InboxMessageType.DM,
         externalId: messageData.message?.mid || senderId,
         senderId,
         senderName: messageData.sender?.username || senderId,
@@ -384,7 +385,7 @@ export class WebhookService {
         });
 
         // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-        await this.recordAutoReply('INSTAGRAM', messageData.message?.mid || senderId, matchingRule.responseMessage.replace('{name}', 'there'));
+        await this.recordAutoReply(Platform.INSTAGRAM, messageData.message?.mid || senderId, matchingRule.responseMessage.replace('{name}', 'there'));
 
         // Update CRM lead stage if the rule has that configured
         if (matchingRule.updateLeadStage && senderId) {
@@ -481,7 +482,7 @@ export class WebhookService {
       });
 
       // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-      await this.recordAutoReply('INSTAGRAM', mid, message);
+      await this.recordAutoReply(Platform.INSTAGRAM, mid, message);
 
       // Update CRM lead stage if the rule has that configured
       if (matchingRule.updateLeadStage) {
@@ -504,8 +505,8 @@ export class WebhookService {
 
   private async saveInboxMessage(data: {
     workspaceId: string;
-    platform: string;
-    type: string;
+    platform: Platform;
+    type: InboxMessageType;
     externalId: string;
     senderId?: string;
     senderName?: string;
@@ -519,7 +520,7 @@ export class WebhookService {
       await this.prisma.inboxMessage.upsert({
         where: {
           platform_externalId: {
-            platform: data.platform as any,
+            platform: data.platform,
             externalId: data.externalId,
           },
         },
@@ -529,8 +530,8 @@ export class WebhookService {
         },
         create: {
           workspaceId: data.workspaceId,
-          platform: data.platform as any,
-          type: data.type as any,
+          platform: data.platform,
+          type: data.type,
           externalId: data.externalId,
           senderId: data.senderId,
           senderName: data.senderName,
@@ -684,13 +685,13 @@ export class WebhookService {
    * without accidentally sending a duplicate response.
    */
   private async recordAutoReply(
-    platform: string,
+    platform: Platform,
     externalId: string,
     responseContent: string,
   ): Promise<void> {
     try {
       const msg = await this.prisma.inboxMessage.findFirst({
-        where: { platform: platform as any, externalId },
+        where: { platform, externalId },
       });
       if (!msg) return;
 
