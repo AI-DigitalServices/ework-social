@@ -97,16 +97,28 @@ export class PlanGuardService {
     const limits = getPlanLimits(plan);
 
     const featureMap: Record<string, boolean> = {
+      // Scheduling
       bulkScheduling:       limits.bulkSchedulingEnabled,
       perPlatformEditor:    limits.perPlatformEditorEnabled,
-      whiteLabel:           limits.whiteLabelEnabled,
-      apiAccess:            limits.apiAccessEnabled,
+      // Platform
       twitter:              limits.twitterEnabled,
+      // Inbox
       inboxTags:            limits.inboxTagsEnabled,
       inboxCrmLink:         limits.inboxCrmLinkEnabled,
       inboxAssign:          limits.inboxAssignEnabled,
-      clientApproval:       limits.clientApprovalEnabled,
+      // AI
+      aiReply:              limits.aiReplyEnabled,
       aiCrmInsights:        limits.aiCrmInsightsEnabled,
+      // Collaboration
+      clientApproval:       limits.clientApprovalEnabled,
+      // CRM
+      crmPipeline:          limits.crmPipelineEnabled,
+      crmActivityLog:       limits.crmActivityLogEnabled,
+      crmExport:            limits.crmExportEnabled,
+      crmAssign:            limits.crmAssignEnabled,
+      // Agency
+      whiteLabel:           limits.whiteLabelEnabled,
+      apiAccess:            limits.apiAccessEnabled,
     };
 
     if (featureMap[feature] === false) {
@@ -134,6 +146,36 @@ export class PlanGuardService {
 
   async checkClientApprovalAccess(workspaceId: string): Promise<void> {
     return this.checkFeatureAccess(workspaceId, 'clientApproval');
+  }
+
+  // ── AI feature checks ────────────────────────────────────────────────────
+
+  async checkAiReplyAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'aiReply');
+  }
+
+  // ── CRM feature checks ───────────────────────────────────────────────────
+
+  async checkCrmPipelineAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'crmPipeline');
+  }
+
+  async checkCrmActivityLogAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'crmActivityLog');
+  }
+
+  async checkCrmExportAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'crmExport');
+  }
+
+  async checkCrmAssignAccess(workspaceId: string): Promise<void> {
+    return this.checkFeatureAccess(workspaceId, 'crmAssign');
+  }
+
+  async checkCrmFullAccess(workspaceId: string): Promise<void> {
+    // "crm full" = editing deal value, company, source, next follow-up — Growth+
+    // Reuse crmActivityLog gate as the proxy for "full CRM editing access"
+    return this.checkFeatureAccess(workspaceId, 'crmActivityLog');
   }
 
   // ── Full workspace usage summary ─────────────────────────────────────────

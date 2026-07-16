@@ -45,7 +45,8 @@ export class AiUsageService {
         limitLabel = 'AI CRM insight';
         break;
       case 'REPLY_SUGGEST':
-        limit = (limits as any).aiReplyPerMonth || 0;
+        // aiReplyEnabled gates access; aiReplyPerMonth defines the monthly cap
+        if (!limits.aiReplyEnabled) { limit = 0; } else { limit = limits.aiReplyPerMonth; }
         limitLabel = 'AI reply suggestion';
         break;
     }
@@ -99,7 +100,7 @@ export class AiUsageService {
         HASHTAG:      { used: usage.find(u => u.type === 'HASHTAG')?.count      || 0, limit: limits.aiHashtagsEnabled ? 'unlimited' : 0 },
         REWRITE:      { used: usage.find(u => u.type === 'REWRITE')?.count      || 0, limit: limits.aiRewriteEnabled ? 'unlimited' : 0 },
         CRM_INSIGHT:  { used: usage.find(u => u.type === 'CRM_INSIGHT')?.count  || 0, limit: limits.aiCrmInsightsEnabled ? 'unlimited' : 0 },
-        REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count|| 0, limit: (limits as any).aiReplyPerMonth || 0 },
+        REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count || 0, limit: limits.aiReplyEnabled ? limits.aiReplyPerMonth : 0 },
       },
     };
   }

@@ -39,6 +39,12 @@ export const PLAN_LIMITS = {
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,
+
+    // ── CRM feature flags ─────────────────────────────────
+    crmPipelineEnabled:     false,  // Kanban pipeline view — unlocks at Starter
+    crmActivityLogEnabled:  false,  // Activity history per client — unlocks at Growth
+    crmExportEnabled:       false,  // CSV export — unlocks at Growth
+    crmAssignEnabled:       false,  // Assign clients to team members — unlocks at Growth
   },
 
   STARTER: {
@@ -46,7 +52,7 @@ export const PLAN_LIMITS = {
     maxSocialAccounts:      10,
     maxPostsPerMonth:       200,
     maxTeamMembers:         1,
-    maxClients:             15,       // Increased from 10 — freelancers have 10-20 clients
+    maxClients:             25,       // At $5/mo — generous enough for a freelancer with 25 clients
     analyticsHistoryDays:   30,
 
     // ── Platform access ───────────────────────────────────
@@ -81,6 +87,12 @@ export const PLAN_LIMITS = {
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,      // Collaboration feature — unlocks at Growth
+
+    // ── CRM feature flags ─────────────────────────────────
+    crmPipelineEnabled:     true,   // Pipeline Kanban unlocks at Starter ✅ — shows CRM value
+    crmActivityLogEnabled:  false,  // Activity log unlocks at Growth
+    crmExportEnabled:       false,  // CSV export unlocks at Growth
+    crmAssignEnabled:       false,  // No team members on Starter — assign stays locked
   },
 
   GROWTH: {
@@ -123,6 +135,12 @@ export const PLAN_LIMITS = {
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
+
+    // ── CRM feature flags ─────────────────────────────────
+    crmPipelineEnabled:     true,
+    crmActivityLogEnabled:  true,   // Full history unlocks at Growth ✅
+    crmExportEnabled:       true,   // CSV export unlocks at Growth ✅
+    crmAssignEnabled:       true,   // Assign to team — confirmed Growth ✅
   },
 
   AGENCY_PRO: {
@@ -165,6 +183,12 @@ export const PLAN_LIMITS = {
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,
+
+    // ── CRM feature flags ─────────────────────────────────
+    crmPipelineEnabled:     true,
+    crmActivityLogEnabled:  true,
+    crmExportEnabled:       true,
+    crmAssignEnabled:       true,
   },
 } as const;
 
@@ -188,14 +212,26 @@ export function getPlanDisplayName(plan: string): string {
 
 /** Minimum plan required for a feature — used for upgrade prompts */
 export const FEATURE_MIN_PLAN: Record<string, string> = {
-  inboxTags:          'STARTER',
-  inboxCrmLink:       'STARTER',
-  inboxAssign:        'GROWTH',
-  twitter:            'GROWTH',
-  clientApproval:     'GROWTH',
-  aiCrmInsights:      'GROWTH',
-  bulkScheduling:     'GROWTH',
-  teamMembers:        'GROWTH',
-  whiteLabel:         'AGENCY_PRO',
-  apiAccess:          'AGENCY_PRO',
+  // Inbox
+  inboxTags:            'STARTER',
+  inboxCrmLink:         'STARTER',
+  inboxAssign:          'GROWTH',
+  aiReply:              'STARTER',
+  // Platform
+  twitter:              'GROWTH',
+  // Collaboration
+  clientApproval:       'GROWTH',
+  // AI
+  aiCrmInsights:        'GROWTH',
+  // Scheduling
+  bulkScheduling:       'GROWTH',
+  teamMembers:          'GROWTH',
+  // CRM
+  crmPipeline:          'STARTER',
+  crmActivityLog:       'GROWTH',
+  crmExport:            'GROWTH',
+  crmAssign:            'GROWTH',
+  // Agency
+  whiteLabel:           'AGENCY_PRO',
+  apiAccess:            'AGENCY_PRO',
 };

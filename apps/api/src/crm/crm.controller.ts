@@ -10,7 +10,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
 import { AutomationService } from './automation.service';
 import { JwtGuard } from '../auth/jwt.guard';
-import { PlanGuard, RequireFeature } from '../common/plan.guard';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('crm')
 @UseGuards(JwtGuard)
@@ -18,6 +18,7 @@ export class CrmController {
   constructor(
     private crmService: CrmService,
     private automationService: AutomationService,
+    private planGuard: PlanGuardService,
   ) {}
 
   @Get('clients')
@@ -31,12 +32,12 @@ export class CrmController {
   }
 
   @Get('clients/export/csv')
-  @RequireFeature('crm_export')
-  @UseGuards(PlanGuard)
   async exportClients(
     @Query('workspaceId') workspaceId: string,
     @Res() res: Response,
   ) {
+    // 🔒 Growth+ required — CSV export is a power-user / agency feature
+    await this.planGuard.checkCrmExportAccess(workspaceId);
     const csv = await this.crmService.exportClients(workspaceId);
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="contacts.csv"');
@@ -49,9 +50,12 @@ export class CrmController {
   }
 
   @Get('clients/:id/activity')
-  @RequireFeature('crm_activity_log')
-  @UseGuards(PlanGuard)
-  getActivityLog(@Param('id') clientId: string) {
+  async getActivityLog(
+    @Param('id') clientId: string,
+    @Query('workspaceId') workspaceId: string,
+  ) {
+    // 🔒 Growth+ required — activity history is a full-CRM feature
+    await this.planGuard.checkCrmActivityLogAccess(workspaceId);
     return this.crmService.getActivityLog(clientId);
   }
 
@@ -61,9 +65,13 @@ export class CrmController {
   }
 
   @Patch('clients/:id')
-  @RequireFeature('crm_full')
-  @UseGuards(PlanGuard)
-  updateClient(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  async updateClient(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
+    // 🔒 Growth+ required — editing full client profile (deal value, source, company, etc.)
+    await this.planGuard.checkCrmFullAccess(body.workspaceId);
     return this.crmService.updateClient(id, { ...body, userId: req.user?.id });
   }
 
@@ -93,9 +101,9 @@ export class CrmController {
   }
 
   @Get('pipeline/:workspaceId')
-  @RequireFeature('crm_pipeline')
-  @UseGuards(PlanGuard)
-  getPipelineStats(@Param('workspaceId') workspaceId: string) {
+  async getPipelineStats(@Param('workspaceId') workspaceId: string) {
+    // 🔒 Starter+ required — pipeline Kanban view
+    await this.planGuard.checkCrmPipelineAccess(workspaceId);
     return this.crmService.getPipelineStats(workspaceId);
   }
 

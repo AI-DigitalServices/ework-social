@@ -126,10 +126,12 @@ export class InboxController {
   }
 
   @Post(':id/suggest')
-  suggestReply(
+  async suggestReply(
     @Param('id') id: string,
     @Query('workspaceId') workspaceId: string,
   ) {
+    // 🔒 Starter+ required — consistent with all other gated inbox endpoints
+    await this.planGuard.checkAiReplyAccess(workspaceId);
     return this.inboxService.suggestReply(id, workspaceId);
   }
 }

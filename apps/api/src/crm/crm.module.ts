@@ -5,12 +5,12 @@ import { AuthModule } from '../auth/auth.module';
 import { AutomationService } from './automation.service';
 import { EmailService } from '../email/email.service';
 import { PrismaModule } from '../prisma/prisma.module';
-import { PlanGuard } from '../common/plan.guard';
+import { CommonModule } from '../common/common.module';
 import { PostHogModule } from '../analytics/posthog.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, PostHogModule],
-  providers: [CrmService, AutomationService, EmailService, PlanGuard],
+  imports: [AuthModule, PrismaModule, PostHogModule, CommonModule],
+  providers: [CrmService, AutomationService, EmailService],
   controllers: [CrmController],
   exports: [AutomationService],
 })

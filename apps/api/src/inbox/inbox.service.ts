@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { createDecipheriv } from 'crypto';
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
 import { AiUsageService } from '../ai/ai-usage.service';
@@ -70,26 +71,34 @@ export class InboxService {
   }
 
   async markRead(id: string, workspaceId: string) {
-    return this.prisma.inboxMessage.update({
-      where: { id },
+    // updateMany enforces workspace ownership — prevents cross-workspace message manipulation
+    const result = await this.prisma.inboxMessage.updateMany({
+      where: { id, workspaceId },
       data: { isRead: true },
     });
+    if (result.count === 0) throw new NotFoundException('Message not found');
+    return { success: true };
   }
 
   async markResolved(id: string, workspaceId: string) {
-    return this.prisma.inboxMessage.update({
-      where: { id },
+    const result = await this.prisma.inboxMessage.updateMany({
+      where: { id, workspaceId },
       data: { isResolved: true },
     });
+    if (result.count === 0) throw new NotFoundException('Message not found');
+    return { success: true };
   }
 
   async tagMessage(id: string, workspaceId: string, tags: string[]) {
     const msg = await this.prisma.inboxMessage.findUnique({ where: { id } });
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
 
+    // Only allow known tags to prevent arbitrary string injection
+    const validTags = tags.filter(t => INBOX_TAGS.includes(t));
+
     return this.prisma.inboxMessage.update({
       where: { id },
-      data: { tags },
+      data: { tags: validTags },
     });
   }
 
@@ -177,12 +186,18 @@ export class InboxService {
     });
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
 
+    // Twitter/X: we only poll mentions via Bearer Token — user OAuth replies not yet supported
+    if (msg.platform === 'TWITTER') {
+      throw new BadRequestException(
+        'Replying to Twitter/X mentions from the inbox is not yet supported. Please reply directly on Twitter/X for now.',
+      );
+    }
+
     const account = msg.workspace.socialAccounts.find(
       a => a.platform === msg.platform && a.isActive
     );
     if (!account) throw new Error('No active social account found for this platform');
 
-    const { createDecipheriv } = require('crypto');
     const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
     const [ivHex, encrypted] = account.accessToken!.split(':');
     const iv = Buffer.from(ivHex, 'hex');
@@ -252,12 +267,15 @@ export class InboxService {
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
     if (msg.type !== 'COMMENT') throw new Error('Only comments can be hidden');
 
+    if (msg.platform === 'TWITTER') {
+      throw new BadRequestException('Hiding Twitter/X comments is not supported via the inbox. Please manage this directly on Twitter/X.');
+    }
+
     const account = msg.workspace.socialAccounts.find(
       a => a.platform === msg.platform && a.isActive
     );
     if (!account) throw new Error('No active social account found for this platform');
 
-    const { createDecipheriv } = require('crypto');
     const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
     const [ivHex, encrypted] = account.accessToken!.split(':');
     const iv = Buffer.from(ivHex, 'hex');
@@ -283,12 +301,18 @@ export class InboxService {
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');
     if (msg.type !== 'COMMENT') throw new Error('Only comments can be deleted');
 
+    if (msg.platform === 'TWITTER') {
+      // For Twitter, just remove from our inbox — we cannot delete tweets via Bearer Token
+      await this.prisma.inboxMessage.delete({ where: { id } });
+      this.posthog.capture(workspaceId, 'comment_deleted', { platform: 'TWITTER' });
+      return { success: true };
+    }
+
     const account = msg.workspace.socialAccounts.find(
       a => a.platform === msg.platform && a.isActive
     );
     if (!account) throw new Error('No active social account found for this platform');
 
-    const { createDecipheriv } = require('crypto');
     const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
     const [ivHex, encrypted] = account.accessToken!.split(':');
     const iv = Buffer.from(ivHex, 'hex');
