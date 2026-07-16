@@ -264,7 +264,7 @@ export class AdminService {
         referralCode: true,
         isFoundingPartner: true,
         createdAt: true,
-        referredUsers: {
+        referrals: {
           select: {
             id: true,
             createdAt: true,
@@ -283,8 +283,8 @@ export class AdminService {
     };
 
     const stats = partners.map((p: any) => {
-      const totalReferrals = p.referredUsers.length;
-      const payingReferrals = p.referredUsers.filter((r: any) => {
+      const totalReferrals = p.referrals.length;
+      const payingReferrals = p.referrals.filter((r: any) => {
         const plan = r.ownedWorkspaces[0]?.subscription?.plan;
         return plan && ['STARTER', 'GROWTH', 'AGENCY_PRO'].includes(plan);
       });
