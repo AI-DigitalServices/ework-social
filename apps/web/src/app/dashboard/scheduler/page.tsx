@@ -12,10 +12,10 @@ import PlatformIcon from '@/components/ui/PlatformIcon';
 
 /* ─── Stat card visual config ────────────────────────────────── */
 const STAT_STYLE = {
-  total:     { gradient: 'linear-gradient(135deg,#1e293b 0%,#0f172a 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc', icon: FileText  },
-  scheduled: { gradient: 'linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd', icon: Clock      },
-  published: { gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', icon: CheckCircle },
-  drafts:    { gradient: 'linear-gradient(135deg,#2d1f08 0%,#0f172a 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d', icon: FileText   },
+  total:     { gradient: 'linear-gradient(135deg,#1e293b 0%,#1e2d42 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc', icon: FileText  },
+  scheduled: { gradient: 'linear-gradient(135deg,#1e3a5f 0%,#1e2d42 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd', icon: Clock      },
+  published: { gradient: 'linear-gradient(135deg,#0c2a20 0%,#1e2d42 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', icon: CheckCircle },
+  drafts:    { gradient: 'linear-gradient(135deg,#2d1f08 0%,#1e2d42 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d', icon: FileText   },
 } as const;
 
 /* ─── Status filter config ───────────────────────────────────── */
@@ -32,7 +32,7 @@ function PlatformBadge({ platform, accountName }: { platform: string; accountNam
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '5px 12px 5px 5px',
-      background: 'rgba(255,255,255,0.06)',
+      background: 'rgba(255,255,255,0.10)',
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 100,
       backdropFilter: 'blur(8px)',
@@ -100,12 +100,12 @@ export default function SchedulerPage() {
 
       {/* ── Hero header ───────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#162032 100%)',
+        background: 'linear-gradient(135deg,#1e2d42 0%,#1e293b 60%,#1e2e40 100%)',
         borderRadius: 20,
         padding: '28px 32px',
         position: 'relative',
         overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.10)',
       }}>
         {/* Glow blobs */}
         <div style={{ position: 'absolute', top: -40, right: 60,  width: 200, height: 200, borderRadius: '50%', background: 'rgba(59,130,246,0.12)',  filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -133,7 +133,7 @@ export default function SchedulerPage() {
             {/* View toggle */}
             <div style={{
               display: 'flex', gap: 4, padding: 4,
-              background: 'rgba(255,255,255,0.06)',
+              background: 'rgba(255,255,255,0.10)',
               borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)',
             }}>
               {(['grid', 'calendar'] as const).map(v => (
@@ -248,7 +248,7 @@ export default function SchedulerPage() {
               background: style.gradient,
               borderRadius: 16,
               padding: '20px 22px',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
               position: 'relative',
               overflow: 'hidden',
             }}>
@@ -326,8 +326,8 @@ export default function SchedulerPage() {
       ) : filteredPosts.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '60px 24px',
-          background: 'linear-gradient(135deg,#0f172a,#1e293b)',
-          borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(135deg,#1e2d42,#1e293b)',
+          borderRadius: 20, border: '1px solid rgba(255,255,255,0.10)',
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 240, height: 240, borderRadius: '50%', background: 'rgba(99,102,241,0.08)', filter: 'blur(60px)', pointerEvents: 'none' }} />

@@ -31,10 +31,10 @@ const STATUS_META: Record<string, {
 
 /* ─── Stat filter card config ────────────────────────────────── */
 const FILTER_CARDS = [
-  { key: 'all',                label: 'Total',          gradient: 'linear-gradient(135deg,#1e293b 0%,#0f172a 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc', dotColor: '#818cf8' },
-  { key: 'PENDING',            label: 'Awaiting',       gradient: 'linear-gradient(135deg,#2d1f08 0%,#0f172a 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d', dotColor: '#fbbf24' },
-  { key: 'APPROVED',           label: 'Approved',       gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', dotColor: '#34d399' },
-  { key: 'REVISION_REQUESTED', label: 'Needs Revision', gradient: 'linear-gradient(135deg,#2d0808 0%,#0f172a 100%)', glow: 'rgba(239,68,68,0.5)',  accent: '#fca5a5', dotColor: '#f87171' },
+  { key: 'all',                label: 'Total',          gradient: 'linear-gradient(135deg,#1e293b 0%,#1e2d42 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc', dotColor: '#818cf8' },
+  { key: 'PENDING',            label: 'Awaiting',       gradient: 'linear-gradient(135deg,#2d1f08 0%,#1e2d42 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d', dotColor: '#fbbf24' },
+  { key: 'APPROVED',           label: 'Approved',       gradient: 'linear-gradient(135deg,#0c2a20 0%,#1e2d42 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', dotColor: '#34d399' },
+  { key: 'REVISION_REQUESTED', label: 'Needs Revision', gradient: 'linear-gradient(135deg,#2d0808 0%,#1e2d42 100%)', glow: 'rgba(239,68,68,0.5)',  accent: '#fca5a5', dotColor: '#f87171' },
 ] as const;
 
 function formatDate(iso: string) {
@@ -93,9 +93,9 @@ export default function ApprovalsPage() {
 
       {/* ── Hero header ───────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#162032 100%)',
+        background: 'linear-gradient(135deg,#1e2d42 0%,#1e293b 60%,#1e2e40 100%)',
         borderRadius: 20, padding: '28px 32px',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.10)',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -30, right: 60,  width: 200, height: 200, borderRadius: '50%', background: 'rgba(16,185,129,0.08)', filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -114,12 +114,12 @@ export default function ApprovalsPage() {
             onClick={loadApprovals}
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 12, color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.color = '#e2e8f0'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
           >
             <RefreshCw size={14} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} />
             Refresh
@@ -139,7 +139,7 @@ export default function ApprovalsPage() {
               style={{
                 background: card.gradient,
                 borderRadius: 16, padding: '20px 22px', textAlign: 'left',
-                border: isActive ? `1.5px solid ${card.dotColor}60` : '1px solid rgba(255,255,255,0.06)',
+                border: isActive ? `1.5px solid ${card.dotColor}60` : '1px solid rgba(255,255,255,0.10)',
                 position: 'relative', overflow: 'hidden', cursor: 'pointer',
                 boxShadow: isActive ? `0 0 20px ${card.glow}` : 'none',
                 transform: isActive ? 'translateY(-2px)' : 'none',
@@ -173,8 +173,8 @@ export default function ApprovalsPage() {
       ) : filtered.length === 0 ? (
         /* ── Empty state ──────────────────────────────────────────── */
         <div style={{
-          background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)',
+          border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: 20, padding: '56px 32px', textAlign: 'center',
         }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 28px rgba(16,185,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -199,8 +199,8 @@ export default function ApprovalsPage() {
                 onMouseEnter={() => setHoveredCard(approval.id)}
                 onMouseLeave={() => setHoveredCard(null)}
                 style={{
-                  background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)',
-                  border: isHovered ? `1px solid rgba(255,255,255,0.12)` : '1px solid rgba(255,255,255,0.06)',
+                  background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)',
+                  border: isHovered ? `1px solid rgba(255,255,255,0.12)` : '1px solid rgba(255,255,255,0.10)',
                   borderRadius: 18, padding: '18px 20px',
                   transition: 'all 0.2s',
                   transform: isHovered ? 'translateY(-1px)' : 'none',
@@ -257,7 +257,7 @@ export default function ApprovalsPage() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '8px 14px', borderRadius: 10,
-                      background: copied === approval.token ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.06)',
+                      background: copied === approval.token ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.10)',
                       border: copied === approval.token ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
                       color: copied === approval.token ? '#34d399' : '#94a3b8',
                       fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,

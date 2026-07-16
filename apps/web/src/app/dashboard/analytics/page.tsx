@@ -30,13 +30,13 @@ const PLATFORM_CHART_COLOR: Record<string, string> = {
 
 /* ─── Stat card config ───────────────────────────────────────── */
 const STAT_CARDS = [
-  { key: 'totalPosts',     label: 'Total Posts',     icon: FileText,   gradient: 'linear-gradient(135deg,#1e293b 0%,#0f172a 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc' },
-  { key: 'scheduledPosts', label: 'Scheduled',       icon: Clock,      gradient: 'linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd' },
-  { key: 'publishedPosts', label: 'Published',       icon: CheckCircle,gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7' },
-  { key: 'socialAccounts', label: 'Social Accounts', icon: Share2,     gradient: 'linear-gradient(135deg,#2d1508 0%,#0f172a 100%)', glow: 'rgba(249,115,22,0.5)', accent: '#fdba74' },
-  { key: 'totalClients',   label: 'Total Clients',   icon: Users,      gradient: 'linear-gradient(135deg,#2d1854 0%,#0f172a 100%)', glow: 'rgba(139,92,246,0.5)', accent: '#c4b5fd' },
-  { key: 'activeClients',  label: 'Active Clients',  icon: UserCheck,  gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#86efac' },
-  { key: 'openLeads',      label: 'Open Leads',      icon: TrendingUp, gradient: 'linear-gradient(135deg,#2d1f08 0%,#0f172a 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d' },
+  { key: 'totalPosts',     label: 'Total Posts',     icon: FileText,   gradient: 'linear-gradient(135deg,#1e293b 0%,#1e2d42 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc' },
+  { key: 'scheduledPosts', label: 'Scheduled',       icon: Clock,      gradient: 'linear-gradient(135deg,#1e3a5f 0%,#1e2d42 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd' },
+  { key: 'publishedPosts', label: 'Published',       icon: CheckCircle,gradient: 'linear-gradient(135deg,#0c2a20 0%,#1e2d42 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7' },
+  { key: 'socialAccounts', label: 'Social Accounts', icon: Share2,     gradient: 'linear-gradient(135deg,#2d1508 0%,#1e2d42 100%)', glow: 'rgba(249,115,22,0.5)', accent: '#fdba74' },
+  { key: 'totalClients',   label: 'Total Clients',   icon: Users,      gradient: 'linear-gradient(135deg,#2d1854 0%,#1e2d42 100%)', glow: 'rgba(139,92,246,0.5)', accent: '#c4b5fd' },
+  { key: 'activeClients',  label: 'Active Clients',  icon: UserCheck,  gradient: 'linear-gradient(135deg,#0c2a20 0%,#1e2d42 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#86efac' },
+  { key: 'openLeads',      label: 'Open Leads',      icon: TrendingUp, gradient: 'linear-gradient(135deg,#2d1f08 0%,#1e2d42 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d' },
 ] as const;
 
 /* ─── Pipeline stage colours ─────────────────────────────────── */
@@ -57,7 +57,7 @@ const STATUS_META: Record<string, { label: string; textColor: string; bg: string
 /* ─── Dark chart tooltip ─────────────────────────────────────── */
 const darkTooltip = {
   contentStyle: {
-    background: '#0f172a',
+    background: '#1e2d42',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 12,
     color: '#f1f5f9',
@@ -112,9 +112,9 @@ export default function AnalyticsPage() {
 
       {/* ── Hero header ───────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#162032 100%)',
+        background: 'linear-gradient(135deg,#1e2d42 0%,#1e293b 60%,#1e2e40 100%)',
         borderRadius: 20, padding: '28px 32px',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.10)',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -30, right: 60,  width: 200, height: 200, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -135,7 +135,7 @@ export default function AnalyticsPage() {
         {STAT_CARDS.slice(0, 4).map(card => {
           const Icon = card.icon;
           return (
-            <div key={card.key} style={{ background: card.gradient, borderRadius: 16, padding: '20px 22px', border: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' }}>
+            <div key={card.key} style={{ background: card.gradient, borderRadius: 16, padding: '20px 22px', border: '1px solid rgba(255,255,255,0.10)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -24, right: -24, width: 80, height: 80, borderRadius: '50%', background: card.glow, filter: 'blur(22px)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,255,255,0.08)', border: `1px solid ${card.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
         {STAT_CARDS.slice(4).map(card => {
           const Icon = card.icon;
           return (
-            <div key={card.key} style={{ background: card.gradient, borderRadius: 16, padding: '20px 22px', border: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' }}>
+            <div key={card.key} style={{ background: card.gradient, borderRadius: 16, padding: '20px 22px', border: '1px solid rgba(255,255,255,0.10)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -24, right: -24, width: 80, height: 80, borderRadius: '50%', background: card.glow, filter: 'blur(22px)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,255,255,0.08)', border: `1px solid ${card.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Post activity chart ───────────────────────────────────── */}
-      <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)', borderRadius: 20, padding: '28px 28px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)', borderRadius: 20, padding: '28px 28px 20px', border: '1px solid rgba(255,255,255,0.10)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Post Activity — Last 30 Days</p>
@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* CRM Pipeline pie */}
-        <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)', borderRadius: 20, padding: '28px 24px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)', borderRadius: 20, padding: '28px 24px 20px', border: '1px solid rgba(255,255,255,0.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#8b5cf6', boxShadow: '0 0 8px rgba(139,92,246,0.8)' }} />
             <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>CRM Pipeline</p>
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Posts by platform bar chart */}
-        <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)', borderRadius: 20, padding: '28px 24px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)', borderRadius: 20, padding: '28px 24px 20px', border: '1px solid rgba(255,255,255,0.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ec4899', boxShadow: '0 0 8px rgba(236,72,153,0.8)' }} />
             <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Posts by Platform</p>
@@ -264,7 +264,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Recent posts ──────────────────────────────────────────── */}
-      <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)', borderRadius: 20, padding: '24px 24px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)', borderRadius: 20, padding: '24px 24px 20px', border: '1px solid rgba(255,255,255,0.10)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 8px rgba(52,211,153,0.8)' }} />
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Recent Posts</p>
@@ -282,7 +282,7 @@ export default function AnalyticsPage() {
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '12px 16px',
                   background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.10)',
                   borderRadius: 14,
                 }}>
                   <PlatformIcon platform={post.socialAccount?.platform || ''} size="md" glow />

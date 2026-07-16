@@ -12,10 +12,10 @@ import PlatformIcon from '@/components/ui/PlatformIcon';
 
 /* ─── Stat card gradient config ──────────────────────────────── */
 const STAT_CARD = [
-  { label: 'Scheduled Posts', key: 'scheduledPosts',  icon: CalendarDays, gradient: 'linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd', href: '/dashboard/scheduler'        },
-  { label: 'Published Posts', key: 'publishedPosts',  icon: CheckCircle,  gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', href: '/dashboard/scheduler'        },
-  { label: 'Total Clients',   key: 'totalClients',    icon: Users,        gradient: 'linear-gradient(135deg,#2d1854 0%,#0f172a 100%)', glow: 'rgba(139,92,246,0.5)', accent: '#c4b5fd', href: '/dashboard/crm'             },
-  { label: 'Social Accounts', key: 'socialAccounts',  icon: Share2,       gradient: 'linear-gradient(135deg,#2d1508 0%,#0f172a 100%)', glow: 'rgba(249,115,22,0.5)', accent: '#fdba74', href: '/dashboard/settings?tab=social' },
+  { label: 'Scheduled Posts', key: 'scheduledPosts',  icon: CalendarDays, gradient: 'linear-gradient(135deg,#1e3a5f 0%,#1e2d42 100%)', glow: 'rgba(59,130,246,0.5)',  accent: '#93c5fd', href: '/dashboard/scheduler'        },
+  { label: 'Published Posts', key: 'publishedPosts',  icon: CheckCircle,  gradient: 'linear-gradient(135deg,#0c2a20 0%,#1e2d42 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', href: '/dashboard/scheduler'        },
+  { label: 'Total Clients',   key: 'totalClients',    icon: Users,        gradient: 'linear-gradient(135deg,#2d1854 0%,#1e2d42 100%)', glow: 'rgba(139,92,246,0.5)', accent: '#c4b5fd', href: '/dashboard/crm'             },
+  { label: 'Social Accounts', key: 'socialAccounts',  icon: Share2,       gradient: 'linear-gradient(135deg,#2d1508 0%,#1e2d42 100%)', glow: 'rgba(249,115,22,0.5)', accent: '#fdba74', href: '/dashboard/settings?tab=social' },
 ] as const;
 
 /* ─── Quick actions ──────────────────────────────────────────── */
@@ -50,7 +50,7 @@ function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) 
           <X size={16} />
         </button>
         <div style={{ fontSize: 52, marginBottom: 12 }}>👋</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Welcome, {name}!</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1e2d42', marginBottom: 8 }}>Welcome, {name}!</h2>
         <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
           You&apos;re now on eWork Social. Here&apos;s how to get the most out of your workspace in the next 3 minutes.
         </p>
@@ -63,7 +63,7 @@ function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) 
             <a key={item.title} href={item.href} onClick={onClose} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', background: '#f8fafc', borderRadius: 14, textDecoration: 'none', border: '1px solid #e2e8f0' }}>
               <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg,#2563EB,#1D4ED8)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
               <div>
-                <p style={{ color: '#0f172a', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{item.title}</p>
+                <p style={{ color: '#1e2d42', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{item.title}</p>
                 <p style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.4, margin: 0 }}>{item.desc}</p>
               </div>
               <ArrowRight size={16} style={{ color: '#cbd5e1', marginLeft: 'auto', marginTop: 10, flexShrink: 0 }} />
@@ -164,9 +164,9 @@ export default function DashboardPage() {
 
       {/* ── Hero welcome header ───────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#162032 100%)',
+        background: 'linear-gradient(135deg,#1e2d42 0%,#1e293b 60%,#1e2e40 100%)',
         borderRadius: 20, padding: '28px 32px',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.10)',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -30, right: 80,  width: 200, height: 200, borderRadius: '50%', background: 'rgba(99,102,241,0.1)',  filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               <div style={{
                 background: card.gradient,
                 borderRadius: 16, padding: '20px 22px',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.10)',
                 position: 'relative', overflow: 'hidden',
                 cursor: 'pointer', transition: 'transform 0.15s',
               }}
@@ -232,7 +232,7 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: !checklistDismissed ? '2fr 1fr' : '1fr', gap: 16 }}>
         {/* Quick actions */}
         <div style={{ background: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-          <p style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Quick Actions</p>
+          <p style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#1e2d42' }}>Quick Actions</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {QUICK_ACTIONS.map(action => {
               const ActionIcon = action.icon;
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             border: '1px solid rgba(255,255,255,0.08)',
             position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{ position: 'absolute', top: -30, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: -30, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.10)', filter: 'blur(30px)', pointerEvents: 'none' }} />
             <button
               onClick={dismissChecklist}
               style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
@@ -334,7 +334,7 @@ export default function DashboardPage() {
       {recentPosts.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Recent Posts</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1e2d42' }}>Recent Posts</p>
             <Link href="/dashboard/scheduler" style={{ fontSize: 12, fontWeight: 700, color: '#3b82f6', textDecoration: 'none' }}>
               View all →
             </Link>
