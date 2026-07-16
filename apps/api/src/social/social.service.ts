@@ -51,7 +51,6 @@ export class SocialService {
       'pages_read_engagement',
       'pages_manage_posts',
       'pages_manage_metadata',   // required for comments + messages webhook subscription
-      'pages_messaging',         // required for sending Messenger DM replies via Graph API
       'instagram_basic',
       'instagram_content_publish',
       'instagram_manage_comments',
