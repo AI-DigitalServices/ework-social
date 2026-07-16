@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const platformIcons: Record<string, string> = {
-  FACEBOOK: '📘', INSTAGRAM: '📸', TWITTER: '🐦',
-  LINKEDIN: '💼', TIKTOK: '🎵', YOUTUBE: '▶️',
-};
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 interface Props {
   posts: any[];
@@ -103,7 +99,10 @@ export default function CalendarView({ posts }: Props) {
                     className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 truncate"
                     title={post.content}
                   >
-                    {platformIcons[post.socialAccount?.platform]} {post.content.slice(0, 15)}...
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}>
+                      <PlatformIcon platform={post.socialAccount?.platform || ''} size="xs" />
+                      {post.content.slice(0, 15)}…
+                    </span>
                   </div>
                 ))}
                 {dayPosts.length > 2 && (

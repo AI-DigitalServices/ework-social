@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { createRuleAction } from '@/actions/responder.actions';
 import { useAuthStore } from '@/store/auth.store';
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 const platforms = [
-  { id: 'FACEBOOK', label: 'Facebook', icon: '📘' },
-  { id: 'INSTAGRAM', label: 'Instagram', icon: '📸' },
-  { id: 'TWITTER', label: 'Twitter/X', icon: '🐦' },
-  { id: 'LINKEDIN', label: 'LinkedIn', icon: '💼' },
-  { id: 'WHATSAPP', label: 'WhatsApp', icon: '💬' },
+  { id: 'FACEBOOK',  label: 'Facebook'  },
+  { id: 'INSTAGRAM', label: 'Instagram' },
+  { id: 'TWITTER',   label: 'Twitter/X' },
+  { id: 'LINKEDIN',  label: 'LinkedIn'  },
+  { id: 'WHATSAPP',  label: 'WhatsApp'  },
 ];
 
 const triggerTypes = [
@@ -138,7 +139,7 @@ export default function AddRuleModal({ onClose, onCreated }: Props) {
                           : 'border-slate-200 text-slate-600 hover:border-blue-200'
                       }`}
                     >
-                      <span>{p.icon}</span> {p.label}
+                      <PlatformIcon platform={p.id} size="xs" /> {p.label}
                     </button>
                   ))}
                 </div>

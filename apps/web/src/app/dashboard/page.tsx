@@ -8,18 +8,7 @@ import {
   CheckCircle, Clock, AlertCircle, Zap, X, Link2, Gift, Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
-
-/* ─── Platform visual config ─────────────────────────────────── */
-const PLATFORM_META: Record<string, { gradient: string; glow: string; letter: string }> = {
-  FACEBOOK:  { gradient: 'linear-gradient(135deg,#1877F2,#0a5bd4)',                                                       glow: 'rgba(24,119,242,0.4)',  letter: 'f'  },
-  INSTAGRAM: { gradient: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',           glow: 'rgba(225,48,108,0.4)', letter: '✦' },
-  TWITTER:   { gradient: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)',                                                        glow: 'rgba(29,161,242,0.4)', letter: '𝕏'  },
-  THREADS:   { gradient: 'linear-gradient(135deg,#444,#111)',                                                              glow: 'rgba(80,80,80,0.3)',   letter: '@'  },
-  LINKEDIN:  { gradient: 'linear-gradient(135deg,#0077B5,#005f93)',                                                        glow: 'rgba(0,119,181,0.4)', letter: 'in' },
-  BLUESKY:   { gradient: 'linear-gradient(135deg,#0085FF,#0060cc)',                                                        glow: 'rgba(0,133,255,0.4)', letter: 'bs' },
-  TIKTOK:    { gradient: 'linear-gradient(135deg,#010101,#2d2d2d)',                                                        glow: 'rgba(0,0,0,0.25)',     letter: '♪'  },
-  YOUTUBE:   { gradient: 'linear-gradient(135deg,#FF0000,#cc0000)',                                                        glow: 'rgba(255,0,0,0.4)',   letter: '▶'  },
-};
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 /* ─── Stat card gradient config ──────────────────────────────── */
 const STAT_CARD = [
@@ -47,21 +36,6 @@ const STATUS_META: Record<string, { icon: any; gradient: string; textColor: stri
   FAILED:    { icon: AlertCircle,   gradient: 'rgba(239,68,68,0.12)',    textColor: '#f87171', label: 'Failed'    },
 };
 
-function PlatformIcon({ platform, size = 32 }: { platform: string; size?: number }) {
-  const meta = PLATFORM_META[platform] || { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' };
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: size > 24 ? 10 : 7,
-      background: meta.gradient,
-      boxShadow: `0 0 12px ${meta.glow}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: size * 0.32, fontWeight: 900,
-      flexShrink: 0, letterSpacing: '-0.5px',
-    }}>
-      {meta.letter}
-    </div>
-  );
-}
 
 /* ─── Welcome modal ──────────────────────────────────────────── */
 function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) {
@@ -167,7 +141,7 @@ export default function DashboardPage() {
           border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <PlatformIcon platform={account.platform} size={32} />
+            <PlatformIcon platform={account.platform} size="md" glow />
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#92400e' }}>
                 {account.platform} token expired — @{account.accountName}
@@ -377,7 +351,7 @@ export default function DashboardPage() {
                   border: '1px solid #f1f5f9',
                   borderRadius: 14,
                 }}>
-                  <PlatformIcon platform={post.socialAccount?.platform || ''} size={36} />
+                  <PlatformIcon platform={post.socialAccount?.platform || ''} size="md" glow />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.content}

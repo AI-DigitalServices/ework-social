@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { Trash2, ToggleLeft, ToggleRight, Zap } from 'lucide-react';
 import { toggleRuleAction, deleteRuleAction } from '@/actions/responder.actions';
-
-const platformIcons: Record<string, string> = {
-  FACEBOOK: '📘', INSTAGRAM: '📸', TWITTER: '🐦',
-  LINKEDIN: '💼', WHATSAPP: '💬', TIKTOK: '🎵',
-};
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 const triggerLabels: Record<string, string> = {
   keyword: 'Keyword Match',
@@ -53,7 +49,7 @@ export default function RuleCard({ rule, onToggled, onDeleted }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{platformIcons[rule.platform] || '📱'}</span>
+          <PlatformIcon platform={rule.platform} size="md" />
           <div>
             <p className="font-semibold text-slate-800">{rule.name}</p>
             <div className="flex items-center gap-2 mt-0.5">

@@ -8,18 +8,7 @@ import CreatePostModal from '@/components/scheduler/CreatePostModal';
 import CalendarView from '@/components/scheduler/CalendarView';
 import { Plus, LayoutGrid, Calendar, Clock, CheckCircle, FileText, Settings, Zap, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-/* ─── Platform visual config ─────────────────────────────────── */
-const PLATFORM_META: Record<string, { gradient: string; glow: string; letter: string; label: string }> = {
-  FACEBOOK:  { gradient: 'linear-gradient(135deg,#1877F2,#0a5bd4)',                                                                           glow: 'rgba(24,119,242,0.4)',  letter: 'f',  label: 'Facebook'  },
-  INSTAGRAM: { gradient: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',                               glow: 'rgba(225,48,108,0.4)', letter: '✦', label: 'Instagram' },
-  TWITTER:   { gradient: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)',                                                                            glow: 'rgba(29,161,242,0.4)', letter: '𝕏',  label: 'X / Twitter'},
-  THREADS:   { gradient: 'linear-gradient(135deg,#444,#111)',                                                                                  glow: 'rgba(80,80,80,0.3)',   letter: '@',  label: 'Threads'   },
-  LINKEDIN:  { gradient: 'linear-gradient(135deg,#0077B5,#005f93)',                                                                            glow: 'rgba(0,119,181,0.4)', letter: 'in', label: 'LinkedIn'  },
-  BLUESKY:   { gradient: 'linear-gradient(135deg,#0085FF,#0060cc)',                                                                            glow: 'rgba(0,133,255,0.4)', letter: 'bs', label: 'Bluesky'   },
-  TIKTOK:    { gradient: 'linear-gradient(135deg,#010101,#2d2d2d)',                                                                            glow: 'rgba(0,0,0,0.25)',     letter: '♪',  label: 'TikTok'    },
-  YOUTUBE:   { gradient: 'linear-gradient(135deg,#FF0000,#cc0000)',                                                                            glow: 'rgba(255,0,0,0.4)',   letter: '▶',  label: 'YouTube'   },
-};
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 /* ─── Stat card visual config ────────────────────────────────── */
 const STAT_STYLE = {
@@ -39,25 +28,16 @@ const FILTER_STYLE: Record<string, { active: string; dot: string; label: string 
 };
 
 function PlatformBadge({ platform, accountName }: { platform: string; accountName: string }) {
-  const meta = PLATFORM_META[platform] || PLATFORM_META.FACEBOOK;
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
-      padding: '6px 12px 6px 6px',
+      padding: '5px 12px 5px 5px',
       background: 'rgba(255,255,255,0.06)',
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 100,
       backdropFilter: 'blur(8px)',
     }}>
-      <div style={{
-        width: 22, height: 22, borderRadius: '50%',
-        background: meta.gradient,
-        boxShadow: `0 0 8px ${meta.glow}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0,
-      }}>
-        {meta.letter}
-      </div>
+      <PlatformIcon platform={platform} size="xs" glow />
       <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>
         {accountName}
       </span>

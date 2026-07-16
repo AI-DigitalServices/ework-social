@@ -19,16 +19,13 @@ import {
   TrendingUp, Share2, UserCheck, BarChart2,
 } from 'lucide-react';
 
-/* ─── Platform visual config ─────────────────────────────────── */
-const PLATFORM_META: Record<string, { gradient: string; glow: string; letter: string; chartColor: string }> = {
-  FACEBOOK:  { gradient: 'linear-gradient(135deg,#1877F2,#0a5bd4)',                                                  glow: 'rgba(24,119,242,0.4)',  letter: 'f',  chartColor: '#3b82f6' },
-  INSTAGRAM: { gradient: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',      glow: 'rgba(225,48,108,0.4)', letter: '✦', chartColor: '#ec4899' },
-  TWITTER:   { gradient: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)',                                                   glow: 'rgba(29,161,242,0.4)', letter: '𝕏',  chartColor: '#0ea5e9' },
-  THREADS:   { gradient: 'linear-gradient(135deg,#444,#111)',                                                         glow: 'rgba(80,80,80,0.3)',   letter: '@',  chartColor: '#94a3b8' },
-  LINKEDIN:  { gradient: 'linear-gradient(135deg,#0077B5,#005f93)',                                                   glow: 'rgba(0,119,181,0.4)', letter: 'in', chartColor: '#0077b5' },
-  BLUESKY:   { gradient: 'linear-gradient(135deg,#0085FF,#0060cc)',                                                   glow: 'rgba(0,133,255,0.4)', letter: 'bs', chartColor: '#0085ff' },
-  TIKTOK:    { gradient: 'linear-gradient(135deg,#010101,#2d2d2d)',                                                   glow: 'rgba(0,0,0,0.25)',     letter: '♪',  chartColor: '#8b5cf6' },
-  YOUTUBE:   { gradient: 'linear-gradient(135deg,#FF0000,#cc0000)',                                                   glow: 'rgba(255,0,0,0.4)',   letter: '▶',  chartColor: '#ef4444' },
+import PlatformIcon from '@/components/ui/PlatformIcon';
+
+/* ─── Platform chart colours (for Recharts bars) ─────────────── */
+const PLATFORM_CHART_COLOR: Record<string, string> = {
+  FACEBOOK: '#3b82f6', INSTAGRAM: '#ec4899', TWITTER:  '#0ea5e9',
+  THREADS:  '#94a3b8', LINKEDIN:  '#0077b5', BLUESKY:  '#0085ff',
+  TIKTOK:   '#8b5cf6', YOUTUBE:   '#ef4444',
 };
 
 /* ─── Stat card config ───────────────────────────────────────── */
@@ -56,21 +53,6 @@ const STATUS_META: Record<string, { label: string; textColor: string; bg: string
   FAILED:    { label: 'Failed',    textColor: '#f87171', bg: 'rgba(239,68,68,0.12)'   },
 };
 
-function PlatformIcon({ platform, size = 32 }: { platform: string; size?: number }) {
-  const meta = PLATFORM_META[platform] || { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' };
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: Math.max(7, size * 0.28),
-      background: meta.gradient,
-      boxShadow: `0 0 12px ${meta.glow}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: size * 0.32, fontWeight: 900,
-      flexShrink: 0,
-    }}>
-      {meta.letter}
-    </div>
-  );
-}
 
 /* ─── Dark chart tooltip ─────────────────────────────────────── */
 const darkTooltip = {
@@ -268,8 +250,7 @@ export default function AnalyticsPage() {
                 <Tooltip {...darkTooltip} />
                 <Bar dataKey="posts" name="Posts" radius={[8, 8, 0, 0]}>
                   {platforms.map((entry) => {
-                    const meta = PLATFORM_META[entry.platform];
-                    return <Cell key={entry.platform} fill={meta?.chartColor || '#6366f1'} />;
+                    return <Cell key={entry.platform} fill={PLATFORM_CHART_COLOR[entry.platform] || '#6366f1'} />;
                   })}
                 </Bar>
               </BarChart>
@@ -304,7 +285,7 @@ export default function AnalyticsPage() {
                   border: '1px solid rgba(255,255,255,0.06)',
                   borderRadius: 14,
                 }}>
-                  <PlatformIcon platform={post.socialAccount?.platform || ''} size={36} />
+                  <PlatformIcon platform={post.socialAccount?.platform || ''} size="md" glow />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.content}

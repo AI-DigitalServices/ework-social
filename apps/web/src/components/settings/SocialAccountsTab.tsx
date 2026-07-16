@@ -8,18 +8,18 @@ import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
 
 const platforms = [
-  { id: 'facebook',  name: 'Facebook',          description: 'Pages, posts, analytics & auto-responder',       icon: '📘', phase: 1, apiPlatform: 'FACEBOOK'  },
-  { id: 'instagram', name: 'Instagram',          description: 'Feed, Reels, Stories & DM auto-responder',       icon: '📸', phase: 1, apiPlatform: 'INSTAGRAM' },
-  { id: 'linkedin',  name: 'LinkedIn',           description: 'Company pages & personal profiles',              icon: '💼', phase: 1, apiPlatform: 'LINKEDIN'  },
-  { id: 'bluesky',   name: 'Bluesky',            description: 'Posts, threads & growing global audience',       icon: '🦋', phase: 1, apiPlatform: 'BLUESKY'   },
-  { id: 'twitter',   name: 'Twitter / X',        description: '@Mentions pulled into inbox every 10 min — free', icon: '𝕏', phase: 1, apiPlatform: 'TWITTER'  },
-  { id: 'tiktok',    name: 'TikTok',             description: 'Video posts & analytics',                        icon: '🎵', phase: 1, apiPlatform: 'TIKTOK'    },
-  { id: 'youtube',   name: 'YouTube',            description: 'Videos, shorts & channel analytics',             icon: '▶️', phase: 1, apiPlatform: 'YOUTUBE'   },
-  { id: 'threads',   name: 'Threads',            description: 'Posts, replies & growing Meta audience',         icon: '🧵', phase: 1, apiPlatform: 'THREADS'   },
-  { id: 'pinterest', name: 'Pinterest',          description: 'Pins, boards & analytics',                       icon: '📌', phase: 3, apiPlatform: 'PINTEREST' },
-  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Broadcasts & auto-responder',                    icon: '💬', phase: 3, apiPlatform: 'WHATSAPP'  },
-  { id: 'telegram',  name: 'Telegram',           description: 'Channel posts & bot auto-responder',             icon: '✈️', phase: 4, apiPlatform: 'TELEGRAM'  },
-  { id: 'reddit',    name: 'Reddit',             description: 'Subreddit posts & community management',         icon: '🤖', phase: 4, apiPlatform: 'REDDIT'    },
+  { id: 'facebook',  name: 'Facebook',          description: 'Pages, posts, analytics & auto-responder',        phase: 1, apiPlatform: 'FACEBOOK'  },
+  { id: 'instagram', name: 'Instagram',          description: 'Feed, Reels, Stories & DM auto-responder',        phase: 1, apiPlatform: 'INSTAGRAM' },
+  { id: 'linkedin',  name: 'LinkedIn',           description: 'Company pages & personal profiles',               phase: 1, apiPlatform: 'LINKEDIN'  },
+  { id: 'bluesky',   name: 'Bluesky',            description: 'Posts, threads & growing global audience',        phase: 1, apiPlatform: 'BLUESKY'   },
+  { id: 'twitter',   name: 'Twitter / X',        description: '@Mentions pulled into inbox every 10 min — free', phase: 1, apiPlatform: 'TWITTER'   },
+  { id: 'tiktok',    name: 'TikTok',             description: 'Video posts & analytics',                         phase: 1, apiPlatform: 'TIKTOK'    },
+  { id: 'youtube',   name: 'YouTube',            description: 'Videos, shorts & channel analytics',              phase: 1, apiPlatform: 'YOUTUBE'   },
+  { id: 'threads',   name: 'Threads',            description: 'Posts, replies & growing Meta audience',          phase: 1, apiPlatform: 'THREADS'   },
+  { id: 'pinterest', name: 'Pinterest',          description: 'Pins, boards & analytics',                        phase: 3, apiPlatform: 'PINTEREST' },
+  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Broadcasts & auto-responder',                     phase: 3, apiPlatform: 'WHATSAPP'  },
+  { id: 'telegram',  name: 'Telegram',           description: 'Channel posts & bot auto-responder',              phase: 4, apiPlatform: 'TELEGRAM'  },
+  { id: 'reddit',    name: 'Reddit',             description: 'Subreddit posts & community management',          phase: 4, apiPlatform: 'REDDIT'    },
 ];
 
 const platformColors: Record<string, { border: string; bg: string; text: string; badge: string }> = {

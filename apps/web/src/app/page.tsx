@@ -1,5 +1,6 @@
 'use client';
 import { Calendar, Users, BarChart3, MessageSquareReply, CreditCard, Globe, Zap, Shield, CheckCircle, ArrowRight, Star } from 'lucide-react';
+import PlatformIcon from '@/components/ui/PlatformIcon';
 import { useState } from 'react';
 import { joinWaitlistAction, getWaitlistCountAction } from '@/actions/waitlist.actions';
 
@@ -402,18 +403,18 @@ export default function LandingPage() {
           <p style={{ color: '#6B8299', fontSize: 16, marginBottom: 52, fontWeight: 400 }}>Connect all your social accounts and manage them from one place</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center' }}>
             {[
-              { color: '#0077B5', letter: 'in', name: 'LinkedIn',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
-              { color: '#000000', letter: 'tt', name: 'TikTok',     status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
-              { color: '#0085FF', letter: 'bs', name: 'Bluesky',    status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
-              { color: '#FF0000', letter: '▶',  name: 'YouTube',    status: 'Beta',        textColor: '#F59E0B', bgColor: '#451A03' },
-              { color: '#1DA1F2', letter: '𝕏',  name: 'Twitter/X',  status: 'Growth+',     textColor: '#3B82F6', bgColor: '#1E3A5F' },
-              { color: '#1877F2', letter: 'f',  name: 'Facebook',   status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
-              { color: '#E1306C', letter: '✦',  name: 'Instagram',  status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
-              { color: '#E60023', letter: 'P',  name: 'Pinterest',  status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
-              { color: '#25D366', letter: 'W',  name: 'WhatsApp',   status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
+              { platform: 'LINKEDIN',  name: 'LinkedIn',  status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { platform: 'TIKTOK',   name: 'TikTok',    status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { platform: 'BLUESKY',  name: 'Bluesky',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { platform: 'YOUTUBE',  name: 'YouTube',   status: 'Beta',        textColor: '#F59E0B', bgColor: '#451A03' },
+              { platform: 'TWITTER',  name: 'Twitter/X', status: 'Growth+',     textColor: '#3B82F6', bgColor: '#1E3A5F' },
+              { platform: 'FACEBOOK', name: 'Facebook',  status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
+              { platform: 'INSTAGRAM',name: 'Instagram', status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
+              { platform: 'PINTEREST',name: 'Pinterest', status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
+              { platform: 'WHATSAPP', name: 'WhatsApp',  status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
             ].map((p, i) => (
               <div key={i} className="platform-pill">
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 900, flexShrink: 0 }}>{p.letter}</div>
+                <PlatformIcon platform={p.platform} size="sm" glow />
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</span>
                 <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, background: p.bgColor, color: p.textColor, fontWeight: 700 }}>{p.status}</span>
               </div>

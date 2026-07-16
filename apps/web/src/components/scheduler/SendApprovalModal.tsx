@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Send, User, Mail } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 interface Props {
   post: any;
@@ -66,11 +67,6 @@ export default function SendApprovalModal({ post, onClose, onSent }: Props) {
     }
   };
 
-  const platformIcons: Record<string, string> = {
-    FACEBOOK: '📘', INSTAGRAM: '📸', LINKEDIN: '💼',
-    TIKTOK: '🎵', YOUTUBE: '▶️', THREADS: '🧵', BLUESKY: '🦋',
-  };
-
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -96,7 +92,7 @@ export default function SendApprovalModal({ post, onClose, onSent }: Props) {
           {/* Post preview */}
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <div className="flex items-center gap-2 mb-2">
-              <span>{platformIcons[post.socialAccount?.platform] || '📱'}</span>
+              <PlatformIcon platform={post.socialAccount?.platform || ''} size="sm" />
               <span className="text-xs font-semibold text-slate-600">{post.socialAccount?.accountName}</span>
             </div>
             <p className="text-slate-700 text-sm line-clamp-2">{post.content}</p>

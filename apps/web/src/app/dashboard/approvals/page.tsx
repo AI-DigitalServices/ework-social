@@ -5,17 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { CheckCircle, Clock, AlertCircle, RefreshCw, Send, ExternalLink, ClipboardCheck } from 'lucide-react';
 
-/* ─── Platform visual config ─────────────────────────────────── */
-const PLATFORM_META: Record<string, { gradient: string; glow: string; letter: string }> = {
-  FACEBOOK:  { gradient: 'linear-gradient(135deg,#1877F2,#0a5bd4)',                                               glow: 'rgba(24,119,242,0.45)',  letter: 'f'  },
-  INSTAGRAM: { gradient: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',  glow: 'rgba(225,48,108,0.45)', letter: '✦'  },
-  TWITTER:   { gradient: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)',                                               glow: 'rgba(29,161,242,0.45)', letter: '𝕏'  },
-  THREADS:   { gradient: 'linear-gradient(135deg,#444,#111)',                                                     glow: 'rgba(80,80,80,0.35)',   letter: '@'  },
-  LINKEDIN:  { gradient: 'linear-gradient(135deg,#0077B5,#005f93)',                                               glow: 'rgba(0,119,181,0.45)', letter: 'in' },
-  BLUESKY:   { gradient: 'linear-gradient(135deg,#0085FF,#0060cc)',                                               glow: 'rgba(0,133,255,0.45)', letter: 'bs' },
-  TIKTOK:    { gradient: 'linear-gradient(135deg,#010101,#2d2d2d)',                                               glow: 'rgba(0,0,0,0.25)',     letter: '♪'  },
-  YOUTUBE:   { gradient: 'linear-gradient(135deg,#FF0000,#cc0000)',                                               glow: 'rgba(255,0,0,0.45)',   letter: '▶'  },
-};
+import PlatformIcon from '@/components/ui/PlatformIcon';
 
 /* ─── Status visual config ───────────────────────────────────── */
 const STATUS_META: Record<string, {
@@ -54,22 +44,6 @@ function formatDate(iso: string) {
   });
 }
 
-function PlatformBadge({ platform }: { platform?: string }) {
-  const meta = platform
-    ? (PLATFORM_META[platform] || { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' })
-    : { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' };
-  return (
-    <div style={{
-      width: 42, height: 42, borderRadius: 13,
-      background: meta.gradient,
-      boxShadow: `0 0 14px ${meta.glow}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: 14, fontWeight: 900, flexShrink: 0,
-    }}>
-      {meta.letter}
-    </div>
-  );
-}
 
 export default function ApprovalsPage() {
   const { workspace } = useAuthStore();
@@ -238,7 +212,7 @@ export default function ApprovalsPage() {
                 <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, borderRadius: '0 3px 3px 0', background: sMeta.textColor, boxShadow: `0 0 8px ${sMeta.glow}`, opacity: 0.8 }} />
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, paddingLeft: 8 }}>
-                  <PlatformBadge platform={platform} />
+                  <PlatformIcon platform={platform || ''} size="md" glow />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
