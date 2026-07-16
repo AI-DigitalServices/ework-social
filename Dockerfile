@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Force fresh layer - 2026-04-25
+# Force fresh layer - 2026-07-16
 COPY apps/api ./apps/api
 COPY prisma ./prisma
 
