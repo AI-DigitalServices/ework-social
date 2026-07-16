@@ -342,17 +342,31 @@ export class WebhookService {
       });
       if (!account) return;
 
+      const externalId = messageData.message?.mid || senderId;
+
       // Always save to inbox — every DM regardless of auto-responder rule match
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.INSTAGRAM,
         type: InboxMessageType.DM,
-        externalId: messageData.message?.mid || senderId,
+        externalId,
         senderId,
         senderName: messageData.sender?.username || senderId,
         content: messageText,
         socialAccountId: account.id,
       });
+
+      // Dedup: if handleInstagramDMByMid already processed this MID (message_edit.num_edit=0
+      // fires first and marks isRead=true via recordAutoReply), skip the auto-reply here
+      // to prevent the user receiving the same automated response twice.
+      const savedMsg = await this.prisma.inboxMessage.findFirst({
+        where: { externalId },
+        select: { isRead: true },
+      });
+      if (savedMsg?.isRead) {
+        this.logger.log(`Instagram DM ${externalId} already handled by message_edit path — skipping duplicate auto-reply`);
+        return;
+      }
 
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
@@ -437,6 +451,18 @@ export class WebhookService {
         return;
       }
 
+      // Save to inbox early so recordAutoReply can find the message
+      await this.saveInboxMessage({
+        workspaceId: account.workspaceId,
+        platform: Platform.INSTAGRAM,
+        type: InboxMessageType.DM,
+        externalId: mid,
+        senderId,
+        senderName: senderId,
+        content: messageText,
+        socialAccountId: account.id,
+      });
+
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
           workspaceId: account.workspaceId,
@@ -517,31 +543,37 @@ export class WebhookService {
     socialAccountId?: string;
   }) {
     try {
-      await this.prisma.inboxMessage.upsert({
-        where: {
-          platform_externalId: {
-            platform: data.platform,
-            externalId: data.externalId,
-          },
-        },
-        update: {
-          content: data.content,
-          senderName: data.senderName,
-        },
-        create: {
-          workspaceId: data.workspaceId,
-          platform: data.platform,
-          type: data.type,
-          externalId: data.externalId,
-          senderId: data.senderId,
-          senderName: data.senderName,
-          senderAvatar: data.senderAvatar,
-          content: data.content,
-          postId: data.postId,
-          postContent: data.postContent,
-          socialAccountId: data.socialAccountId,
-        },
+      // NOTE: Prisma v5 binds enum values as `text` in WHERE clauses which
+      // PostgreSQL rejects for native enum columns (text ≠ "Platform").
+      // Workaround: find by externalId only (no enum in WHERE), then update
+      // or create. PostgreSQL accepts text→enum casts in INSERT fine.
+      const existing = await this.prisma.inboxMessage.findFirst({
+        where: { externalId: data.externalId },
+        select: { id: true },
       });
+
+      if (existing) {
+        await this.prisma.inboxMessage.update({
+          where: { id: existing.id },
+          data: { content: data.content, senderName: data.senderName },
+        });
+      } else {
+        await this.prisma.inboxMessage.create({
+          data: {
+            workspaceId: data.workspaceId,
+            platform: data.platform,
+            type: data.type,
+            externalId: data.externalId,
+            senderId: data.senderId,
+            senderName: data.senderName,
+            senderAvatar: data.senderAvatar,
+            content: data.content,
+            postId: data.postId,
+            postContent: data.postContent,
+            socialAccountId: data.socialAccountId,
+          },
+        });
+      }
       this.logger.log(`Inbox: saved ${data.type} from ${data.platform} — ${data.senderName}`);
     } catch (err: any) {
       this.logger.error('Failed to save inbox message:', err?.message);
@@ -690,8 +722,9 @@ export class WebhookService {
     responseContent: string,
   ): Promise<void> {
     try {
+      // NOTE: Same Prisma/PG enum cast workaround — find by externalId only, no enum in WHERE
       const msg = await this.prisma.inboxMessage.findFirst({
-        where: { platform, externalId },
+        where: { externalId },
       });
       if (!msg) return;
 
