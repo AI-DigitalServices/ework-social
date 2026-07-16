@@ -356,18 +356,6 @@ export class WebhookService {
         socialAccountId: account.id,
       });
 
-      // Dedup: if handleInstagramDMByMid already processed this MID (message_edit.num_edit=0
-      // fires first and marks isRead=true via recordAutoReply), skip the auto-reply here
-      // to prevent the user receiving the same automated response twice.
-      const savedMsg = await this.prisma.inboxMessage.findFirst({
-        where: { externalId },
-        select: { isRead: true },
-      });
-      if (savedMsg?.isRead) {
-        this.logger.log(`Instagram DM ${externalId} already handled by message_edit path — skipping duplicate auto-reply`);
-        return;
-      }
-
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
           workspaceId: account.workspaceId,
@@ -451,76 +439,27 @@ export class WebhookService {
         return;
       }
 
-      // Save to inbox early so recordAutoReply can find the message
+      // Save to inbox immediately — the full `message` webhook event fires seconds
+      // after this message_edit.num_edit=0 event and handleInstagramDM will handle
+      // the auto-reply. Saving here gives a faster inbox record.
+      const senderUsername = (msgRes.data.from as any)?.username || senderId;
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.INSTAGRAM,
         type: InboxMessageType.DM,
         externalId: mid,
         senderId,
-        senderName: senderId,
+        senderName: senderUsername,
         content: messageText,
         socialAccountId: account.id,
       });
 
-      const rules = await this.prisma.autoResponderRule.findMany({
-        where: {
-          workspaceId: account.workspaceId,
-          platform: 'INSTAGRAM',
-          isActive: true,
-          triggerType: { in: ['any_dm', 'keyword', 'first_message'] },
-        },
-      });
-
-      const matchingRule = this.findMatchingRule(rules, messageText, 'dm');
-      if (!matchingRule) {
-        this.logger.log(`No matching DM rule for message: "${messageText}"`);
-        return;
-      }
-
-      const message = matchingRule.responseMessage.replace('{name}', 'there');
-
-      // Per Meta docs: Instagram DM sending via Messenger Platform requires Facebook Page ID,
-      // not the IG account ID. Look up the linked FB page account for this workspace.
-      const fbAccount = await this.prisma.socialAccount.findFirst({
-        where: { workspaceId: account.workspaceId, platform: 'FACEBOOK', isActive: true },
-      });
-      const pageId = fbAccount?.accountId ?? igAccountId;
-      this.logger.log(`Sending DM reply to ${senderId} via Page ID: ${pageId}`);
-      this.logger.log(`Reply message: "${message}"`);
-
-      const payload = {
-        recipient: { id: senderId },
-        message: { text: message },
-        messaging_type: 'RESPONSE',
-        access_token: accessToken,
-      };
-
-      const sendRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${pageId}/messages`,
-        payload
-      );
-      this.logger.log(`Instagram DM auto-reply sent — response: ${JSON.stringify(sendRes.data)}`);
-
-      await this.prisma.autoResponderRule.update({
-        where: { id: matchingRule.id },
-        data: { triggerCount: { increment: 1 } },
-      });
-
-      // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
-      await this.recordAutoReply(Platform.INSTAGRAM, mid, message);
-
-      // Update CRM lead stage if the rule has that configured
-      if (matchingRule.updateLeadStage) {
-        await this.updateLeadStage(
-          account.workspaceId,
-          senderId,
-          senderId,
-          matchingRule.updateLeadStage,
-          'INSTAGRAM_DM',
-          accessToken,
-        );
-      }
+      // NOTE: Auto-reply is intentionally NOT sent here.
+      // Meta fires two webhook events per Instagram DM:
+      //   1. message_edit.num_edit=0  → this handler (ByMid) — inbox save only
+      //   2. full `message` event     → handleInstagramDM   — auto-reply + recordAutoReply
+      // Sending the reply here would cause every DM to get two identical auto-replies.
+      this.logger.log(`ByMid: inbox saved for mid=${mid}. Auto-reply will be sent by handleInstagramDM.`);
     } catch (err: any) {
       const status = err?.response?.status;
       const data = JSON.stringify(err?.response?.data ?? '(empty)');
