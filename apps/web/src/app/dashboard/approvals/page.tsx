@@ -3,18 +3,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
-import { CheckCircle, Clock, AlertCircle, RefreshCw, Send, ExternalLink } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, RefreshCw, Send, ExternalLink, ClipboardCheck } from 'lucide-react';
 
-const PLATFORM_COLORS: Record<string, string> = {
-  INSTAGRAM: '#E1306C', FACEBOOK: '#1877F2', LINKEDIN: '#0077B5',
-  TIKTOK: '#000000', THREADS: '#000000', BLUESKY: '#0085FF', YOUTUBE: '#FF0000',
+/* ─── Platform visual config ─────────────────────────────────── */
+const PLATFORM_META: Record<string, { gradient: string; glow: string; letter: string }> = {
+  FACEBOOK:  { gradient: 'linear-gradient(135deg,#1877F2,#0a5bd4)',                                               glow: 'rgba(24,119,242,0.45)',  letter: 'f'  },
+  INSTAGRAM: { gradient: 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',  glow: 'rgba(225,48,108,0.45)', letter: '✦'  },
+  TWITTER:   { gradient: 'linear-gradient(135deg,#1DA1F2,#0d8bd9)',                                               glow: 'rgba(29,161,242,0.45)', letter: '𝕏'  },
+  THREADS:   { gradient: 'linear-gradient(135deg,#444,#111)',                                                     glow: 'rgba(80,80,80,0.35)',   letter: '@'  },
+  LINKEDIN:  { gradient: 'linear-gradient(135deg,#0077B5,#005f93)',                                               glow: 'rgba(0,119,181,0.45)', letter: 'in' },
+  BLUESKY:   { gradient: 'linear-gradient(135deg,#0085FF,#0060cc)',                                               glow: 'rgba(0,133,255,0.45)', letter: 'bs' },
+  TIKTOK:    { gradient: 'linear-gradient(135deg,#010101,#2d2d2d)',                                               glow: 'rgba(0,0,0,0.25)',     letter: '♪'  },
+  YOUTUBE:   { gradient: 'linear-gradient(135deg,#FF0000,#cc0000)',                                               glow: 'rgba(255,0,0,0.45)',   letter: '▶'  },
 };
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: any }> = {
-  PENDING:            { label: 'Awaiting Review',  color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  icon: Clock },
-  APPROVED:           { label: 'Approved',          color: '#10B981', bg: 'rgba(16,185,129,0.1)', icon: CheckCircle },
-  REVISION_REQUESTED: { label: 'Needs Revision',   color: '#EF4444', bg: 'rgba(239,68,68,0.1)',  icon: AlertCircle },
+/* ─── Status visual config ───────────────────────────────────── */
+const STATUS_META: Record<string, {
+  label: string; textColor: string; bg: string; glow: string;
+  cardGlow: string; accentColor: string; icon: any;
+}> = {
+  PENDING: {
+    label: 'Awaiting Review', textColor: '#fbbf24', bg: 'rgba(245,158,11,0.12)',
+    glow: 'rgba(245,158,11,0.5)', cardGlow: 'rgba(245,158,11,0.15)', accentColor: '#fcd34d',
+    icon: Clock,
+  },
+  APPROVED: {
+    label: 'Approved', textColor: '#34d399', bg: 'rgba(16,185,129,0.12)',
+    glow: 'rgba(16,185,129,0.5)', cardGlow: 'rgba(16,185,129,0.15)', accentColor: '#6ee7b7',
+    icon: CheckCircle,
+  },
+  REVISION_REQUESTED: {
+    label: 'Needs Revision', textColor: '#f87171', bg: 'rgba(239,68,68,0.12)',
+    glow: 'rgba(239,68,68,0.5)', cardGlow: 'rgba(239,68,68,0.1)', accentColor: '#fca5a5',
+    icon: AlertCircle,
+  },
 };
+
+/* ─── Stat filter card config ────────────────────────────────── */
+const FILTER_CARDS = [
+  { key: 'all',                label: 'Total',          gradient: 'linear-gradient(135deg,#1e293b 0%,#0f172a 100%)', glow: 'rgba(99,102,241,0.5)',  accent: '#a5b4fc', dotColor: '#818cf8' },
+  { key: 'PENDING',            label: 'Awaiting',       gradient: 'linear-gradient(135deg,#2d1f08 0%,#0f172a 100%)', glow: 'rgba(245,158,11,0.5)', accent: '#fcd34d', dotColor: '#fbbf24' },
+  { key: 'APPROVED',           label: 'Approved',       gradient: 'linear-gradient(135deg,#0c2a20 0%,#0f172a 100%)', glow: 'rgba(16,185,129,0.5)', accent: '#6ee7b7', dotColor: '#34d399' },
+  { key: 'REVISION_REQUESTED', label: 'Needs Revision', gradient: 'linear-gradient(135deg,#2d0808 0%,#0f172a 100%)', glow: 'rgba(239,68,68,0.5)',  accent: '#fca5a5', dotColor: '#f87171' },
+] as const;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-NG', {
@@ -23,12 +54,30 @@ function formatDate(iso: string) {
   });
 }
 
+function PlatformBadge({ platform }: { platform?: string }) {
+  const meta = platform
+    ? (PLATFORM_META[platform] || { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' })
+    : { gradient: 'linear-gradient(135deg,#475569,#334155)', glow: 'rgba(100,116,139,0.3)', letter: '?' };
+  return (
+    <div style={{
+      width: 42, height: 42, borderRadius: 13,
+      background: meta.gradient,
+      boxShadow: `0 0 14px ${meta.glow}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#fff', fontSize: 14, fontWeight: 900, flexShrink: 0,
+    }}>
+      {meta.letter}
+    </div>
+  );
+}
+
 export default function ApprovalsPage() {
   const { workspace } = useAuthStore();
   const [approvals, setApprovals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [filter, setFilter]       = useState('all');
+  const [copied, setCopied]       = useState<string | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const loadApprovals = useCallback(async () => {
     if (!workspace?.id) return;
@@ -45,7 +94,6 @@ export default function ApprovalsPage() {
 
   useEffect(() => {
     loadApprovals();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(loadApprovals, 30000);
     return () => clearInterval(interval);
   }, [loadApprovals]);
@@ -58,106 +106,201 @@ export default function ApprovalsPage() {
   };
 
   const counts = {
-    all: approvals.length,
-    PENDING: approvals.filter(a => a.status === 'PENDING').length,
-    APPROVED: approvals.filter(a => a.status === 'APPROVED').length,
+    all:                approvals.length,
+    PENDING:            approvals.filter(a => a.status === 'PENDING').length,
+    APPROVED:           approvals.filter(a => a.status === 'APPROVED').length,
     REVISION_REQUESTED: approvals.filter(a => a.status === 'REVISION_REQUESTED').length,
   };
 
   const filtered = filter === 'all' ? approvals : approvals.filter(a => a.status === filter);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Client Approvals</h2>
-          <p className="text-slate-500 mt-1">Track content approval status across all your clients.</p>
-        </div>
-        <button onClick={loadApprovals} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { key: 'all',                label: 'Total',          color: 'text-slate-800', bg: 'bg-slate-100' },
-          { key: 'PENDING',            label: 'Awaiting',       color: 'text-amber-700', bg: 'bg-amber-100' },
-          { key: 'APPROVED',           label: 'Approved',       color: 'text-green-700', bg: 'bg-green-100' },
-          { key: 'REVISION_REQUESTED', label: 'Needs Revision', color: 'text-red-700',   bg: 'bg-red-100'   },
-        ].map(s => (
-          <button key={s.key} onClick={() => setFilter(s.key)}
-            className={`bg-white rounded-xl p-4 border text-left transition ${filter === s.key ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-100'}`}>
-            <p className={`text-2xl font-bold ${s.color}`}>{counts[s.key as keyof typeof counts]}</p>
-            <p className="text-slate-500 text-xs mt-0.5">{s.label}</p>
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="text-center py-16 text-slate-400">Loading approvals...</div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 p-16 text-center">
-          <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Send className="w-8 h-8 text-purple-600" />
+      {/* ── Hero header ───────────────────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#162032 100%)',
+        borderRadius: 20, padding: '28px 32px',
+        border: '1px solid rgba(255,255,255,0.06)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: -30, right: 60,  width: 200, height: 200, borderRadius: '50%', background: 'rgba(16,185,129,0.08)', filter: 'blur(50px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -30, right: 0, width: 160, height: 160, borderRadius: '50%', background: 'rgba(245,158,11,0.07)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 20px rgba(16,185,129,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <ClipboardCheck size={20} color="#fff" />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Client Approvals</h2>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(148,163,184,0.85)' }}>Track content approval status across all your clients</p>
+            </div>
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">No approvals yet</h3>
-          <p className="text-slate-500 max-w-sm mx-auto text-sm">
+          <button
+            onClick={loadApprovals}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 12, color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.color = '#e2e8f0'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
+          >
+            <RefreshCw size={14} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* ── Stat / filter cards ───────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+        {FILTER_CARDS.map(card => {
+          const isActive = filter === card.key;
+          const count = counts[card.key as keyof typeof counts];
+          return (
+            <button
+              key={card.key}
+              onClick={() => setFilter(card.key)}
+              style={{
+                background: card.gradient,
+                borderRadius: 16, padding: '20px 22px', textAlign: 'left',
+                border: isActive ? `1.5px solid ${card.dotColor}60` : '1px solid rgba(255,255,255,0.06)',
+                position: 'relative', overflow: 'hidden', cursor: 'pointer',
+                boxShadow: isActive ? `0 0 20px ${card.glow}` : 'none',
+                transform: isActive ? 'translateY(-2px)' : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              <div style={{ position: 'absolute', top: -24, right: -24, width: 80, height: 80, borderRadius: '50%', background: isActive ? card.glow : 'transparent', filter: 'blur(22px)', pointerEvents: 'none', transition: 'all 0.3s' }} />
+              <div style={{ position: 'relative' }}>
+                {isActive && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: card.dotColor, boxShadow: `0 0 6px ${card.dotColor}` }} />
+                    <span style={{ fontSize: 10, fontWeight: 700, color: card.dotColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active</span>
+                  </div>
+                )}
+                <p style={{ margin: 0, fontSize: 32, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>{count}</p>
+                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: isActive ? card.accent : 'rgba(148,163,184,0.65)', textTransform: 'uppercase', letterSpacing: '0.06em', transition: 'color 0.2s' }}>{card.label}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content area ──────────────────────────────────────────── */}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid rgba(16,185,129,0.3)', borderTop: '3px solid #10b981', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 14px' }} />
+            <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading approvals…</p>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        /* ── Empty state ──────────────────────────────────────────── */
+        <div style={{
+          background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 20, padding: '56px 32px', textAlign: 'center',
+        }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 28px rgba(16,185,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <Send size={26} color="#fff" />
+          </div>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#f1f5f9' }}>No approvals yet</h3>
+          <p style={{ margin: '10px auto 0', fontSize: 13, color: 'rgba(148,163,184,0.7)', maxWidth: 340, lineHeight: 1.6 }}>
             Send posts for client approval from the Scheduler. Clients receive an email with a review link — no login needed.
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        /* ── Approval list ────────────────────────────────────────── */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(approval => {
-            const status = STATUS_META[approval.status] || STATUS_META.PENDING;
-            const StatusIcon = status.icon;
-            const platformColor = PLATFORM_COLORS[approval.post?.socialAccount?.platform] || '#378ADD';
+            const sMeta = STATUS_META[approval.status] || STATUS_META.PENDING;
+            const StatusIcon = sMeta.icon;
+            const platform = approval.post?.socialAccount?.platform;
+            const isHovered = hoveredCard === approval.id;
             return (
-              <div key={approval.id} className="bg-white rounded-xl border border-slate-100 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                      style={{ background: platformColor }}>
-                      {approval.post?.socialAccount?.platform?.slice(0, 2)}
+              <div
+                key={approval.id}
+                onMouseEnter={() => setHoveredCard(approval.id)}
+                onMouseLeave={() => setHoveredCard(null)}
+                style={{
+                  background: 'linear-gradient(135deg,#0f172a 0%,#1a2540 100%)',
+                  border: isHovered ? `1px solid rgba(255,255,255,0.12)` : '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 18, padding: '18px 20px',
+                  transition: 'all 0.2s',
+                  transform: isHovered ? 'translateY(-1px)' : 'none',
+                  boxShadow: isHovered ? `0 4px 24px ${sMeta.cardGlow}` : 'none',
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                {/* Status glow pulse on left edge */}
+                <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, borderRadius: '0 3px 3px 0', background: sMeta.textColor, boxShadow: `0 0 8px ${sMeta.glow}`, opacity: 0.8 }} />
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, paddingLeft: 8 }}>
+                  <PlatformBadge platform={platform} />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>{approval.clientName}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(148,163,184,0.6)' }}>{approval.clientEmail}</span>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '4px 10px', borderRadius: 99,
+                        background: sMeta.bg, flexShrink: 0,
+                      }}>
+                        <StatusIcon size={11} color={sMeta.textColor} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: sMeta.textColor }}>{sMeta.label}</span>
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-semibold text-slate-800 text-sm">{approval.clientName}</span>
-                        <span className="text-slate-400 text-xs">{approval.clientEmail}</span>
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-                          style={{ background: status.bg, color: status.color }}>
-                          <StatusIcon className="w-3 h-3" />
-                          {status.label}
-                        </span>
+
+                    <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.75)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {approval.post?.content?.slice(0, 160)}
+                    </p>
+
+                    {approval.revisionNote && (
+                      <div style={{
+                        marginTop: 10, padding: '10px 14px',
+                        background: 'rgba(239,68,68,0.08)',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                        borderRadius: 12,
+                      }}>
+                        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#f87171', marginBottom: 3 }}>Client revision note:</p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#fca5a5', lineHeight: 1.5 }}>{approval.revisionNote}</p>
                       </div>
-                      <p className="text-slate-500 text-xs line-clamp-2 mb-2">
-                        {approval.post?.content?.slice(0, 120)}...
-                      </p>
-                      {approval.revisionNote && (
-                        <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-2">
-                          <p className="text-red-600 text-xs font-semibold mb-0.5">Client revision note:</p>
-                          <p className="text-red-700 text-xs">{approval.revisionNote}</p>
-                        </div>
+                    )}
+
+                    <p style={{ margin: '10px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.5)' }}>
+                      Sent {formatDate(approval.createdAt)}
+                      {approval.respondedAt && (
+                        <span style={{ color: sMeta.textColor }}> · Responded {formatDate(approval.respondedAt)}</span>
                       )}
-                      <p className="text-slate-400 text-xs">
-                        Sent {formatDate(approval.createdAt)}
-                        {approval.respondedAt && ` · Responded ${formatDate(approval.respondedAt)}`}
-                      </p>
-                    </div>
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={() => copyLink(approval.token)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 transition">
-                      <ExternalLink className="w-3 h-3" />
-                      {copied === approval.token ? 'Copied!' : 'Copy Link'}
-                    </button>
-                  </div>
+
+                  <button
+                    onClick={() => copyLink(approval.token)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 10,
+                      background: copied === approval.token ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.06)',
+                      border: copied === approval.token ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                      color: copied === approval.token ? '#34d399' : '#94a3b8',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    {copied === approval.token ? 'Copied!' : 'Copy Link'}
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
