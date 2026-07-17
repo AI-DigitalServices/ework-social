@@ -841,6 +841,87 @@ export const posts: BlogPost[] = [
 <p><em>— Bernard Oshapi, Founder, eWork Social</em></p>
     `,
   },
+  {
+    slug: "founders-log-002-the-week-the-hub-woke-up",
+    title: "Founder's Log #002 — The Week the Hub Woke Up",
+    excerpt: "A DM arrived in the Engagement Hub and I felt it before I could explain it. Then I found the bug that had been swallowing records in silence, fixed the reply that was firing twice, and built a feature I hadn't planned because a permission I needed hadn't arrived yet.",
+    category: "Case Studies",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-07-17",
+    readTime: 7,
+    coverImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80",
+    content: `
+<p>The first DM showed up in the Engagement Hub on a Tuesday morning. I didn't see it come in — I saw it sitting there, waiting, like it had been there a while and I'd only just noticed. A test account I'd used to verify the auto-responder, a message I'd sent myself two days earlier to confirm the webhook was connected.</p>
+
+<p>It worked. And I didn't know whether to feel relieved or suspicious.</p>
+
+<p>I went with suspicious, which turned out to be the right call.</p>
+
+<h2>The Bug That Ate the Records</h2>
+
+<p>The DM was in the hub. But only one DM — out of several I'd sent across different sessions. I went into the Railway logs and found nothing obviously wrong. Checked the webhook handler, checked the database. No errors surfacing anywhere.</p>
+
+<p>Then I looked closer at the exact SQL Prisma was generating.</p>
+
+<p>The upsert I'd written to save incoming messages was doing a WHERE lookup on a <code>platform</code> field — which in the schema is a PostgreSQL enum. Prisma was binding that value as plain text. PostgreSQL doesn't compare text to an enum natively; it needs an explicit cast. The error code was <code>42883 — operator does not exist: text = "Platform"</code>. Except it wasn't surfacing as an error in the logs. Prisma was catching it internally, the record was never saved, and nothing was returned. It was failing silently and completely.</p>
+
+<p>Fix: replace the upsert with a <code>findFirst</code> — no platform in the WHERE clause, just the external message ID — followed by a separate create or update depending on what came back. A few lines of code that should have been how I wrote it the first time.</p>
+
+<p>Ten DMs appeared in the hub within the next ten minutes. The records hadn't been lost. They'd just never been written.</p>
+
+<h2>The Reply That Arrived Twice</h2>
+
+<p>There is a thing Meta does that took me an embarrassingly long time to fully understand. When someone sends an Instagram DM, Meta fires <em>two</em> webhook events. The first one arrives almost immediately — a <code>message_edit</code> event with <code>num_edit: 0</code>, which is not actually an edit but Meta's way of signalling that a new message thread has started. No message text. No content. Just a notification that something is coming.</p>
+
+<p>The second event arrives a fraction of a second later — the actual message, with text, sender ID, message ID, everything you need.</p>
+
+<p>My auto-responder was listening to both events and treating each one as a separate message. Two webhook arrivals. Two rule matches. Two replies. If a user sent "PRICE" expecting one response about our pricing, they were getting the same response twice in two seconds — which looks like a technical glitch, which is the last thing an auto-responder should look like.</p>
+
+<p>I tried a dedup check first — a flag on the saved record that would prevent a second reply if one had already been sent. It didn't work. The two events arrived so close together that both handlers would check the flag before either had a chance to set it. Race condition. Classic.</p>
+
+<p>The fix was simpler once I stopped trying to coordinate between the two handlers: make only one of them responsible for replies. The <code>message_edit</code> handler saves the conversation to the inbox. The full <code>message</code> handler, which arrives with the actual text, is the only one that checks rules and sends a reply. Two events, two jobs, no overlap. One reply per DM, every time.</p>
+
+<h2>The Wall I Ran Into at Exactly the Right Moment</h2>
+
+<p>I was getting close to recording the Meta App Review screencast for <code>instagram_manage_comments</code> — the permission that lets the app read and respond to comments posted on Instagram media. The reviewer's feedback from the previous submission was specific: show a complete moderation loop. Post a comment, moderate it, delete it, confirm in the native app.</p>
+
+<p>I posted a comment on the test account. Opened Railway logs. Watched.</p>
+
+<p>Nothing came through.</p>
+
+<p>No webhook event. No record. The comment existed on Instagram — I could see it in the native app — but it had produced no signal in the application whatsoever. I ran the test again. Same result. The webhook endpoint was live, the handler was registered, everything was connected. And the logs were empty.</p>
+
+<p>The reason: Meta does not deliver comment webhook events to an application that has not had <code>instagram_manage_comments</code> approved for production use. You can build the handler. You can configure the subscription. But until the permission is approved, the events simply don't arrive. There's no error, no notification, no indication that the subscription exists — just silence.</p>
+
+<p>I could either wait for the approval to come back, or I could build something that didn't require it.</p>
+
+<h2>The Feature I Hadn't Planned</h2>
+
+<p>I built the Post Comment feature in one sitting. A purple button in the Engagement Hub header labelled "Post Comment" — clicking it opens a modal that loads the twelve most recent posts from the connected Instagram account, displayed as thumbnail cards. You pick a post, write your comment, click Post Comment, and the comment goes live on Instagram through the Graph API, then lands immediately in the Engagement Hub as a new message in the feed.</p>
+
+<p>From there, the Hide and Delete buttons are already on every comment message in the hub. Delete calls the Graph API's delete endpoint — confirmed working, the comment disappears from Instagram native immediately. Hide calls the Graph API's <code>hide</code> parameter on the comment endpoint.</p>
+
+<p>That last one had a typo in my original implementation. I had written <code>hidden=true</code>. The Instagram Graph API expects <code>hide=true</code>. One character. The API accepted the request with a 200, changed nothing, and returned no error. Found it by checking the Instagram Graph API reference directly against what I'd written. Fixed. Pushed.</p>
+
+<p>The comment moderation loop that the Meta reviewer asked for now lives entirely inside eWork Social — post, hide, delete — without requiring the inbound webhook to exist yet. When the permission is approved and the webhook events start arriving, the hub will start receiving comments from external users too. Until then, the outbound flow works.</p>
+
+<h2>The Conversation That Can Be Reopened</h2>
+
+<p>There was another bug I found while testing the reply flow — one that had been there since the Engagement Hub shipped. When a team member sent a manual reply to a DM, the conversation was automatically being marked as resolved. Not by the person replying. Not by a button they'd clicked. Just automatically, by code that had made a decision no one asked it to make.</p>
+
+<p>A resolved conversation is closed. You can't reply to it again without manually reopening it — except there was no reopen button. Once resolved, the conversation was effectively locked. That's not a moderation tool. That's a trap.</p>
+
+<p>Fix: remove the auto-resolve from the reply handler entirely. Add a toggleable resolve that the user controls. Add a Reopen button on the resolved banner so closed conversations can be brought back at any time. Replies don't resolve. Only people do.</p>
+
+<h2>Next</h2>
+
+<p>The screencast is almost ready to record. The full flow — connect, authenticate, post comment, hide, delete — now works cleanly enough to put on camera without explaining my way around anything. The goal this week is to submit that recording to Meta and wait on the second permission with the same patience that the first one eventually rewarded.</p>
+
+<p>The hub is awake. The DMs are coming in. The comment moderation loop is in place. If you're a social media manager who wants to see any of this in action before committing to a trial, <a href="https://app.eworksocial.com/register">the two-minute free trial is still open</a> — and I read every message that comes through during onboarding.</p>
+
+<p><em>— Bernard Oshapi, Founder, eWork Social</em></p>
+    `,
+  },
 ];
 
 
