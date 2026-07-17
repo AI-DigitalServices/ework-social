@@ -661,14 +661,22 @@ export default function InboxPage() {
     if (!replyText.trim() || !selected) return;
     setReplying(true);
     try {
-      await api.post(`/inbox/${selected.id}/reply`, { workspaceId: workspace?.id, content: replyText });
+      const res = await api.post(`/inbox/${selected.id}/reply`, { workspaceId: workspace?.id, content: replyText });
+      const newReply = { id: Date.now().toString(), content: replyText, sentAt: new Date().toISOString(), isAuto: false };
+      setSelected((p: any) => ({ ...p, isRead: true, replies: [...(p.replies || []), newReply] }));
+      setMessages(prev => prev.map(m => m.id === selected.id ? { ...m, isRead: true } : m));
       setReplyText('');
-      setSelected((p: any) => ({ ...p, isResolved: true }));
-      setMessages(prev => prev.map(m => m.id === selected.id ? { ...m, isResolved: true, isRead: true } : m));
-      showToast('Reply sent successfully ✓');
+      showToast('Reply sent ✓');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'Failed to send reply', 'error');
     } finally { setReplying(false); }
+  };
+
+  const handleReopen = async (msg: any) => {
+    await api.patch(`/inbox/${msg.id}/resolve?workspaceId=${workspace?.id}`, { isResolved: false });
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isResolved: false } : m));
+    if (selected?.id === msg.id) setSelected((p: any) => ({ ...p, isResolved: false }));
+    showToast('Conversation reopened ✓');
   };
 
   const handleSuggest = async () => {
@@ -1080,87 +1088,87 @@ export default function InboxPage() {
                   ))}
                 </div>
 
-                {/* Reply box */}
-                {!selected.isResolved && (
-                  <div style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', flexShrink: 0, background: '#fff' }}>
-                    {/* AI button */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                      <button
-                        onClick={handleSuggest}
-                        disabled={suggesting}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 7,
-                          padding: '8px 16px', borderRadius: 10,
-                          background: suggesting ? '#F5F3FF' : 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(99,102,241,0.12))',
-                          border: '1.5px solid rgba(139,92,246,0.35)',
-                          color: '#7C3AED', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          opacity: suggesting ? 0.7 : 1,
-                        }}
-                      >
-                        <Sparkles size={13} style={{ animation: suggesting ? 'spin 1s linear infinite' : 'none' }} />
-                        {suggesting ? 'Generating AI reply...' : '✨ AI Suggest Reply'}
-                      </button>
-                      {selected.aiSuggestion && !replyText && (
-                        <button onClick={() => setReplyText(selected.aiSuggestion)}
-                          style={{ fontSize: 12, color: '#6366F1', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-                          Use last suggestion
-                        </button>
-                      )}
-                    </div>
+                {/* Reply box — always shown, resolved state shows banner above it */}
+                <div style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', flexShrink: 0, background: '#fff' }}>
 
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <textarea
-                        ref={replyRef}
-                        value={replyText}
-                        onChange={e => setReplyText(e.target.value)}
-                        placeholder={`Reply to ${selected.senderName || 'this message'}...`}
-                        rows={3}
-                        onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply(); }}
-                        style={{
-                          flex: 1, padding: '12px 16px',
-                          border: '1.5px solid #E2E8F0', borderRadius: 14,
-                          fontSize: 14, color: '#1E293B', resize: 'none', outline: 'none',
-                          lineHeight: 1.5, background: '#FAFBFF',
-                          transition: 'border-color 0.15s, box-shadow 0.15s',
-                          fontFamily: 'inherit',
-                        }}
-                        onFocus={e => { e.target.style.borderColor = '#6366F1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
-                        onBlur={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; }}
-                      />
-                      <button
-                        onClick={handleReply}
-                        disabled={replying || !replyText.trim()}
-                        style={{
-                          padding: '12px 18px', borderRadius: 14,
-                          background: replyText.trim() ? 'linear-gradient(135deg,#6366F1,#8B5CF6)' : '#E2E8F0',
-                          color: replyText.trim() ? '#fff' : '#94A3B8',
-                          border: 'none', cursor: replyText.trim() ? 'pointer' : 'not-allowed',
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          fontWeight: 800, fontSize: 13,
-                          boxShadow: replyText.trim() ? '0 4px 16px rgba(99,102,241,0.35)' : 'none',
-                          transition: 'all 0.15s',
-                          alignSelf: 'flex-end',
-                        }}
-                      >
-                        <Send size={14} /> {replying ? 'Sending...' : 'Send'}
+                  {/* Resolved banner with Reopen option */}
+                  {selected.isResolved && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', borderRadius: 12, marginBottom: 12,
+                      background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CheckCircle size={14} color="#10B981" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Marked as resolved</span>
+                      </div>
+                      <button onClick={() => handleReopen(selected)} style={{
+                        padding: '5px 12px', borderRadius: 8,
+                        border: '1.5px solid rgba(99,102,241,0.35)',
+                        background: 'rgba(99,102,241,0.06)', color: '#6366F1',
+                        fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                      }}>
+                        Reopen
                       </button>
                     </div>
-                    <p style={{ fontSize: 11, color: '#CBD5E1', marginTop: 6 }}>⌘ + Enter to send</p>
-                  </div>
-                )}
+                  )}
 
-                {/* Resolved state */}
-                {selected.isResolved && (
-                  <div style={{
-                    padding: '16px 20px', borderTop: '1px solid #F1F5F9', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    background: 'linear-gradient(135deg, rgba(16,185,129,0.05), rgba(5,150,105,0.05))',
-                  }}>
-                    <CheckCircle size={16} color="#10B981" />
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#059669' }}>Conversation resolved</p>
+                  {/* AI button */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <button
+                      onClick={handleSuggest}
+                      disabled={suggesting}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 7,
+                        padding: '8px 16px', borderRadius: 10,
+                        background: suggesting ? '#F5F3FF' : 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(99,102,241,0.12))',
+                        border: '1.5px solid rgba(139,92,246,0.35)',
+                        color: '#7C3AED', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+                        transition: 'all 0.15s', opacity: suggesting ? 0.7 : 1,
+                      }}
+                    >
+                      <Sparkles size={13} />
+                      {suggesting ? 'Generating AI reply...' : '✨ AI Suggest Reply'}
+                    </button>
                   </div>
-                )}
+
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <textarea
+                      ref={replyRef}
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder={`Reply to ${selected.senderName || 'this message'}...`}
+                      rows={3}
+                      onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleReply(); }}
+                      style={{
+                        flex: 1, padding: '12px 16px',
+                        border: '1.5px solid #E2E8F0', borderRadius: 14,
+                        fontSize: 14, color: '#1E293B', resize: 'none', outline: 'none',
+                        lineHeight: 1.5, background: '#FAFBFF',
+                        transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit',
+                      }}
+                      onFocus={e => { e.target.style.borderColor = '#6366F1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; }}
+                    />
+                    <button
+                      onClick={handleReply}
+                      disabled={replying || !replyText.trim()}
+                      style={{
+                        padding: '12px 18px', borderRadius: 14,
+                        background: replyText.trim() ? 'linear-gradient(135deg,#6366F1,#8B5CF6)' : '#E2E8F0',
+                        color: replyText.trim() ? '#fff' : '#94A3B8',
+                        border: 'none', cursor: replyText.trim() ? 'pointer' : 'not-allowed',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        fontWeight: 800, fontSize: 13,
+                        boxShadow: replyText.trim() ? '0 4px 16px rgba(99,102,241,0.35)' : 'none',
+                        transition: 'all 0.15s', alignSelf: 'flex-end',
+                      }}
+                    >
+                      <Send size={14} /> {replying ? 'Sending...' : 'Send'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#CBD5E1', marginTop: 6 }}>⌘ + Enter to send</p>
+                </div>
               </>
             )}
           </div>

@@ -56,8 +56,14 @@ export class InboxController {
   }
 
   @Patch(':id/resolve')
-  markResolved(@Param('id') id: string, @Query('workspaceId') workspaceId: string) {
-    return this.inboxService.markResolved(id, workspaceId);
+  markResolved(
+    @Param('id') id: string,
+    @Query('workspaceId') workspaceId: string,
+    @Body() body?: { isResolved?: boolean },
+  ) {
+    // body.isResolved=false reopens a resolved conversation
+    const resolved = body?.isResolved !== false;
+    return this.inboxService.markResolved(id, workspaceId, resolved);
   }
 
   @Patch(':id/tags')

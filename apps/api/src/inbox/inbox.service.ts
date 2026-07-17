@@ -80,10 +80,10 @@ export class InboxService {
     return { success: true };
   }
 
-  async markResolved(id: string, workspaceId: string) {
+  async markResolved(id: string, workspaceId: string, resolved = true) {
     const result = await this.prisma.inboxMessage.updateMany({
       where: { id, workspaceId },
-      data: { isResolved: true },
+      data: { isResolved: resolved },
     });
     if (result.count === 0) throw new NotFoundException('Message not found');
     return { success: true };
@@ -239,7 +239,10 @@ export class InboxService {
 
     await this.prisma.inboxMessage.update({
       where: { id },
-      data: { isRead: true, isResolved: true },
+      data: { isRead: true },
+      // NOTE: isResolved is intentionally NOT set here — the team resolves manually
+      // after they're satisfied with the conversation. Auto-resolving on reply blocks
+      // further replies and hides the thread from the Open inbox filter.
     });
 
     // If linked to CRM, log the reply as activity
