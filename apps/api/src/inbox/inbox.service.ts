@@ -334,6 +334,80 @@ export class InboxService {
     return { success: true };
   }
 
+  // ─── Post Comment (instagram_manage_comments demo) ───────────────────────────
+
+  /** Fetch the 12 most recent Instagram media items for the post-comment selector */
+  async getRecentMedia(workspaceId: string) {
+    const account = await this.prisma.socialAccount.findFirst({
+      where: { workspaceId, platform: 'INSTAGRAM', isActive: true },
+    });
+    if (!account) throw new NotFoundException('No active Instagram account found');
+
+    const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
+    const [ivHex, encrypted] = account.accessToken!.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = createDecipheriv('aes-256-cbc', key, iv);
+    const accessToken = decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
+
+    const res = await axios.get(
+      `https://graph.facebook.com/v19.0/${account.accountId}/media`,
+      {
+        params: {
+          fields: 'id,caption,media_url,thumbnail_url,media_type,timestamp,permalink',
+          limit: 12,
+          access_token: accessToken,
+        },
+      }
+    );
+    return res.data.data || [];
+  }
+
+  /**
+   * Post a comment on an Instagram media item using instagram_manage_comments,
+   * then save it to the inbox so it can be hidden or deleted from the hub.
+   */
+  async postComment(workspaceId: string, mediaId: string, content: string) {
+    const account = await this.prisma.socialAccount.findFirst({
+      where: { workspaceId, platform: 'INSTAGRAM', isActive: true },
+    });
+    if (!account) throw new NotFoundException('No active Instagram account found');
+
+    const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
+    const [ivHex, encrypted] = account.accessToken!.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = createDecipheriv('aes-256-cbc', key, iv);
+    const accessToken = decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
+
+    // POST /{media-id}/comments — requires instagram_manage_comments
+    const res = await axios.post(
+      `https://graph.facebook.com/v19.0/${mediaId}/comments`,
+      null,
+      { params: { message: content, access_token: accessToken } }
+    );
+
+    const commentId = res.data.id;
+
+    // Save to inbox as COMMENT so hide/delete actions work from the hub
+    const msg = await this.prisma.inboxMessage.create({
+      data: {
+        workspaceId,
+        platform: 'INSTAGRAM' as any,
+        type: 'COMMENT' as any,
+        externalId: commentId,
+        senderId: account.accountId,
+        senderName: account.accountName || 'Your Account',
+        content,
+        socialAccountId: account.id,
+      },
+    });
+
+    this.posthog.capture(workspaceId, 'comment_posted', { platform: 'INSTAGRAM', mediaId });
+
+    return { success: true, commentId, messageId: msg.id };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+
   async suggestReply(id: string, workspaceId: string) {
     const msg = await this.prisma.inboxMessage.findUnique({ where: { id } });
     if (!msg || msg.workspaceId !== workspaceId) throw new NotFoundException('Message not found');

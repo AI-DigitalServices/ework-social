@@ -613,6 +613,12 @@ export default function InboxPage() {
   const [hiding, setHiding]       = useState(false);
   const [deleting, setDeleting]   = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPostComment, setShowPostComment] = useState(false);
+  const [recentMedia, setRecentMedia] = useState<any[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [selectedMediaId, setSelectedMediaId] = useState('');
+  const [newCommentText, setNewCommentText] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [search, setSearch]       = useState('');
@@ -747,6 +753,38 @@ export default function InboxPage() {
     } catch { showToast('Failed to create CRM contact', 'error'); }
   };
 
+  const openPostComment = async () => {
+    setShowPostComment(true);
+    setSelectedMediaId('');
+    setNewCommentText('');
+    setMediaLoading(true);
+    try {
+      const res = await api.get('/inbox/recent-media', { params: { workspaceId: workspace?.id } });
+      setRecentMedia(res.data || []);
+    } catch { showToast('Could not load recent posts', 'error'); }
+    finally { setMediaLoading(false); }
+  };
+
+  const handlePostComment = async () => {
+    if (!selectedMediaId || !newCommentText.trim()) return;
+    setPostingComment(true);
+    try {
+      await api.post('/inbox/post-comment', {
+        workspaceId: workspace?.id,
+        mediaId: selectedMediaId,
+        content: newCommentText.trim(),
+      });
+      setShowPostComment(false);
+      setNewCommentText('');
+      setSelectedMediaId('');
+      showToast('Comment posted to Instagram ✓');
+      setLoading(true);
+      loadMessages();
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'Failed to post comment', 'error');
+    } finally { setPostingComment(false); }
+  };
+
   const handleAssigned = (assignedTo: any) => {
     setSelected((p: any) => ({ ...p, assignedTo }));
     setMessages(prev => prev.map(m => m.id === selected?.id ? { ...m, assignedTo } : m));
@@ -780,6 +818,138 @@ export default function InboxPage() {
         </div>
       )}
 
+      {/* ── Post Comment Modal ─────────────────────────────────────────────── */}
+      {showPostComment && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.15s ease',
+        }} onClick={e => { if (e.target === e.currentTarget) setShowPostComment(false); }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, width: 560, maxWidth: '95vw',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+            animation: 'slideUp 0.2s ease',
+            overflow: 'hidden',
+          }}>
+            {/* Modal header */}
+            <div style={{
+              padding: '20px 24px 16px',
+              background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div>
+                <h3 style={{ color: '#fff', fontSize: 17, fontWeight: 800, margin: 0 }}>Post Comment on Instagram</h3>
+                <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, margin: '4px 0 0' }}>Select a post, write your comment, then manage it from the hub</p>
+              </div>
+              <button onClick={() => setShowPostComment(false)} style={{
+                background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8,
+                color: '#fff', cursor: 'pointer', padding: '6px 10px', fontSize: 16, fontWeight: 700,
+              }}>✕</button>
+            </div>
+
+            <div style={{ padding: '20px 24px' }}>
+              {/* Post selector */}
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 12, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                1. Select a Post
+              </p>
+              {mediaLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 20 }}>
+                  {Array.from({ length: 8 }).map((_, i) => <Shimmer key={i} w="100%" h={80} r={10} />)}
+                </div>
+              ) : recentMedia.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: '#94A3B8', fontSize: 13, marginBottom: 20 }}>
+                  No recent posts found. Make sure your Instagram account is connected.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 20 }}>
+                  {recentMedia.map((m: any) => (
+                    <div
+                      key={m.id}
+                      onClick={() => setSelectedMediaId(m.id)}
+                      style={{
+                        borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
+                        border: selectedMediaId === m.id ? '3px solid #6366F1' : '2px solid transparent',
+                        boxShadow: selectedMediaId === m.id ? '0 0 0 2px rgba(99,102,241,0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'all 0.15s',
+                        position: 'relative',
+                      }}
+                    >
+                      <img
+                        src={m.thumbnail_url || m.media_url}
+                        alt={m.caption || m.id}
+                        style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                        onError={(e: any) => { e.target.style.display = 'none'; }}
+                      />
+                      {selectedMediaId === m.id && (
+                        <div style={{
+                          position: 'absolute', inset: 0, background: 'rgba(99,102,241,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <CheckCircle size={22} color="#fff" />
+                        </div>
+                      )}
+                      <div style={{
+                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                        background: 'linear-gradient(transparent,rgba(0,0,0,0.6))',
+                        padding: '12px 6px 4px', fontSize: 9, color: '#fff', fontWeight: 600,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {m.caption?.slice(0, 30) || m.media_type}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Comment text */}
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                2. Write Your Comment
+              </p>
+              <textarea
+                value={newCommentText}
+                onChange={e => setNewCommentText(e.target.value)}
+                placeholder="Type your comment here..."
+                rows={3}
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: 12,
+                  border: '1.5px solid #E2E8F0', fontSize: 14, color: '#1E293B',
+                  resize: 'none', outline: 'none', lineHeight: 1.6,
+                  background: '#FAFBFF', fontFamily: 'inherit', boxSizing: 'border-box',
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                onBlur={e => { e.target.style.borderColor = '#E2E8F0'; }}
+              />
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowPostComment(false)} style={{
+                  padding: '10px 20px', borderRadius: 12,
+                  border: '1.5px solid #E2E8F0', background: '#fff',
+                  color: '#64748B', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>Cancel</button>
+                <button
+                  onClick={handlePostComment}
+                  disabled={postingComment || !selectedMediaId || !newCommentText.trim()}
+                  style={{
+                    padding: '10px 24px', borderRadius: 12, border: 'none',
+                    background: (selectedMediaId && newCommentText.trim()) ? 'linear-gradient(135deg,#6366F1,#8B5CF6)' : '#E2E8F0',
+                    color: (selectedMediaId && newCommentText.trim()) ? '#fff' : '#94A3B8',
+                    fontWeight: 800, fontSize: 13, cursor: (selectedMediaId && newCommentText.trim()) ? 'pointer' : 'not-allowed',
+                    boxShadow: (selectedMediaId && newCommentText.trim()) ? '0 4px 14px rgba(99,102,241,0.4)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <Instagram size={14} />
+                  {postingComment ? 'Posting...' : 'Post Comment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Header */}
@@ -806,19 +976,33 @@ export default function InboxPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => { setLoading(true); loadMessages(); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '9px 16px', borderRadius: 12,
-              border: '1.5px solid #E2E8F0', background: '#fff',
-              color: '#64748B', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              transition: 'all 0.15s',
-            }}
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={openPostComment}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '9px 18px', borderRadius: 12,
+                border: 'none',
+                background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+              }}
+            >
+              <Plus size={14} /> Post Comment
+            </button>
+            <button
+              onClick={() => { setLoading(true); loadMessages(); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '9px 16px', borderRadius: 12,
+                border: '1.5px solid #E2E8F0', background: '#fff',
+                color: '#64748B', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              }}
+            >
+              <RefreshCw size={14} /> Refresh
+            </button>
+          </div>
         </div>
 
         {/* Stats */}

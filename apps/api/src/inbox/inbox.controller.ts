@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { InboxService } from './inbox.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
@@ -129,6 +129,18 @@ export class InboxController {
     @Query('workspaceId') workspaceId: string,
   ) {
     return this.inboxService.deleteComment(id, workspaceId);
+  }
+
+  @Get('recent-media')
+  getRecentMedia(@Query('workspaceId') workspaceId: string) {
+    return this.inboxService.getRecentMedia(workspaceId);
+  }
+
+  @Post('post-comment')
+  async postComment(@Body() body: { workspaceId: string; mediaId: string; content: string }) {
+    if (!body.mediaId?.trim()) throw new BadRequestException('mediaId is required');
+    if (!body.content?.trim()) throw new BadRequestException('Comment text is required');
+    return this.inboxService.postComment(body.workspaceId, body.mediaId.trim(), body.content.trim());
   }
 
   @Post(':id/suggest')
