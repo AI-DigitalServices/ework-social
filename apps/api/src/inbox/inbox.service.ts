@@ -288,7 +288,7 @@ export class InboxService {
     await axios.post(
       `https://graph.facebook.com/v19.0/${msg.externalId}`,
       null,
-      { params: { hidden, access_token: accessToken } }
+      { params: { hide: hidden, access_token: accessToken } }
     );
 
     this.posthog.capture(workspaceId, hidden ? 'comment_hidden' : 'comment_unhidden', { platform: msg.platform });
