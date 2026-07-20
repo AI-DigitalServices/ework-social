@@ -454,13 +454,7 @@ export class SocialService {
     const clientId = this.config.get('LINKEDIN_CLIENT_ID');
     const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
     const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
-    const scopes = [
-      'openid', 'profile', 'email',
-      'w_member_social',        // post as personal profile
-      'rw_organization_admin',  // discover which Company Pages the user admins
-      'w_organization_social',  // post as Company Page (Community Management API)
-      'r_organization_social',  // read org posts
-    ].join(' ');
+    const scopes = ['openid', 'profile', 'email', 'w_member_social'].join(' ');
     return {
       url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
     };
