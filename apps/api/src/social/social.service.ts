@@ -454,7 +454,13 @@ export class SocialService {
     const clientId = this.config.get('LINKEDIN_CLIENT_ID');
     const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
     const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
-    const scopes = ['openid', 'profile', 'email', 'w_member_social'].join(' ');
+    const scopes = [
+      'openid', 'profile', 'email',
+      'w_member_social',        // post as personal profile
+      'rw_organization_admin',  // discover which Company Pages the user admins
+      'w_organization_social',  // post as Company Page (Community Management API)
+      'r_organization_social',  // read org posts
+    ].join(' ');
     return {
       url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
     };
@@ -494,7 +500,7 @@ export class SocialService {
       throw new BadRequestException('LinkedIn token exchange failed: ' + JSON.stringify(err?.response?.data));
     }
 
-    // Get profile info
+    // Step 2: Fetch personal profile
     let profile: any;
     try {
       const profileRes = await axios.get('https://api.linkedin.com/v2/userinfo', {
@@ -505,28 +511,103 @@ export class SocialService {
       throw new BadRequestException('Failed to fetch LinkedIn profile');
     }
 
-    const accountId = profile.sub;
-    const accountName = profile.name || `${profile.given_name} ${profile.family_name}`;
+    const personAccountId = profile.sub;
+    const personAccountName = profile.name || `${profile.given_name} ${profile.family_name}`;
+    const encryptedToken = this.encryptToken(accessToken);
 
-    const account = await this.prisma.socialAccount.upsert({
-      where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId } },
-      update: { accountName, accessToken: this.encryptToken(accessToken), isActive: true },
-      create: { workspaceId, platform: 'LINKEDIN', accountId, accountName, accessToken: this.encryptToken(accessToken), isActive: true },
+    const connectedAccounts: any[] = [];
+
+    // Store personal profile
+    const personalAccount = await this.prisma.socialAccount.upsert({
+      where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId: personAccountId } },
+      update: { accountName: personAccountName, accessToken: encryptedToken, isActive: true },
+      create: { workspaceId, platform: 'LINKEDIN', accountId: personAccountId, accountName: personAccountName, accessToken: encryptedToken, isActive: true },
+    });
+    connectedAccounts.push(personalAccount);
+
+    // Step 3: Discover Company Pages this user is admin of (Community Management API)
+    // Each page gets stored as its own SocialAccount so the user can pick it in the composer.
+    try {
+      const aclRes = await axios.get(
+        'https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&count=50',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        },
+      );
+
+      const elements: any[] = aclRes.data?.elements || [];
+      this.logger.log(`LinkedIn: found ${elements.length} org page(s) for workspace ${workspaceId}`);
+
+      for (const el of elements) {
+        // org URN looks like "urn:li:organization:12345"
+        const orgUrn: string = el.organization || el['organization'];
+        if (!orgUrn) continue;
+
+        const orgId = orgUrn.split(':').pop(); // extract numeric ID
+        // Detect entity type — Company Page = "organization", Showcase/Brand = "organizationBrand"
+        const isOrgBrand = orgUrn.includes(':organizationBrand:');
+        const nameEndpoint = isOrgBrand
+          ? `https://api.linkedin.com/v2/organizationBrands/${orgId}?projection=(id,localizedName)`
+          : `https://api.linkedin.com/v2/organizations/${orgId}?projection=(id,localizedName)`;
+
+        // Fetch org / brand name
+        let orgName = `LinkedIn Page (${orgId})`;
+        try {
+          const orgRes = await axios.get(nameEndpoint, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+            },
+          });
+          orgName = orgRes.data?.localizedName || orgName;
+        } catch {
+          this.logger.warn(`Could not fetch name for LinkedIn ${isOrgBrand ? 'brand' : 'org'} ${orgId} — using fallback`);
+        }
+
+        // Store org page — accountId is the full URN so publishToLinkedIn can detect it
+        const orgAccount = await this.prisma.socialAccount.upsert({
+          where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId: orgUrn } },
+          update: { accountName: orgName, accessToken: encryptedToken, isActive: true },
+          create: {
+            workspaceId,
+            platform: 'LINKEDIN',
+            accountId: orgUrn,           // full URN: "urn:li:organization:12345"
+            accountName: orgName,
+            accessToken: encryptedToken,
+            isActive: true,
+          },
+        });
+        connectedAccounts.push(orgAccount);
+        this.logger.log(`LinkedIn org page stored: ${orgName} (${orgUrn})`);
+      }
+    } catch (err: any) {
+      // Org page discovery failing should NOT block the personal profile connection
+      this.logger.warn(`LinkedIn org page discovery failed: ${err?.response?.data?.message || err.message}`);
+    }
+
+    this.posthog.capture(workspaceId, 'social_account_connected', {
+      platform: 'LINKEDIN',
+      accountsConnected: connectedAccounts.length,
     });
 
-    this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'LINKEDIN' });
-
-    return { success: true, connectedAccounts: [account], message: 'LinkedIn connected successfully' };
+    return {
+      success: true,
+      connectedAccounts,
+      message: `LinkedIn connected — ${connectedAccounts.length} account(s) added`,
+    };
   }
 
-  async uploadImageToLinkedIn(imageUrl: string, accessToken: string, personUrn: string): Promise<string> {
-    // Step 1: Register upload
+  async uploadImageToLinkedIn(imageUrl: string, accessToken: string, authorUrn: string): Promise<string> {
+    // Step 1: Register upload — owner must match the post author (person or org URN)
     const registerRes = await axios.post(
       'https://api.linkedin.com/v2/assets?action=registerUpload',
       {
         registerUploadRequest: {
           recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-          owner: personUrn,
+          owner: authorUrn,
           serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }],
         },
       },
@@ -553,17 +634,23 @@ export class SocialService {
     if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
     try {
-      const personUrn = `urn:li:person:${post.socialAccount.accountId}`;
+      const storedId = post.socialAccount.accountId;
+      // If the stored accountId is already a full URN (org or brand page), use it directly.
+      // Otherwise it's a plain member sub — wrap it in the person URN.
+      const authorUrn = storedId.startsWith('urn:li:')
+        ? storedId
+        : `urn:li:person:${storedId}`;
+
       const token = this.decryptToken(post.socialAccount.accessToken);
 
+      this.logger.log(`Publishing to LinkedIn as: ${authorUrn}`);
+
       // Upload images if any
-      let shareMediaCategory = 'NONE';
       let media: any[] = [];
       if (post.mediaUrls && post.mediaUrls.length > 0) {
-        shareMediaCategory = 'IMAGE';
         for (const imageUrl of post.mediaUrls) {
           try {
-            const asset = await this.uploadImageToLinkedIn(imageUrl, token, personUrn);
+            const asset = await this.uploadImageToLinkedIn(imageUrl, token, authorUrn);
             media.push({ status: 'READY', media: asset });
           } catch (err: any) {
             this.logger.error('Failed to upload image to LinkedIn', err?.message);
@@ -574,7 +661,7 @@ export class SocialService {
       const res = await axios.post(
         'https://api.linkedin.com/v2/ugcPosts',
         {
-          author: personUrn,
+          author: authorUrn,
           lifecycleState: 'PUBLISHED',
           specificContent: {
             'com.linkedin.ugc.ShareContent': {
