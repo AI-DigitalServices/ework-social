@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import PlatformIcon from '@/components/ui/PlatformIcon';
-import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle, Twitter, AtSign, Zap } from 'lucide-react';
+import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
@@ -52,24 +52,32 @@ interface ConnectedAccount {
   createdAt: string;
 }
 
-/* ── Twitter handle connect modal ────────────────────────── */
-function TwitterConnectModal({ onClose, onConnected }: { onClose: () => void; onConnected: () => void }) {
-  const { workspace } = useAuthStore();
-  const [handle, setHandle] = useState('');
+/* ── Twitter OAuth 2.0 connect modal ─────────────────────── */
+function TwitterConnectModal({ onClose }: { onClose: () => void }) {
+  const { workspace, token } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const connect = async () => {
-    const clean = handle.replace('@', '').trim();
-    if (!clean) { setError('Please enter your Twitter/X handle'); return; }
-    setLoading(true); setError('');
+  const handleOAuth = async () => {
+    if (!workspace?.id || !token) return;
+    setLoading(true);
+    setError('');
     try {
-      await api.post('/twitter/connect', { workspaceId: workspace?.id, handle: clean });
-      onConnected();
-      onClose();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/twitter/auth-url?workspaceId=${workspace.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Could not generate Twitter authorisation URL');
+      }
+      const { url } = await res.json();
+      // Hand off to Twitter — callback lands back at /twitter/callback on the API
+      window.location.href = url;
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Connection failed. Check your handle and try again.');
-    } finally { setLoading(false); }
+      setError(err.message || 'Something went wrong. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,47 +90,55 @@ function TwitterConnectModal({ onClose, onConnected }: { onClose: () => void; on
           </div>
           <div>
             <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1E293B' }}>Connect Twitter / X</h3>
-            <p style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>@Mentions will appear in your Engagement Hub</p>
+            <p style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Authorise eWork Social to read @mentions & send replies</p>
           </div>
         </div>
 
-        {/* Free tier badge */}
-        <div style={{ background: 'linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.08))', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Zap size={14} color="#10B981" />
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Free Tier — No cost</p>
-            <p style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Polls your @mentions every 10 minutes using Twitter API v2 free plan (500k reads/month)</p>
+        {/* What you get */}
+        <div style={{ background: 'linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.05))', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#059669', marginBottom: 6 }}>What you'll be able to do</p>
+          <ul style={{ margin: 0, padding: '0 0 0 16px', listStyle: 'disc' }}>
+            <li style={{ fontSize: 12, color: '#374151', marginBottom: 3 }}>@Mentions pulled into Engagement Hub every 10 min</li>
+            <li style={{ fontSize: 12, color: '#374151', marginBottom: 3 }}>Reply to mentions directly from your inbox</li>
+            <li style={{ fontSize: 12, color: '#374151' }}>Secure OAuth 2.0 — we never store your password</li>
+          </ul>
+        </div>
+
+        {error && (
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: '#DC2626', margin: 0 }}>{error}</p>
           </div>
-        </div>
-
-        {/* Handle input */}
-        <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 8 }}>Your Twitter / X Handle</label>
-        <div style={{ position: 'relative', marginBottom: 6 }}>
-          <AtSign size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-          <input
-            value={handle}
-            onChange={e => setHandle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && connect()}
-            placeholder="yourhandle  (without @)"
-            autoFocus
-            style={{ width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 11, paddingBottom: 11, border: `1.5px solid ${error ? '#EF4444' : '#E2E8F0'}`, borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#1E293B' }}
-          />
-        </div>
-        {error && <p style={{ fontSize: 12, color: '#DC2626', marginBottom: 14 }}>{error}</p>}
-
-        <p style={{ fontSize: 11, color: '#94A3B8', marginBottom: 20 }}>
-          We'll monitor @{handle.replace('@', '') || 'yourhandle'} for mentions and pull them into your inbox automatically.
-        </p>
+        )}
 
         {/* Buttons */}
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
             Cancel
           </button>
-          <button onClick={connect} disabled={loading || !handle.trim()} style={{ flex: 2, padding: '11px', borderRadius: 12, border: 'none', background: handle.trim() ? 'linear-gradient(135deg,#1DA1F2,#0d8bd9)' : '#E2E8F0', color: handle.trim() ? '#fff' : '#94A3B8', fontWeight: 800, fontSize: 13, cursor: handle.trim() ? 'pointer' : 'not-allowed', boxShadow: handle.trim() ? '0 4px 14px rgba(29,161,242,0.4)' : 'none' }}>
-            {loading ? 'Connecting...' : '✓ Connect Account'}
+          <button
+            onClick={handleOAuth}
+            disabled={loading}
+            style={{ flex: 2, padding: '11px', borderRadius: 12, border: 'none', background: loading ? '#E2E8F0' : 'linear-gradient(135deg,#1DA1F2,#0d8bd9)', color: loading ? '#94A3B8' : '#fff', fontWeight: 800, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer', boxShadow: loading ? 'none' : '0 4px 14px rgba(29,161,242,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            {loading ? (
+              <>
+                <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #94A3B8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                Redirecting…
+              </>
+            ) : (
+              <>
+                <span style={{ fontWeight: 900, fontSize: 15 }}>𝕏</span>
+                Authorise with Twitter
+              </>
+            )}
           </button>
         </div>
+        <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 12 }}>
+          You'll be redirected to Twitter to approve access, then brought back here automatically.
+        </p>
       </div>
     </div>
   );
@@ -164,7 +180,7 @@ export default function SocialAccountsTab() {
     const success = params.get('success');
     const error = params.get('error');
     if (success === 'connected') {
-      showToast('success', '✅ Account connected successfully!');
+      showToast('success', '✅ Account connected! Your mentions will appear in the Engagement Hub shortly.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
       setTimeout(() => loadAccounts(), 2000);
     } else if (error === 'cancelled') {
@@ -337,7 +353,6 @@ export default function SocialAccountsTab() {
       {showTwitterModal && (
         <TwitterConnectModal
           onClose={() => setShowTwitterModal(false)}
-          onConnected={() => { loadAccounts(); showToast('success', '𝕏 Twitter/X connected! Mentions will appear in your inbox shortly.'); }}
         />
       )}
     </div>
