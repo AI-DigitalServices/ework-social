@@ -1,20 +1,39 @@
 'use client';
-import { Calendar, Users, BarChart3, MessageSquareReply } from 'lucide-react';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Calendar, Users, BarChart3, MessageSquareReply } from 'lucide-react';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { registerAction } from '@/actions/auth.actions';
+import api from '@/lib/api';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+export const dynamic = 'force-dynamic';
+
+// ─── Inner component that can safely use useSearchParams ─────────────────────
+
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [form, setForm] = useState({ name: '', email: '', password: '', workspaceName: '' });
+
+  // Invite-flow context — passed from /invite/accept when user doesn't yet exist
+  const inviteToken = searchParams.get('invite') || '';
+  const inviteEmail = searchParams.get('email') || '';
+  const isInviteFlow = !!(inviteToken && inviteEmail);
+
+  const [form, setForm] = useState({
+    name: '',
+    email: inviteEmail, // pre-fill from invite link
+    password: '',
+    workspaceName: isInviteFlow ? 'My Workspace' : '', // hidden in invite mode
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Don't allow changing the email when in invite flow
+    if (e.target.name === 'email' && isInviteFlow) return;
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -22,9 +41,31 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     try {
-      const data = await registerAction(form.name, form.email, form.password, form.workspaceName);
+      // Step 1: Create the account
+      const data = await registerAction(
+        form.name,
+        form.email,
+        form.password,
+        form.workspaceName || 'My Workspace',
+      );
       setAuth(data.user, data.workspace, data.accessToken, data.refreshToken);
+
+      // Step 2: If coming from an invite link, accept the invite now that the
+      // user account exists. The /workspace/invite/accept endpoint is unguarded
+      // — it just needs the token to find the invite record and the now-existing
+      // user by email to create the WorkspaceMember row.
+      if (isInviteFlow) {
+        try {
+          await api.post('/workspace/invite/accept', { token: inviteToken });
+        } catch (inviteErr: any) {
+          // Invite may have already been accepted or expired — not fatal.
+          // User still has their account; they can contact the agency owner for re-invite.
+          console.warn('Invite accept after registration failed:', inviteErr?.response?.data?.message);
+        }
+      }
+
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -44,6 +85,7 @@ export default function RegisterPage() {
         .field-input { width: 100%; padding: 13px 16px; background: #0C1524; border: 1px solid #1A2840; border-radius: 10px; color: #E8F0FA; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .field-input::placeholder { color: #3A506B; }
         .field-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+        .field-input:disabled { opacity: 0.6; cursor: not-allowed; }
         .field-label { font-size: 13px; font-weight: 600; color: #8BA0BC; margin-bottom: 7px; display: block; }
         .submit-btn { width: 100%; padding: 15px; background: #2563EB; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
         .submit-btn:hover:not(:disabled) { background: #1D4ED8; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
@@ -57,7 +99,7 @@ export default function RegisterPage() {
       `}</style>
 
       <div className="reg-wrap">
-        {/* Left panel - branding - hidden on mobile */}
+        {/* Left panel — branding */}
         <div className="reg-left">
           <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', filter: 'blur(120px)', background: '#2563EB', opacity: 0.1, top: -100, left: -100, pointerEvents: 'none' }} />
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 80, maxWidth: 560, width: '100%' }}>
@@ -66,10 +108,16 @@ export default function RegisterPage() {
           </Link>
           <div style={{ maxWidth: 560, width: '100%' }}>
             <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-1.5px', color: '#F0F6FF', marginBottom: 20 }}>
-              Start managing your clients<br /><span style={{ color: '#3B82F6', fontStyle: 'italic' }}>social media</span> today.
+              {isInviteFlow
+                ? <>You've been invited to<br /><span style={{ color: '#3B82F6', fontStyle: 'italic' }}>collaborate</span></>
+                : <>Start managing your clients<br /><span style={{ color: '#3B82F6', fontStyle: 'italic' }}>social media</span> today.</>
+              }
             </h1>
             <p style={{ color: '#6B8299', fontSize: 16, lineHeight: 1.75, marginBottom: 48 }}>
-              Join agencies across Africa and beyond. Your 7-day free trial includes all Pro features — no credit card required.
+              {isInviteFlow
+                ? "Create your free account to access the workspace you've been invited to. It only takes 30 seconds."
+                : 'Join agencies across Africa and beyond. Your 7-day free trial includes all Pro features — no credit card required.'
+              }
             </p>
             {[
               { Icon: Calendar, text: 'Schedule posts across Facebook, Instagram and more' },
@@ -78,54 +126,94 @@ export default function RegisterPage() {
               { Icon: MessageSquareReply, text: 'Auto-responder with keyword triggers' },
             ].map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-                <div style={{ width: 38, height: 38, background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><f.Icon size={18} color="#4D8FE8" /></div>
+                <div style={{ width: 38, height: 38, background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <f.Icon size={18} color="#4D8FE8" />
+                </div>
                 <span style={{ color: '#8BA0BC', fontSize: 15 }}>{f.text}</span>
               </div>
             ))}
-            <div style={{ marginTop: 48, padding: '20px 24px', background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 14 }}>
-              <p style={{ color: '#8BA0BC', fontSize: 14, lineHeight: 1.7, fontStyle: 'italic' }}>
-                "eWork Social changed how we manage our clients. Everything in one place — scheduling, CRM, analytics. Game changer."
-              </p>
-              <p style={{ color: '#4D8FE8', fontSize: 13, fontWeight: 600, marginTop: 12 }}>— Digital Agency Owner, Lagos</p>
-            </div>
           </div>
         </div>
 
-        {/* Right panel - form */}
+        {/* Right panel — form */}
         <div className="reg-right">
           <div className="reg-form-inner" style={{ width: '100%', maxWidth: 400 }}>
-            {/* Mobile logo - only shows on mobile */}
+            {/* Mobile logo */}
             <div style={{ display: 'none' }} className="mobile-logo">
               <style>{`@media(max-width:768px){ .mobile-logo { display: flex !important; align-items: center; gap: 10px; margin-bottom: 32px; justify-content: center; } }`}</style>
               <img src="/icon.png" alt="eWork Social" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover' }} />
               <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 20, color: '#fff' }}>eWork Social</span>
             </div>
 
-            {/* Social proof bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '8px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
-              <div style={{ display: 'flex' }}>
-                {['B','A','S','D'].map((l,i) => (
-                  <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: ['#3B82F6','#10B981','#F59E0B','#8B5CF6'][i], border: '2px solid #070B12', marginLeft: i > 0 ? -8 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>{l}</div>
-                ))}
+            {/* Invite banner OR social proof */}
+            {isInviteFlow ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, padding: '12px 16px', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 }}>
+                <span style={{ fontSize: 20 }}>📩</span>
+                <div>
+                  <p style={{ color: '#60A5FA', fontSize: 13, fontWeight: 700, margin: 0 }}>You have a workspace invitation</p>
+                  <p style={{ color: '#4A6080', fontSize: 12, margin: 0 }}>Create your account to join — it's free</p>
+                </div>
               </div>
-              <span style={{ color: '#10B981', fontSize: 12, fontWeight: 600 }}>6 agencies joined this week</span>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '8px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
+                <div style={{ display: 'flex' }}>
+                  {['B', 'A', 'S', 'D'].map((l, i) => (
+                    <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'][i], border: '2px solid #070B12', marginLeft: i > 0 ? -8 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>{l}</div>
+                  ))}
+                </div>
+                <span style={{ color: '#10B981', fontSize: 12, fontWeight: 600 }}>6 agencies joined this week</span>
+              </div>
+            )}
 
-            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 26, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>Start your free trial</h2>
-            <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 32 }}>7-day free trial · No credit card required · Cancel anytime</p>
+            <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 26, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>
+              {isInviteFlow ? 'Create your account' : 'Start your free trial'}
+            </h2>
+            <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 32 }}>
+              {isInviteFlow ? 'Your email is pre-filled from the invite link' : '7-day free trial · No credit card required · Cancel anytime'}
+            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {[
-                { label: 'Your Full Name', name: 'name', type: 'text', placeholder: 'John Doe' },
-                { label: 'Work Email', name: 'email', type: 'email', placeholder: 'you@agency.com' },
-                { label: 'Password', name: 'password', type: 'password', placeholder: 'Minimum 8 characters' },
-                { label: 'Agency / Workspace Name', name: 'workspaceName', type: 'text', placeholder: 'My Digital Agency' },
-              ].map(field => (
-                <div key={field.name}>
-                  <label className="field-label">{field.label}</label>
-                  <input type={field.type} name={field.name} value={form[field.name as keyof typeof form]} onChange={handleChange} className="field-input" placeholder={field.placeholder} required />
+              {/* Name */}
+              <div>
+                <label className="field-label">Your Full Name</label>
+                <input type="text" name="name" value={form.name} onChange={handleChange} className="field-input" placeholder="John Doe" required />
+              </div>
+
+              {/* Email — locked in invite flow */}
+              <div>
+                <label className="field-label">
+                  Work Email
+                  {isInviteFlow && (
+                    <span style={{ marginLeft: 8, fontSize: 11, color: '#2563EB', fontWeight: 600, background: 'rgba(37,99,235,0.1)', padding: '2px 8px', borderRadius: 6 }}>
+                      🔒 Locked to invite
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  className="field-input"
+                  placeholder="you@agency.com"
+                  disabled={isInviteFlow}
+                  required
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="field-label">Password</label>
+                <input type="password" name="password" value={form.password} onChange={handleChange} className="field-input" placeholder="Minimum 8 characters" required />
+              </div>
+
+              {/* Workspace name — hidden in invite flow (auto-set to "My Workspace") */}
+              {!isInviteFlow && (
+                <div>
+                  <label className="field-label">Agency / Workspace Name</label>
+                  <input type="text" name="workspaceName" value={form.workspaceName} onChange={handleChange} className="field-input" placeholder="My Digital Agency" required />
                 </div>
-              ))}
+              )}
 
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#FCA5A5', fontSize: 14, padding: '12px 16px', borderRadius: 10 }}>
@@ -133,17 +221,24 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* Founding member badge */}
-              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 18 }}>🏆</span>
-                <div>
-                  <p style={{ color: '#F59E0B', fontSize: 12, fontWeight: 700, margin: 0 }}>Founding Member Pricing Available</p>
-                  <p style={{ color: '#4A6080', fontSize: 11, margin: 0 }}>Locked in at 50% off Agency Pro — forever. Only 44 spots left.</p>
+              {/* Founding member badge — only on normal signup */}
+              {!isInviteFlow && (
+                <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>🏆</span>
+                  <div>
+                    <p style={{ color: '#F59E0B', fontSize: 12, fontWeight: 700, margin: 0 }}>Founding Member Pricing Available</p>
+                    <p style={{ color: '#4A6080', fontSize: 11, margin: 0 }}>Locked in at 50% off Agency Pro — forever. Only 44 spots left.</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Creating your account...' : 'Start Free Trial →'}
+                {loading
+                  ? 'Creating your account...'
+                  : isInviteFlow
+                  ? 'Create Account & Join Workspace →'
+                  : 'Start Free Trial →'
+                }
               </button>
 
               <p style={{ fontSize: 12, color: '#2A3A52', textAlign: 'center', lineHeight: 1.6 }}>
@@ -160,5 +255,20 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Page wrapper — Suspense required for useSearchParams in Next.js App Router
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: '#080C14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }
