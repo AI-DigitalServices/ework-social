@@ -288,6 +288,20 @@ export class AuthService {
     return { message: 'Password reset successfully. You can now log in.' };
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.password) throw new BadRequestException('User not found.');
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new BadRequestException('Current password is incorrect.');
+
+    if (newPassword.length < 8) throw new BadRequestException('New password must be at least 8 characters.');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+    return { message: 'Password updated successfully.' };
+  }
+
   async deleteAccount(userId: string) {
     // Find all workspaces owned by user
     const workspaces = await this.prisma.workspace.findMany({

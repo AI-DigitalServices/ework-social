@@ -59,6 +59,13 @@ export class AuthController {
     return this.authService.resetPassword(body.token, body.password);
   }
 
+  @Post('change-password')
+  @HttpCode(200)
+  @UseGuards(JwtGuard)
+  changePassword(@Request() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
+    return this.authService.changePassword(req.user.sub, body.currentPassword, body.newPassword);
+  }
+
   @Delete('delete-account')
   @UseGuards(JwtGuard)
   deleteAccount(@Request() req: any) {

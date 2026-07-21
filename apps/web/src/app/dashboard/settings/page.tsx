@@ -8,25 +8,51 @@ import SocialAccountsTab from '@/components/settings/SocialAccountsTab';
 import ProfileTab from '@/components/settings/ProfileTab';
 import WorkspaceTab from '@/components/settings/WorkspaceTab';
 import PlanTab from '@/components/settings/PlanTab';
-import { Share2, User, Building2, CreditCard, CheckCircle, Gift } from 'lucide-react';
-import api from '@/lib/api';
+import PasswordTab from '@/components/settings/PasswordTab';
+import NotificationsTab from '@/components/settings/NotificationsTab';
 import ReferralTab from '@/components/settings/ReferralTab';
+import { Share2, User, Building2, CreditCard, CheckCircle, Gift, KeyRound, Bell } from 'lucide-react';
+import api from '@/lib/api';
 
-const tabs = [
-  { id: 'social', label: 'Social Accounts', icon: Share2 },
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'workspace', label: 'Workspace', icon: Building2 },
-  { id: 'plan', label: 'Plan & Billing', icon: CreditCard },
-  { id: 'referral', label: 'Referrals 🎁', icon: Gift },
+// Agency/owner tabs — full access
+const agencyTabs = [
+  { id: 'social',    label: 'Social Accounts', icon: Share2 },
+  { id: 'profile',   label: 'Profile',          icon: User },
+  { id: 'workspace', label: 'Workspace',         icon: Building2 },
+  { id: 'plan',      label: 'Plan & Billing',    icon: CreditCard },
+  { id: 'referral',  label: 'Referrals 🎁',      icon: Gift },
+];
+
+// Client/viewer tabs — profile, password, notifications only
+const clientTabs = [
+  { id: 'profile',       label: 'Profile',       icon: User },
+  { id: 'password',      label: 'Password',      icon: KeyRound },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
 ];
 
 function SettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { workspace } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('social');
+  const { workspace, workspaces } = useAuthStore();
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [verifying, setVerifying] = useState(false);
+
+  // Derive current role — same logic as Sidebar
+  const currentRole: string =
+    workspaces.find(w => w.id === workspace?.id)?.role ||
+    workspace?.role ||
+    (workspace?.isOwner ? 'OWNER' : 'VIEWER');
+
+  const isAgencyUser = currentRole === 'OWNER' || currentRole === 'ADMIN';
+  const tabs = isAgencyUser ? agencyTabs : clientTabs;
+
+  const [activeTab, setActiveTab] = useState(tabs[0].id);
+
+  // Reset tab when role changes (e.g. workspace switch)
+  useEffect(() => {
+    setActiveTab(tabs[0].id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAgencyUser]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -34,10 +60,9 @@ function SettingsContent() {
     const reference = searchParams.get('reference');
     const trxref = searchParams.get('trxref');
 
-    if (tab) setActiveTab(tab);
+    if (tab && tabs.some(t => t.id === tab)) setActiveTab(tab);
 
     const payRef = reference || trxref;
-
     if (success === 'true' && payRef && workspace?.id) {
       setActiveTab('plan');
       verifyAndUpdatePlan(payRef);
@@ -45,6 +70,7 @@ function SettingsContent() {
       setActiveTab('plan');
       setPaymentSuccess(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, workspace?.id]);
 
   const verifyAndUpdatePlan = async (reference: string) => {
@@ -55,7 +81,6 @@ function SettingsContent() {
       );
       if (res.data) {
         setPaymentSuccess(true);
-        // Clean URL
         router.replace('/dashboard/settings?tab=plan');
       }
     } catch (err) {
@@ -70,7 +95,9 @@ function SettingsContent() {
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
-        <p className="text-slate-500 mt-1">Manage your account and workspace settings.</p>
+        <p className="text-slate-500 mt-1">
+          {isAgencyUser ? 'Manage your account and workspace settings.' : 'Manage your account preferences.'}
+        </p>
       </div>
 
       {paymentSuccess && (
@@ -78,9 +105,7 @@ function SettingsContent() {
           <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
           <div>
             <p className="font-bold text-green-800">Payment Successful! 🎉</p>
-            <p className="text-green-600 text-sm">
-              Your subscription is now active. Welcome to eWork Social!
-            </p>
+            <p className="text-green-600 text-sm">Your subscription is now active. Welcome to eWork Social!</p>
           </div>
         </div>
       )}
@@ -113,11 +138,18 @@ function SettingsContent() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
-        {activeTab === 'social' && <SocialAccountsTab />}
+        {/* Agency-only tabs */}
+        {isAgencyUser && activeTab === 'social'    && <SocialAccountsTab />}
+        {isAgencyUser && activeTab === 'workspace' && <WorkspaceTab />}
+        {isAgencyUser && activeTab === 'plan'      && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
+        {isAgencyUser && activeTab === 'referral'  && <ReferralTab />}
+
+        {/* Shared — profile visible to all roles */}
         {activeTab === 'profile' && <ProfileTab />}
-        {activeTab === 'workspace' && <WorkspaceTab />}
-        {activeTab === 'plan' && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
-        {activeTab === 'referral' && <ReferralTab />}
+
+        {/* Client-only tabs */}
+        {!isAgencyUser && activeTab === 'password'      && <PasswordTab />}
+        {!isAgencyUser && activeTab === 'notifications' && <NotificationsTab />}
       </div>
     </div>
   );
