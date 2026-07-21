@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import {
   MessageSquare, CheckCircle, RefreshCw, Send, Sparkles,
   Tag, Users, Link2, X, ChevronDown, Search, Plus,
-  Inbox, Zap, Instagram, Twitter, Facebook, AtSign,
+  Inbox, Zap, Instagram, Twitter, Facebook, AtSign, Linkedin,
   Clock, TrendingUp, Eye, ArrowRight,
 } from 'lucide-react';
 
@@ -40,6 +40,13 @@ const PLATFORM: Record<string, { gradient: string; glow: string; dot: string; ic
     dot: '#333',
     icon: <AtSign size={10} />,
     label: 'Threads',
+  },
+  LINKEDIN: {
+    gradient: 'linear-gradient(135deg, #0077B5, #005885)',
+    glow: 'rgba(0,119,181,0.35)',
+    dot: '#0077B5',
+    icon: <Linkedin size={10} />,
+    label: 'LinkedIn',
   },
 };
 
@@ -127,16 +134,17 @@ function EmptyState({ filtered }: { filtered: boolean }) {
       <p style={{ fontSize: 13, color: '#94A3B8', maxWidth: 240, lineHeight: 1.6, marginBottom: 20 }}>
         {filtered
           ? 'Try adjusting your filters or search to find what you\'re looking for.'
-          : 'Messages from Instagram, Facebook, and Twitter will appear here the moment they arrive.'}
+          : 'Messages from Instagram, Facebook, Twitter, and LinkedIn will appear here the moment they arrive.'}
       </p>
 
       {!filtered && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {['Instagram', 'Facebook', 'X / Twitter'].map((p, i) => {
+          {['Instagram', 'Facebook', 'X / Twitter', 'LinkedIn'].map((p, i) => {
             const colors = [
               'linear-gradient(135deg, #f09433, #dc2743, #bc1888)',
               'linear-gradient(135deg, #1877F2, #0a5bd4)',
               'linear-gradient(135deg, #1DA1F2, #0d8bd9)',
+              'linear-gradient(135deg, #0077B5, #005885)',
             ];
             return (
               <div key={p} style={{
@@ -622,7 +630,8 @@ export default function InboxPage() {
   const [suggesting, setSuggesting] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [search, setSearch]       = useState('');
-  const [filter, setFilter]       = useState({ platform: '', type: '', isResolved: 'false', tag: '' });
+  const [activeTab, setActiveTab] = useState('all'); // all | unread | needsReply | assigned | resolved
+  const [filter, setFilter]       = useState({ platform: '', type: '', tag: '' });
   const [toast, setToast]         = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const replyRef = useRef<HTMLTextAreaElement>(null);
@@ -638,9 +647,16 @@ export default function InboxPage() {
       const params: any = { workspaceId: workspace.id };
       if (filter.platform) params.platform = filter.platform;
       if (filter.type) params.type = filter.type;
-      if (filter.isResolved !== '') params.isResolved = filter.isResolved;
       if (filter.tag) params.tag = filter.tag;
       if (search) params.search = search;
+      // Tab drives isResolved + isRead filters
+      if (activeTab === 'resolved') {
+        params.isResolved = 'true';
+      } else if (activeTab === 'unread' || activeTab === 'needsReply') {
+        params.isResolved = 'false'; params.isRead = 'false';
+      } else {
+        params.isResolved = 'false'; // 'all' and 'assigned' both show open conversations
+      }
       const [msgRes, statsRes] = await Promise.all([
         api.get('/inbox', { params }),
         api.get('/inbox/stats', { params: { workspaceId: workspace.id } }),
@@ -650,7 +666,7 @@ export default function InboxPage() {
       setLastRefresh(new Date());
     } catch (err) { console.error('Inbox load error:', err); }
     finally { setLoading(false); }
-  }, [workspace?.id, filter, search]);
+  }, [workspace?.id, filter, search, activeTab]);
 
   useEffect(() => { setLoading(true); loadMessages(); }, [loadMessages]);
   useEffect(() => { const i = setInterval(loadMessages, 30000); return () => clearInterval(i); }, [loadMessages]);
@@ -791,7 +807,14 @@ export default function InboxPage() {
     showToast(assignedTo ? `Assigned to ${assignedTo.name} ✓` : 'Unassigned');
   };
 
-  const isFiltered = !!(filter.platform || filter.type || filter.tag || search || filter.isResolved === 'true');
+  const isFiltered = !!(filter.platform || filter.type || filter.tag || search || activeTab !== 'all');
+
+  // Client-side secondary filtering for tabs that need it
+  const displayMessages = activeTab === 'assigned'
+    ? messages.filter((m: any) => m.assignedTo !== null)
+    : activeTab === 'needsReply'
+    ? messages.filter((m: any) => !m.replies || m.replies.length === 0)
+    : messages;
 
   const STATS = [
     { label: 'Total Messages', value: stats.total || 0, icon: <Inbox size={16} />, gradient: 'linear-gradient(135deg,#6366F1,#8B5CF6)' },
@@ -1010,7 +1033,50 @@ export default function InboxPage() {
           {STATS.map(s => <StatCard key={s.label} {...s} />)}
         </div>
 
-        {/* Filters row */}
+        {/* ── v2 Filter tabs ────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexShrink: 0, overflowX: 'auto', paddingBottom: 2 }}>
+          {([
+            { id: 'all',        label: 'All',         count: null },
+            { id: 'unread',     label: 'Unread',      count: stats.unread || 0 },
+            { id: 'needsReply', label: 'Needs Reply', count: null },
+            { id: 'assigned',   label: 'Assigned',    count: null },
+            { id: 'resolved',   label: 'Resolved',    count: stats.resolved || 0 },
+          ] as { id: string; label: string; count: number | null }[]).map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 16px', borderRadius: 999, whiteSpace: 'nowrap',
+                  border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  transition: 'all 0.15s ease',
+                  background: active
+                    ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
+                    : '#F1F5F9',
+                  color: active ? '#fff' : '#64748B',
+                  boxShadow: active ? '0 4px 12px rgba(99,102,241,0.35)' : 'none',
+                }}
+              >
+                {tab.label}
+                {tab.count !== null && tab.count > 0 && (
+                  <span style={{
+                    background: active ? 'rgba(255,255,255,0.25)' : 'rgba(99,102,241,0.12)',
+                    color: active ? '#fff' : '#6366F1',
+                    fontSize: 10, fontWeight: 800,
+                    padding: '1px 7px', borderRadius: 999,
+                    minWidth: 18, textAlign: 'center',
+                  }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Filter dropdowns row ──────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', flexShrink: 0 }}>
           {/* Search */}
           <div style={{ position: 'relative' }}>
@@ -1029,9 +1095,8 @@ export default function InboxPage() {
           </div>
 
           {[
-            { key: 'platform', opts: [['', 'All Platforms'], ['INSTAGRAM', '📷 Instagram'], ['FACEBOOK', '📘 Facebook'], ['TWITTER', '𝕏 Twitter']] },
+            { key: 'platform', opts: [['', 'All Platforms'], ['INSTAGRAM', '📷 Instagram'], ['FACEBOOK', '📘 Facebook'], ['TWITTER', '𝕏 Twitter'], ['LINKEDIN', '💼 LinkedIn'], ['THREADS', '🧵 Threads']] },
             { key: 'type',     opts: [['', 'All Types'], ['DM', '💬 DMs'], ['COMMENT', '💭 Comments']] },
-            { key: 'isResolved', opts: [['false', '🟢 Open'], ['true', '✓ Resolved'], ['', 'All Status']] },
             { key: 'tag',      opts: [['', 'All Tags'], ...AVAILABLE_TAGS.map(t => [t, t])] },
           ].map(f => (
             <select
@@ -1051,7 +1116,7 @@ export default function InboxPage() {
 
           {isFiltered && (
             <button
-              onClick={() => { setFilter({ platform: '', type: '', isResolved: 'false', tag: '' }); setSearch(''); }}
+              onClick={() => { setFilter({ platform: '', type: '', tag: '' }); setSearch(''); setActiveTab('all'); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '9px 14px', borderRadius: 12,
@@ -1081,7 +1146,7 @@ export default function InboxPage() {
               background: 'linear-gradient(135deg, #FAFBFF, #F5F3FF)',
             }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: '#374151' }}>
-                {loading ? 'Loading...' : `${messages.length} conversation${messages.length !== 1 ? 's' : ''}`}
+                {loading ? 'Loading...' : `${displayMessages.length} conversation${displayMessages.length !== 1 ? 's' : ''}`}
               </span>
               {stats.unread > 0 && (
                 <span style={{
@@ -1099,10 +1164,10 @@ export default function InboxPage() {
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-              ) : messages.length === 0 ? (
+              ) : displayMessages.length === 0 ? (
                 <EmptyState filtered={isFiltered} />
               ) : (
-                messages.map(msg => (
+                displayMessages.map((msg: any) => (
                   <MessageCard key={msg.id} msg={msg} isSelected={selected?.id === msg.id} onClick={() => selectMessage(msg)} />
                 ))
               )}

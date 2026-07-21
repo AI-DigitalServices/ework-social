@@ -33,6 +33,7 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
   const [newWsName,     setNewWsName]     = useState('');
   const [creating,      setCreating]      = useState(false);
   const [createError,   setCreateError]   = useState('');
+  const [unreadCount,   setUnreadCount]   = useState(0);
   const wsRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => { logout(); router.push('/login'); };
@@ -60,6 +61,19 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Engagement Hub unread badge — poll inbox stats every 60 s
+  useEffect(() => {
+    if (!workspace?.id) return;
+    const fetchUnread = () => {
+      api.get('/inbox/stats', { params: { workspaceId: workspace.id } })
+        .then(res => setUnreadCount(res.data?.unread ?? 0))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
+  }, [workspace?.id]);
 
   const switchWorkspace = (ws: typeof workspace) => {
     if (!ws || ws.id === workspace?.id) { setWsOpen(false); return; }
@@ -236,6 +250,7 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
               );
             }
 
+            const isInbox = item.href === '/dashboard/inbox';
             return (
               <Link
                 key={item.href}
@@ -246,6 +261,13 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
               >
                 <Icon className="w-5 h-5" />
                 {item.label}
+                {isInbox && unreadCount > 0 && (
+                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
+                    isActive ? 'bg-white text-blue-600' : 'bg-red-500 text-white'
+                  }`}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}

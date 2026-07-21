@@ -193,6 +193,60 @@ export class InboxService {
       );
     }
 
+    // LinkedIn: reply to comment via Community Management API (org account only)
+    if (msg.platform === 'LINKEDIN') {
+      const liAccount = msg.workspace.socialAccounts.find(
+        (a: any) => a.platform === 'LINKEDIN' && a.isActive && a.accountId?.startsWith('urn:li:'),
+      );
+      if (!liAccount) {
+        throw new BadRequestException(
+          'No active LinkedIn organization account found for this workspace. Please reconnect via Settings → Social Accounts.',
+        );
+      }
+
+      const liKey = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
+      const [liIvHex, liEncrypted] = liAccount.accessToken!.split(':');
+      const liIv = Buffer.from(liIvHex, 'hex');
+      const liDecipher = createDecipheriv('aes-256-cbc', liKey, liIv);
+      const liToken = liDecipher.update(liEncrypted, 'hex', 'utf8') + liDecipher.final('utf8');
+
+      // POST /v2/socialActions/{commentUrn}/comments to create a nested reply
+      await axios.post(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(msg.externalId)}/comments`,
+        {
+          actor:   liAccount.accountId, // urn:li:organization:xxx
+          message: { text: content },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${liToken}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        },
+      );
+
+      await this.prisma.inboxReply.create({
+        data: { messageId: id, content, sentBy: userId, isAuto: false },
+      });
+      await this.prisma.inboxMessage.update({
+        where: { id },
+        data: { isRead: true },
+      });
+      if (msg.crmClientId) {
+        await this.prisma.activity.create({
+          data: {
+            clientId:    msg.crmClientId,
+            type:        'NOTE_ADDED',
+            description: `Reply sent via LinkedIn comment: "${content.slice(0, 100)}${content.length > 100 ? '…' : ''}"`,
+            metadata:    { inboxMessageId: id, platform: 'LINKEDIN', replyContent: content },
+          },
+        });
+      }
+      this.posthog.capture(workspaceId, 'inbox_reply_sent', { platform: 'LINKEDIN', type: msg.type });
+      return { success: true };
+    }
+
     const account = msg.workspace.socialAccounts.find(
       a => a.platform === msg.platform && a.isActive
     );
