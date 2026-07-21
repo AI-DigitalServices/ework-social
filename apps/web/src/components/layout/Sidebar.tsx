@@ -75,6 +75,9 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
     return () => clearInterval(interval);
   }, [workspace?.id]);
 
+  // A client member with only one workspace doesn't need a switcher
+  const canSwitchWorkspace = workspaces.length > 1 || workspaces.some(w => w.isOwner);
+
   const switchWorkspace = (ws: typeof workspace) => {
     if (!ws || ws.id === workspace?.id) { setWsOpen(false); return; }
     setWorkspace(ws);
@@ -131,8 +134,9 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
             <span className="text-white font-bold text-lg">eWork Social</span>
           </Link>
 
-          {/* Workspace switcher */}
+          {/* Workspace switcher — collapsed to a label for single-workspace client members */}
           <div ref={wsRef} className="relative">
+            {canSwitchWorkspace ? (
             <button
               onClick={() => setWsOpen(v => !v)}
               className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors group"
@@ -146,6 +150,15 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
               </div>
               <ChevronDown className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform ${wsOpen ? 'rotate-180' : ''}`} />
             </button>
+            ) : (
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-800 rounded-lg">
+              <Building2 className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-slate-400 text-[10px] leading-none mb-0.5">Workspace</p>
+                <p className="text-white text-sm font-medium truncate">{workspace?.name}</p>
+              </div>
+            </div>
+            )}
 
             {/* Dropdown */}
             {wsOpen && (
