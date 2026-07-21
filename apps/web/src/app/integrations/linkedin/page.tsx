@@ -167,7 +167,7 @@ export default function LinkedInIntegrationPage() {
       <section style={{ padding: '48px 24px', background: '#0A1628' }}>
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, color: '#fff', marginBottom: 36 }}>
-            Built for agencies and brands across Africa
+            Born in Africa. Built for the world.
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             {useCases.map((u) => (
@@ -203,7 +203,7 @@ export default function LinkedInIntegrationPage() {
             Ready to manage LinkedIn from one dashboard?
           </h2>
           <p style={{ fontSize: 16, color: MUTED, marginBottom: 32 }}>
-            Join agencies across Nigeria, Ghana, Kenya, and South Africa using eWork Social to manage their clients' social media presence.
+            From Lagos to London, Accra to Amsterdam — social media agencies everywhere use eWork Social to manage their clients' LinkedIn presence from one unified dashboard.
           </p>
           <Link href="/register" style={{ background: BLUE, color: '#fff', textDecoration: 'none', padding: '16px 36px', borderRadius: 12, fontWeight: 800, fontSize: 16, boxShadow: '0 4px 24px rgba(55,138,221,0.4)', display: 'inline-block' }}>
             Start your free 7-day trial
@@ -221,7 +221,7 @@ export default function LinkedInIntegrationPage() {
           <Link href="/terms" style={{ color: MUTED, fontSize: 13, textDecoration: 'none' }}>Terms of Service</Link>
           <Link href="/register" style={{ color: MUTED, fontSize: 13, textDecoration: 'none' }}>Sign up</Link>
         </div>
-        <p style={{ color: MUTED, fontSize: 12 }}>© 2025 Jben Logistics Limited · eWork Social · Built for African agencies</p>
+        <p style={{ color: MUTED, fontSize: 12 }}>© 2025 Jben Logistics Limited · eWork Social</p>
       </footer>
     </div>
   );
