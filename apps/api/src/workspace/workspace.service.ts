@@ -39,7 +39,7 @@ export class WorkspaceService {
       include: { subscription: true },
     });
 
-    // All workspaces user is a member of (but doesn't own)
+    // All workspaces user is an explicit member of (but doesn't own)
     const memberships = await this.prisma.workspaceMember.findMany({
       where: { userId },
       include: {
@@ -47,17 +47,27 @@ export class WorkspaceService {
       },
     });
 
-    const memberWorkspaces = memberships
-      .map(m => m.workspace)
-      .filter(w => w.ownerId !== userId);
-
-    return [...owned, ...memberWorkspaces].map(w => ({
+    const ownedResult = owned.map(w => ({
       id: w.id,
       name: w.name,
       slug: w.slug,
       plan: w.subscription?.plan || 'FREE',
-      isOwner: w.ownerId === userId,
+      isOwner: true,
+      role: 'OWNER' as const,
     }));
+
+    const memberResult = memberships
+      .filter(m => m.workspace.ownerId !== userId)
+      .map(m => ({
+        id: m.workspace.id,
+        name: m.workspace.name,
+        slug: m.workspace.slug,
+        plan: m.workspace.subscription?.plan || 'FREE',
+        isOwner: false,
+        role: m.role as 'ADMIN' | 'EDITOR' | 'VIEWER',
+      }));
+
+    return [...ownedResult, ...memberResult];
   }
 
   async createWorkspace(userId: string, name: string) {

@@ -14,6 +14,7 @@ export interface Workspace {
   slug: string;
   plan?: string;
   isOwner?: boolean;
+  role?: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER';
 }
 
 interface AuthState {

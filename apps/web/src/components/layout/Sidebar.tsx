@@ -11,15 +11,57 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 
+// roles: which workspace roles can see this item
+// clientLabel: alternate label shown to non-owner members (null = item is hidden for non-owners)
 const navItems = [
-  { label: 'Dashboard',        href: '/dashboard',            icon: LayoutDashboard, proOnly: false },
-  { label: 'Scheduler',        href: '/dashboard/scheduler',  icon: CalendarDays,    proOnly: false },
-  { label: 'CRM & Clients',    href: '/dashboard/crm',        icon: Users,           proOnly: false },
-  { label: 'Engagement Hub',   href: '/dashboard/inbox',      icon: Inbox,           proOnly: false },
-  { label: 'Client Approvals', href: '/dashboard/approvals',  icon: ClipboardCheck,  proOnly: true  },
-  { label: 'Analytics',        href: '/dashboard/analytics',  icon: BarChart3,       proOnly: false },
-  { label: 'Auto-Responder',   href: '/dashboard/responder',  icon: MessageSquareReply, proOnly: false },
-  { label: 'Settings',         href: '/dashboard/settings',   icon: Settings,        proOnly: false },
+  {
+    label: 'Dashboard',       clientLabel: 'Overview',
+    href: '/dashboard',       icon: LayoutDashboard,
+    proOnly: false,
+    roles: ['OWNER','ADMIN','EDITOR','VIEWER'] as const,
+  },
+  {
+    label: 'Scheduler',       clientLabel: 'Content Calendar',
+    href: '/dashboard/scheduler', icon: CalendarDays,
+    proOnly: false,
+    roles: ['OWNER','ADMIN','EDITOR','VIEWER'] as const,
+  },
+  {
+    label: 'CRM & Clients',   clientLabel: null,
+    href: '/dashboard/crm',   icon: Users,
+    proOnly: false,
+    roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'Engagement Hub',  clientLabel: null,
+    href: '/dashboard/inbox', icon: Inbox,
+    proOnly: false,
+    roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'Client Approvals', clientLabel: 'Post Approvals',
+    href: '/dashboard/approvals', icon: ClipboardCheck,
+    proOnly: false, // always available — it's the client's primary feature
+    roles: ['OWNER','ADMIN','EDITOR','VIEWER'] as const,
+  },
+  {
+    label: 'Analytics',       clientLabel: 'Analytics',
+    href: '/dashboard/analytics', icon: BarChart3,
+    proOnly: false,
+    roles: ['OWNER','ADMIN','EDITOR','VIEWER'] as const,
+  },
+  {
+    label: 'Auto-Responder',  clientLabel: null,
+    href: '/dashboard/responder', icon: MessageSquareReply,
+    proOnly: false,
+    roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'Settings',        clientLabel: 'Settings',
+    href: '/dashboard/settings', icon: Settings,
+    proOnly: false,
+    roles: ['OWNER','ADMIN','EDITOR','VIEWER'] as const,
+  },
 ];
 
 export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => void }) {
@@ -244,48 +286,62 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
-            const plan = (workspace as any)?.subscription?.plan || '';
-            const isProLocked = item.proOnly && !['AGENCY_PRO', 'STARTER', 'GROWTH'].includes(plan) && plan !== '';
+          {(() => {
+            // Derive current role — prefer the fresh value from workspaces list,
+            // fall back to the workspace object set during login.
+            const currentRole: string =
+              workspaces.find(w => w.id === workspace?.id)?.role ||
+              workspace?.role ||
+              (workspace?.isOwner ? 'OWNER' : 'VIEWER');
 
-            if (isProLocked) {
-              return (
-                <div
-                  key={item.href}
-                  title="Upgrade to Agency Pro to unlock"
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 cursor-not-allowed select-none"
-                >
-                  <Icon className="w-5 h-5 opacity-40" />
-                  <span className="opacity-40">{item.label}</span>
-                  <Lock className="w-3 h-3 ml-auto opacity-40" />
-                </div>
-              );
-            }
+            const isAgencyUser = currentRole === 'OWNER' || currentRole === 'ADMIN';
 
-            const isInbox = item.href === '/dashboard/inbox';
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-                {isInbox && unreadCount > 0 && (
-                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
-                    isActive ? 'bg-white text-blue-600' : 'bg-red-500 text-white'
-                  }`}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+            return navItems
+              .filter(item => (item.roles as readonly string[]).includes(currentRole))
+              .map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href ||
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+                const plan = (workspace as any)?.subscription?.plan || '';
+                const isProLocked = item.proOnly && !['AGENCY_PRO', 'STARTER', 'GROWTH'].includes(plan) && plan !== '';
+                const displayLabel = isAgencyUser ? item.label : (item.clientLabel || item.label);
+
+                if (isProLocked) {
+                  return (
+                    <div
+                      key={item.href}
+                      title="Upgrade to Agency Pro to unlock"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 cursor-not-allowed select-none"
+                    >
+                      <Icon className="w-5 h-5 opacity-40" />
+                      <span className="opacity-40">{displayLabel}</span>
+                      <Lock className="w-3 h-3 ml-auto opacity-40" />
+                    </div>
+                  );
+                }
+
+                const isInbox = item.href === '/dashboard/inbox';
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {displayLabel}
+                    {isInbox && unreadCount > 0 && (
+                      <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
+                        isActive ? 'bg-white text-blue-600' : 'bg-red-500 text-white'
+                      }`}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              });
+          })()}
         </nav>
 
         {/* User section */}

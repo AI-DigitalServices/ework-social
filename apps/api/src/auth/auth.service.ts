@@ -100,6 +100,7 @@ export class AuthService {
             slug: invite.workspace.slug,
             plan: invite.workspace.subscription?.plan || 'FREE',
             isOwner: false,
+            role: invite.role, // VIEWER / EDITOR / ADMIN — drives client-side nav
           },
           ...tokens,
         };
