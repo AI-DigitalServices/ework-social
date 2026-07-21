@@ -690,6 +690,151 @@ export class SocialService {
   }
 
 
+  // ─── LinkedIn Community Management API (second app — org pages only) ────────
+
+  getLinkedInOrgAuthUrl(workspaceId: string, userId: string) {
+    const clientId = this.config.get('LINKEDIN_ORG_CLIENT_ID');
+    const redirectUri = this.config.get('LINKEDIN_ORG_REDIRECT_URI');
+
+    if (!clientId || !redirectUri) {
+      throw new BadRequestException(
+        'LinkedIn Company Pages not configured — set LINKEDIN_ORG_CLIENT_ID and LINKEDIN_ORG_REDIRECT_URI in Railway',
+      );
+    }
+
+    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    // This app has ONLY Community Management API — no openid/profile scopes available
+    const scopes = ['w_organization_social', 'r_organization_social', 'rw_organization_admin'].join(' ');
+
+    return {
+      url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
+    };
+  }
+
+  async handleLinkedInOrgCallback(code: string, state: string) {
+    const clientId = this.config.get('LINKEDIN_ORG_CLIENT_ID')!;
+    const clientSecret = this.config.get('LINKEDIN_ORG_CLIENT_SECRET')!;
+    const redirectUri = this.config.get('LINKEDIN_ORG_REDIRECT_URI')!;
+
+    let workspaceId: string;
+    let userId: string;
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      workspaceId = decoded.workspaceId;
+      userId = decoded.userId;
+    } catch {
+      throw new BadRequestException('Invalid state parameter');
+    }
+
+    // Exchange code for access token using the org app credentials
+    let accessToken: string;
+    try {
+      const tokenRes = await axios.post(
+        'https://www.linkedin.com/oauth/v2/accessToken',
+        new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: redirectUri,
+          client_id: clientId,
+          client_secret: clientSecret,
+        }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      );
+      accessToken = tokenRes.data.access_token;
+    } catch (err: any) {
+      throw new BadRequestException(
+        'LinkedIn org token exchange failed: ' + JSON.stringify(err?.response?.data),
+      );
+    }
+
+    const encryptedToken = this.encryptToken(accessToken);
+    const connectedAccounts: any[] = [];
+
+    // Discover all Company Pages + Showcase Pages (Brands) this user is admin of
+    try {
+      const aclRes = await axios.get(
+        'https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&count=50',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        },
+      );
+
+      const elements: any[] = aclRes.data?.elements || [];
+      this.logger.log(`LinkedIn Community API: found ${elements.length} org page(s) for workspace ${workspaceId}`);
+
+      for (const el of elements) {
+        const orgUrn: string = el.organization;
+        if (!orgUrn) continue;
+
+        const orgId = orgUrn.split(':').pop();
+        const isOrgBrand = orgUrn.includes(':organizationBrand:');
+        const nameEndpoint = isOrgBrand
+          ? `https://api.linkedin.com/v2/organizationBrands/${orgId}?projection=(id,localizedName)`
+          : `https://api.linkedin.com/v2/organizations/${orgId}?projection=(id,localizedName)`;
+
+        let orgName = `LinkedIn Page (${orgId})`;
+        try {
+          const orgRes = await axios.get(nameEndpoint, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+            },
+          });
+          orgName = orgRes.data?.localizedName || orgName;
+        } catch {
+          this.logger.warn(`Could not fetch name for LinkedIn ${isOrgBrand ? 'brand' : 'org'} ${orgId}`);
+        }
+
+        // Upsert — reactivate if previously disconnected
+        await this.prisma.socialAccount.updateMany({
+          where: { workspaceId, platform: 'LINKEDIN', accountId: orgUrn, isActive: false },
+          data: { isActive: true },
+        });
+
+        const orgAccount = await this.prisma.socialAccount.upsert({
+          where: { workspaceId_platform_accountId: { workspaceId, platform: 'LINKEDIN', accountId: orgUrn } },
+          update: { accountName: orgName, accessToken: encryptedToken, isActive: true },
+          create: {
+            workspaceId,
+            platform: 'LINKEDIN',
+            accountId: orgUrn,
+            accountName: orgName,
+            accessToken: encryptedToken,
+            isActive: true,
+          },
+        });
+
+        connectedAccounts.push(orgAccount);
+        this.logger.log(`LinkedIn org page stored: ${orgName} (${orgUrn})`);
+        this.posthog.capture(workspaceId, 'social_account_connected', {
+          platform: 'LINKEDIN_ORG',
+          orgName,
+          orgUrn,
+        });
+      }
+    } catch (err: any) {
+      throw new BadRequestException(
+        `Failed to discover LinkedIn Company Pages: ${err?.response?.data?.message || err.message}`,
+      );
+    }
+
+    if (connectedAccounts.length === 0) {
+      throw new BadRequestException(
+        'no_pages_found — no LinkedIn Company Pages found where you are an Administrator. ' +
+        'Make sure you have the ADMINISTRATOR role on the pages you want to connect.',
+      );
+    }
+
+    return {
+      success: true,
+      connectedAccounts,
+      message: `${connectedAccounts.length} LinkedIn Company Page(s) connected`,
+    };
+  }
+
   getYouTubeAuthUrl(workspaceId: string, userId: string) {
     const clientId = this.config.get('YOUTUBE_CLIENT_ID');
     const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');

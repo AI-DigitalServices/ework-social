@@ -83,6 +83,33 @@ export class SocialController {
     }
   }
 
+  // ─── LinkedIn Community Management API (Company Pages — second OAuth app) ────
+
+  @Get('linkedin-org/auth-url')
+  @UseGuards(JwtGuard)
+  getLinkedInOrgAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
+    return this.socialService.getLinkedInOrgAuthUrl(workspaceId, req.user.sub);
+  }
+
+  @Get('linkedin-org/callback')
+  async linkedInOrgCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    try {
+      await this.socialService.handleLinkedInOrgCallback(code, state);
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+    } catch (err: any) {
+      console.error('LinkedIn Org OAuth error:', err?.message);
+      const errorCode = err?.message?.includes('no_pages_found') ? 'no_pages' : 'failed';
+      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=${errorCode}`);
+    }
+  }
+
   @Post('publish/:postId')
   @UseGuards(JwtGuard)
   async publishPost(

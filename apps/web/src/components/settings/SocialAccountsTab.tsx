@@ -187,13 +187,31 @@ export default function SocialAccountsTab() {
       showToast('error', 'Connection was cancelled.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
     } else if (error === 'no_pages') {
-      showToast('error', '⚠️ No Facebook Pages found. Your account must be admin of at least one Facebook Page.');
+      showToast('error', '⚠️ No Pages found. Make sure you have the Administrator role on the pages you want to connect.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
     } else if (error === 'failed') {
       showToast('error', '❌ Connection failed. Please try again.');
       window.history.replaceState({}, '', window.location.pathname + '?tab=social');
     }
   }, [loadAccounts]);
+
+  const handleConnectLinkedInOrg = async () => {
+    if (!workspace?.id || !token) return;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/social/linkedin-org/auth-url?workspaceId=${workspace.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.ok) {
+        const { url } = await res.json();
+        window.location.href = url;
+      } else {
+        showToast('error', 'Could not start LinkedIn Company Pages connection. Try again.');
+      }
+    } catch {
+      showToast('error', 'Network error. Please try again.');
+    }
+  };
 
   const handleConnect = async (platformId: string) => {
     if (!workspace?.id || !token) return;
@@ -328,6 +346,27 @@ export default function SocialAccountsTab() {
                       )}
                     </div>
                   </div>
+
+                  {/* LinkedIn Company Pages — second OAuth app (Community Management API) */}
+                  {platform.id === 'linkedin' && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: '#1E293B' }}>Company Pages</p>
+                        <p style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                          {accounts.filter(a => a.platform === 'LINKEDIN' && a.accountId?.startsWith('urn:li:')).length > 0
+                            ? `${accounts.filter(a => a.platform === 'LINKEDIN' && a.accountId?.startsWith('urn:li:')).length} page(s) connected`
+                            : 'Connect your agency & brand pages'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleConnectLinkedInOrg}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: '1.5px solid #0077B5', background: 'transparent', color: '#0077B5', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        <Plus size={11} />
+                        Connect Pages
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
