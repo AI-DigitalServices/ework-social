@@ -25,7 +25,7 @@ export class AuthService {
     private posthog: PostHogService,
   ) {}
 
-  async register(dto: RegisterDto & { referralCode?: string }) {
+  async register(dto: RegisterDto & { referralCode?: string; inviteToken?: string }) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -36,6 +36,78 @@ export class AuthService {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
+    // ── Invite-flow registration ─────────────────────────────────────────────
+    // When registering via a workspace invite the user should NOT get their own
+    // workspace — they are joining someone else's workspace as a member.
+    if (dto.inviteToken) {
+      const invite = await this.prisma.workspaceInvite.findUnique({
+        where: { token: dto.inviteToken },
+        include: { workspace: { include: { subscription: true } } },
+      });
+
+      // If the invite is valid, create the user without a personal workspace
+      // and immediately accept the invite in the same flow.
+      if (invite && invite.expiresAt >= new Date() && !invite.acceptedAt) {
+        const user = await this.prisma.user.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            password: hashed,
+            verificationToken,
+            verificationExpiry,
+            // No ownedWorkspaces block — client has no personal workspace
+          },
+        });
+
+        // Accept the invite: create the WorkspaceMember row
+        await this.prisma.workspaceMember.create({
+          data: {
+            workspaceId: invite.workspaceId,
+            userId: user.id,
+            role: invite.role,
+          },
+        });
+
+        // Mark invite as accepted
+        await this.prisma.workspaceInvite.update({
+          where: { token: dto.inviteToken },
+          data: { acceptedAt: new Date() },
+        });
+
+        try {
+          await this.email.sendVerificationEmail(user.email, user.name, verificationToken);
+        } catch (err) {
+          console.error('Failed to send verification email (invite flow):', err);
+        }
+
+        this.posthog.capture(invite.workspaceId, 'client_invite_registered', {
+          workspaceId: invite.workspaceId,
+          role: invite.role,
+        });
+
+        const tokens = await this.generateTokens(user.id, user.email);
+        return {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            isVerified: user.isVerified,
+          },
+          // Return the invited workspace — this becomes the client's active workspace
+          workspace: {
+            id: invite.workspace.id,
+            name: invite.workspace.name,
+            slug: invite.workspace.slug,
+            plan: invite.workspace.subscription?.plan || 'FREE',
+            isOwner: false,
+          },
+          ...tokens,
+        };
+      }
+      // Invalid / expired invite token — fall through to normal registration below
+    }
+
+    // ── Normal (agency) registration ─────────────────────────────────────────
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -13,4 +13,9 @@ export class RegisterDto {
 
   @IsString()
   workspaceName: string;
+
+  /** Present when registering via a workspace invite link — triggers invite-flow registration (no personal workspace created) */
+  @IsOptional()
+  @IsString()
+  inviteToken?: string;
 }

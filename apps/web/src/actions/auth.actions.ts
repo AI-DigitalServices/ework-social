@@ -9,13 +9,15 @@ export async function registerAction(
   name: string,
   email: string,
   password: string,
-  workspaceName: string
+  workspaceName: string,
+  inviteToken?: string,
 ) {
   const res = await api.post('/auth/register', {
     name,
     email,
     password,
     workspaceName,
+    ...(inviteToken ? { inviteToken } : {}),
   });
   return res.data;
 }

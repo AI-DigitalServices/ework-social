@@ -5,7 +5,6 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { registerAction } from '@/actions/auth.actions';
-import api from '@/lib/api';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -43,28 +42,19 @@ function RegisterContent() {
     setError('');
 
     try {
-      // Step 1: Create the account
+      // Register the account. In invite-flow mode the backend:
+      //   1. Creates the user WITHOUT a personal workspace
+      //   2. Auto-accepts the invite and creates the WorkspaceMember row
+      //   3. Returns the invited workspace as the active workspace
+      // This keeps the client cleanly scoped to just the workspace they were invited to.
       const data = await registerAction(
         form.name,
         form.email,
         form.password,
         form.workspaceName || 'My Workspace',
+        isInviteFlow ? inviteToken : undefined,
       );
       setAuth(data.user, data.workspace, data.accessToken, data.refreshToken);
-
-      // Step 2: If coming from an invite link, accept the invite now that the
-      // user account exists. The /workspace/invite/accept endpoint is unguarded
-      // — it just needs the token to find the invite record and the now-existing
-      // user by email to create the WorkspaceMember row.
-      if (isInviteFlow) {
-        try {
-          await api.post('/workspace/invite/accept', { token: inviteToken });
-        } catch (inviteErr: any) {
-          // Invite may have already been accepted or expired — not fatal.
-          // User still has their account; they can contact the agency owner for re-invite.
-          console.warn('Invite accept after registration failed:', inviteErr?.response?.data?.message);
-        }
-      }
 
       router.push('/dashboard');
     } catch (err: any) {

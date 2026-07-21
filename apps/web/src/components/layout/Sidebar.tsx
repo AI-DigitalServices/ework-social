@@ -75,8 +75,10 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
     return () => clearInterval(interval);
   }, [workspace?.id]);
 
-  // A client member with only one workspace doesn't need a switcher
-  const canSwitchWorkspace = workspaces.length > 1 || workspaces.some(w => w.isOwner);
+  // Show the workspace switcher only when there is genuinely more than one
+  // workspace to switch between. A client who only has access to a single
+  // workspace (their invited one) should see a plain label, not a dropdown.
+  const canSwitchWorkspace = workspaces.length > 1;
 
   const switchWorkspace = (ws: typeof workspace) => {
     if (!ws || ws.id === workspace?.id) { setWsOpen(false); return; }
