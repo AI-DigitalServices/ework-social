@@ -53,7 +53,7 @@ export default function PrivacyPage() {
         </a>
 
         <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 36, fontWeight: 700, color: '#F0F6FF', marginBottom: 8 }}>Privacy Policy</h1>
-        <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 48 }}>Last updated: May 2026</p>
+        <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 48 }}>Last updated: July 2026</p>
 
         {/* Sections 1–9: unchanged from original */}
         {stringSections.map((section, i) => (
@@ -88,10 +88,40 @@ export default function PrivacyPage() {
           <h2 style={h2Style}>11. YouTube API Services</h2>
           <p style={sectionStyle}>
             eWork Social uses YouTube API Services to enable users to schedule and publish video content to their
-            YouTube channels. When you connect your YouTube account, we access your channel information and upload
-            permissions solely to provide the content scheduling and publishing service. We request only the minimum
-            permissions necessary for these features. We do not store video content on our servers beyond the point
-            of upload to YouTube. Our use of YouTube API Services is subject to the{' '}
+            YouTube channels. When you connect your YouTube account, we access the following data solely to provide
+            content scheduling and publishing services:
+          </p>
+          <ul style={{ ...sectionStyle, paddingLeft: 24, marginTop: 12, marginBottom: 12 }}>
+            <li style={{ marginBottom: 6 }}>Your YouTube channel identity and basic channel information</li>
+            <li style={{ marginBottom: 6 }}>Upload permissions to publish video content on your behalf</li>
+            <li style={{ marginBottom: 6 }}>Playlist and video metadata needed to manage scheduled content</li>
+          </ul>
+          <p style={{ ...sectionStyle, marginBottom: 12 }}>
+            We request only the minimum YouTube API scopes necessary to deliver these features
+            (including <strong style={{ color: '#8BA0BC' }}>youtube.upload</strong> and <strong style={{ color: '#8BA0BC' }}>youtube.readonly</strong>).
+            We do not store video content on our servers beyond the point of upload to YouTube.
+            YouTube user data is used exclusively to provide the scheduling and publishing feature you requested
+            and is never used for advertising, sold to third parties, or shared with data brokers or information resellers.
+          </p>
+          <p style={{ ...sectionStyle, marginBottom: 12 }}>
+            <strong style={{ color: '#C0D0E0' }}>Google user data and AI:</strong> eWork Social uses AI features
+            (powered by Anthropic&apos;s Claude) to assist with caption writing and reply suggestions.
+            Google user data obtained via YouTube API Services — including your channel data and any
+            associated content — is <strong style={{ color: '#C0D0E0' }}>never</strong> used to train, develop,
+            or improve any AI or machine learning model, whether personalized or non-personalized.
+            Google user data is used solely to provide the specific user-facing features visible in your
+            eWork Social dashboard.
+          </p>
+          <p style={{ ...sectionStyle, marginBottom: 12 }}>
+            <strong style={{ color: '#C0D0E0' }}>Limited Use compliance:</strong> eWork Social&apos;s use and
+            transfer of information received from Google APIs to any other app will adhere to the{' '}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={linkStyle}>
+              Google API Services User Data Policy
+            </a>
+            , including the Limited Use requirements.
+          </p>
+          <p style={sectionStyle}>
+            Our use of YouTube API Services is subject to the{' '}
             <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" style={linkStyle}>
               YouTube Terms of Service
             </a>
@@ -99,7 +129,8 @@ export default function PrivacyPage() {
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={linkStyle}>
               Google&apos;s Privacy Policy
             </a>
-            . You may revoke eWork Social&apos;s access to your YouTube account at any time via{' '}
+            . You may revoke eWork Social&apos;s access to your YouTube account at any time from your eWork Social
+            Settings page (Settings → Social Accounts → Disconnect YouTube) or directly via{' '}
             <a href="https://security.google.com/settings/security/permissions" target="_blank" rel="noopener noreferrer" style={linkStyle}>
               Google Security Settings
             </a>
@@ -107,9 +138,26 @@ export default function PrivacyPage() {
           </p>
         </div>
 
-        {/* Section 12: Contact Us (was section 10) */}
+        {/* Section 12: Google Sign-In */}
         <div style={wrapStyle}>
-          <h2 style={h2Style}>12. Contact Us</h2>
+          <h2 style={h2Style}>12. Google Sign-In</h2>
+          <p style={sectionStyle}>
+            eWork Social offers Google Sign-In as an optional authentication method. When you sign in with Google,
+            we access only your name and email address to create or link your account. This data is used solely for
+            authentication and account management. We do not access your Gmail, Google Drive, Google Calendar, or
+            any other Google service through the sign-in flow. Google Sign-In data (name and email) is never used
+            to train AI or machine learning models and is never sold or shared with third parties for advertising
+            purposes. eWork Social&apos;s use of Google Sign-In data adheres to the{' '}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={linkStyle}>
+              Google API Services User Data Policy
+            </a>
+            , including the Limited Use requirements.
+          </p>
+        </div>
+
+        {/* Section 13: Contact Us */}
+        <div style={wrapStyle}>
+          <h2 style={h2Style}>13. Contact Us</h2>
           <p style={sectionStyle}>
             If you have any questions about this Privacy Policy, please contact us at privacy@eworksocial.com or visit our website at eworksocial.com.
           </p>
