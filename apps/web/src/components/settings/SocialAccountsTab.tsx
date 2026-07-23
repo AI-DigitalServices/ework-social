@@ -374,14 +374,6 @@ export default function SocialAccountsTab() {
         </div>
       ))}
 
-      {/* Meta dev mode notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-amber-800">Meta App in Development Mode</p>
-          <p className="text-xs text-amber-700 mt-1">Only accounts added as testers can connect right now. Go to <strong>developers.facebook.com → Your App → Roles → Testers</strong> to add test accounts.</p>
-        </div>
-      </div>
       {showBlueskyModal && (
         <BlueskyConnectModal
           onClose={() => setShowBlueskyModal(false)}
