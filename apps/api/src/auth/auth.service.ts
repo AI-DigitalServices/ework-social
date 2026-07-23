@@ -332,6 +332,18 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  /** Public alias used by the Google OAuth callback controller */
+  generateTokensPublic = this.generateTokens.bind(this);
+
+  /** Returns the user's primary (first owned) workspace with subscription — used in OAuth callback */
+  async getPrimaryWorkspace(userId: string) {
+    return this.prisma.workspace.findFirst({
+      where: { ownerId: userId },
+      include: { subscription: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   async refreshAccessToken(refreshToken: string) {
     try {
       const payload = await this.jwt.verifyAsync(refreshToken);

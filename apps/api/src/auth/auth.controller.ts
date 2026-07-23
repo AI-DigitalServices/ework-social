@@ -1,5 +1,8 @@
-import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,7 +10,10 @@ import { JwtGuard } from './jwt.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private config: ConfigService,
+  ) {}
 
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
@@ -70,5 +76,39 @@ export class AuthController {
   @UseGuards(JwtGuard)
   deleteAccount(@Request() req: any) {
     return this.authService.deleteAccount(req.user.sub);
+  }
+
+  // ─── Google OAuth ────────────────────────────────────────────────────────────
+
+  /** Step 1 — redirect user to Google consent screen */
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth() {
+    // Passport handles the redirect automatically
+  }
+
+  /** Step 2 — Google redirects back here after user approves */
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Request() req: any, @Res() res: Response) {
+    const user = req.user;
+    const tokens = await this.authService.generateTokensPublic(user.id, user.email);
+
+    // Find primary workspace
+    const workspace = await this.authService.getPrimaryWorkspace(user.id);
+
+    const frontendUrl = this.config.get('FRONTEND_URL');
+    const params = new URLSearchParams({
+      token:        tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      userId:       user.id,
+      name:         user.name,
+      email:        user.email,
+      workspaceId:  workspace?.id    || '',
+      workspaceName: workspace?.name || '',
+      workspacePlan: workspace?.subscription?.plan || 'FREE',
+    });
+
+    return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
   }
 }
