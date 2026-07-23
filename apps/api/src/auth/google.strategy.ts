@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { Strategy } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -8,47 +8,44 @@ import * as crypto from 'crypto';
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
-    private config: ConfigService,
+    config: ConfigService,
     private prisma: PrismaService,
   ) {
     super({
-      clientID:     config.get('GOOGLE_CLIENT_ID'),
-      clientSecret: config.get('GOOGLE_CLIENT_SECRET'),
-      callbackURL:  config.get('GOOGLE_REDIRECT_URI'),
+      clientID:     config.get<string>('GOOGLE_CLIENT_ID') ?? '',
+      clientSecret: config.get<string>('GOOGLE_CLIENT_SECRET') ?? '',
+      callbackURL:  config.get<string>('GOOGLE_REDIRECT_URI') ?? '',
       scope: ['email', 'profile'],
     });
   }
 
+  // NestJS @nestjs/passport pattern: return the user (or throw) — do NOT use done() callback
   async validate(
     _accessToken: string,
     _refreshToken: string,
     profile: any,
-    done: VerifyCallback,
-  ) {
-    const email: string = profile.emails?.[0]?.value;
-    const name: string  = profile.displayName || profile.emails?.[0]?.value?.split('@')[0];
+  ): Promise<any> {
+    const email: string | undefined = profile.emails?.[0]?.value;
+    const name: string  = profile.displayName || email?.split('@')[0] || 'User';
     const avatar: string | undefined = profile.photos?.[0]?.value;
 
-    if (!email) return done(new Error('No email returned from Google'), undefined);
+    if (!email) throw new UnauthorizedException('No email returned from Google');
 
-    // Find or create the user
+    // Find existing user by email
     let user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      // New user — create account without a personal workspace.
-      // A workspace will be created after OAuth completes (same as invite flow).
-      // We create a default workspace here so the dashboard has somewhere to land.
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const existingSlug = await this.prisma.workspace.findUnique({ where: { slug } });
-      const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+      // New Google user — create with a workspace
+      const baseSlug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'workspace';
+      const existingSlug = await this.prisma.workspace.findUnique({ where: { slug: baseSlug } });
+      const finalSlug = existingSlug ? `${baseSlug}-${Date.now()}` : baseSlug;
 
       user = await this.prisma.user.create({
         data: {
           name,
           email,
-          // Google-authenticated users have no password — they use OAuth exclusively
           password: crypto.randomBytes(32).toString('hex'),
-          isVerified: true,  // Google has already verified the email
+          isVerified: true,
           googleId: profile.id,
           avatar,
           ownedWorkspaces: {
@@ -69,13 +66,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         include: { ownedWorkspaces: true },
       });
     } else if (!user.googleId) {
-      // Existing email/password user — link their Google account
-      await this.prisma.user.update({
+      // Existing email/password user — link Google account
+      user = await this.prisma.user.update({
         where: { email },
-        data: { googleId: profile.id, isVerified: true, avatar: avatar || user.avatar },
+        data: { googleId: profile.id, isVerified: true, avatar: avatar ?? user.avatar ?? undefined },
       });
     }
 
-    done(null, user);
+    return user;
   }
 }
