@@ -6,7 +6,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { loginAction } from '@/actions/auth.actions';
 import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.eworksocial.com';
+// NEXT_PUBLIC_API_URL already includes /api (e.g. https://api.eworksocial.com/api)
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Google "G" SVG icon
 function GoogleIcon() {
