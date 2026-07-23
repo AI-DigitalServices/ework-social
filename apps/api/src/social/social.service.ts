@@ -50,10 +50,10 @@ export class SocialService {
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
-      'pages_manage_metadata',   // required for comments + messages webhook subscription
+      'pages_manage_metadata',   // required for messages webhook subscription
       'instagram_basic',
       'instagram_content_publish',
-      'instagram_manage_comments',
+      // 'instagram_manage_comments' — pending Meta App Review approval; add back once approved
       'instagram_manage_messages',
       'business_management',
     ].join(',');
