@@ -137,9 +137,16 @@ export class TwitterPollerService {
     if (!access_token) throw new Error('No access token returned from Twitter');
 
     // Fetch the authenticated user's profile (handle + numeric ID)
-    const userRes = await axios.get('https://api.twitter.com/2/users/me', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+    let userRes: any;
+    try {
+      userRes = await axios.get('https://api.twitter.com/2/users/me', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+    } catch (err: any) {
+      const detail = JSON.stringify(err?.response?.data || err?.message);
+      this.logger.error(`Twitter users/me failed: ${detail}`);
+      throw new Error(`users/me failed: ${detail}`);
+    }
     const twitterUser = userRes.data?.data;
     if (!twitterUser?.id) throw new Error('Could not retrieve Twitter user profile');
 
