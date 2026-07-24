@@ -106,17 +106,8 @@ export class TwitterPollerService {
     const clientSecret = this.config.get<string>('TWITTER_CLIENT_SECRET')!;
     const redirectUri = this.config.get<string>('TWITTER_REDIRECT_URI')!;
 
-    this.logger.debug(
-      `Twitter creds — clientId: ${clientId?.slice(0, 10)}... ` +
-      `clientSecret: ${clientSecret ? '[SET len=' + clientSecret.length + ']' : '[MISSING]'} ` +
-      `redirectUri: ${redirectUri}`,
-    );
-
     // Exchange auth code + PKCE verifier for access & refresh tokens
-    // Twitter OAuth 2.0 spec: percent-encode client_id and client_secret BEFORE base64 encoding
-    const basicAuth = Buffer.from(
-      `${encodeURIComponent(clientId)}:${encodeURIComponent(clientSecret)}`,
-    ).toString('base64');
+    // Public client (Native App) PKCE flow — no client_secret, no Basic Auth
     let tokenData: any;
     try {
       const tokenRes = await axios.post(
@@ -131,7 +122,6 @@ export class TwitterPollerService {
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: `Basic ${basicAuth}`,
           },
         },
       );
