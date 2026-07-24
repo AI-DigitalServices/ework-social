@@ -118,7 +118,7 @@ export class SocialService {
     let pages: any[] = [];
     try {
       const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
-        params: { access_token: longLivedToken },
+        params: { access_token: longLivedToken, fields: 'id,name,category,tasks,access_token' },
       });
       pages = pagesRes.data.data || [];
       console.log('Pages found:', pages.length);
@@ -170,7 +170,12 @@ export class SocialService {
     const connectedAccounts: any[] = [];
 
     for (const page of pages) {
-      console.log('Processing page:', page.name, page.id);
+      console.log('Processing page:', page.name, page.id, 'has_token:', !!page.access_token);
+
+      if (!page.access_token) {
+        console.warn(`Skipping page ${page.name} — no access_token returned by Facebook API`);
+        continue;
+      }
 
       // Reactivate inactive record first (can't delete — Posts may be linked via foreign key)
       await this.prisma.socialAccount.updateMany({
