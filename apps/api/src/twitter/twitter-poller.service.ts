@@ -128,7 +128,8 @@ export class TwitterPollerService {
       tokenData = tokenRes.data;
     } catch (err: any) {
       const detail = err?.response?.data?.error_description || err.message;
-      this.logger.error(`Twitter token exchange failed: ${detail}`);
+      const fullBody = JSON.stringify(err?.response?.data || {});
+      this.logger.error(`Twitter token exchange failed: ${detail} | full response: ${fullBody}`);
       throw new Error(`Token exchange failed: ${detail}`);
     }
 
