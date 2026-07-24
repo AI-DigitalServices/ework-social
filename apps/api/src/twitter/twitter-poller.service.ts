@@ -107,7 +107,8 @@ export class TwitterPollerService {
     const redirectUri = this.config.get<string>('TWITTER_REDIRECT_URI')!;
 
     // Exchange auth code + PKCE verifier for access & refresh tokens
-    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    // Send client_id + client_secret in the body (Twitter accepts this for confidential clients
+    // and avoids Basic Auth encoding issues with special characters in the secret)
     let tokenData: any;
     try {
       const tokenRes = await axios.post(
@@ -117,11 +118,12 @@ export class TwitterPollerService {
           code,
           redirect_uri: redirectUri,
           code_verifier: codeVerifier,
+          client_id: clientId,
+          client_secret: clientSecret,
         }).toString(),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: `Basic ${basicAuth}`,
           },
         },
       );
