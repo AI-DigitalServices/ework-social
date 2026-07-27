@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import type { Response, Request } from 'express';
 
 @Controller('webhook')
@@ -43,24 +43,30 @@ export class WebhookController {
     @Headers('x-hub-signature-256') signature: string,
     @Res() res: Response,
   ) {
-    // Signature verification — log warning but do not block (endpoint secured by verify token)
-    const appSecret = this.config.get('META_APP_SECRET');
-    if (signature && appSecret) {
-      const rawBody = (req as any).rawBody ?? Buffer.from(JSON.stringify(body));
-      const expectedSig = 'sha256=' + createHmac('sha256', appSecret)
-        .update(rawBody)
-        .digest('hex');
+    // Signature verification — BLOCK on mismatch. The x-hub-signature-256 is the
+    // only proof the payload genuinely came from Meta; an unverified event could
+    // be forged. Facebook and Instagram may sign with different app secrets, so
+    // accept the request if it validates against either.
+    const rawBody = (req as any).rawBody ?? Buffer.from(JSON.stringify(body));
+    const secrets = [
+      this.config.get('META_APP_SECRET'),
+      this.config.get('INSTAGRAM_APP_SECRET'),
+    ].filter(Boolean) as string[];
 
-      if (signature !== expectedSig) {
-        this.logger.warn('Webhook signature mismatch — processing anyway (secured by verify token)');
-        // NOTE: not blocking — signature may differ due to Instagram vs Facebook app secret
-        // TODO: switch to INSTAGRAM_APP_SECRET once confirmed
-      }
+    const valid = !!signature && secrets.some((secret) => {
+      const expected = 'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex');
+      const a = Buffer.from(signature);
+      const b = Buffer.from(expected);
+      return a.length === b.length && timingSafeEqual(a, b);
+    });
+
+    if (!valid) {
+      this.logger.warn('Webhook signature verification failed — rejecting');
+      return res.status(401).send('invalid signature');
     }
 
-    this.logger.log(`Webhook body: ${JSON.stringify(body).substring(0, 500)}`);
-
-    // Respond immediately — process async
+    // Respond immediately — process async (never log the raw payload body: it can
+    // contain private message content / PII)
     res.status(200).send('EVENT_RECEIVED');
 
     // Process in background

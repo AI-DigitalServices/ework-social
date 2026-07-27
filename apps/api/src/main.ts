@@ -29,7 +29,15 @@ async function bootstrap() {
   // Trust Cloudflare and Railway proxy headers for real IP rate limiting
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strip properties not present in the DTO
+      transform: true, // coerce payloads to their DTO types
+      // forbidNonWhitelisted: enable after auditing every frontend payload in
+      // staging — it turns an unknown field into a hard 400 rather than a
+      // silent strip, so it must not be flipped on blind against live traffic.
+    }),
+  );
   app.enableCors({
     origin: [
       'http://localhost:3000',

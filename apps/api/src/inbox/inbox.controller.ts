@@ -2,9 +2,10 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Re
 import { InboxService } from './inbox.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
 @Controller('inbox')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class InboxController {
   constructor(
     private inboxService: InboxService,

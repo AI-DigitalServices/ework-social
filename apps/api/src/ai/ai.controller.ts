@@ -2,10 +2,11 @@ import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AiUsageService } from './ai-usage.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('ai')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class AiController {
   constructor(private aiService: AiService, private aiUsage: AiUsageService) {}
 

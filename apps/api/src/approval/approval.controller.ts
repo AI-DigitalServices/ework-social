@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { ApprovalService } from './approval.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
 @Controller('approvals')
 export class ApprovalController {
@@ -10,7 +11,7 @@ export class ApprovalController {
 
   // Agency: send post for approval
   @Post('send')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   sendForApproval(@Body() body: {
     postId: string;
     workspaceId: string;
@@ -29,7 +30,7 @@ export class ApprovalController {
 
   // Agency: get all approvals for workspace
   @Get('workspace')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getWorkspaceApprovals(@Query('workspaceId') workspaceId: string) {
     return this.approvalService.getWorkspaceApprovals(workspaceId);
   }

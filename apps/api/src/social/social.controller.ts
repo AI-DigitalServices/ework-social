@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { SocialService } from './social.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import type { Response } from 'express';
 
 @Controller('social')
@@ -12,7 +13,7 @@ export class SocialController {
   constructor(private socialService: SocialService) {}
 
   @Get('facebook/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getFacebookAuthUrl(
     @Query('workspaceId') workspaceId: string,
     @Req() req: any,
@@ -45,13 +46,13 @@ export class SocialController {
   }
 
   @Get('accounts')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getAccounts(@Query('workspaceId') workspaceId: string) {
     return this.socialService.getAccounts(workspaceId);
   }
 
   @Delete('accounts/:id')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   disconnectAccount(
     @Param('id') id: string,
     @Body() body: { workspaceId: string },
@@ -60,7 +61,7 @@ export class SocialController {
   }
 
   @Get('linkedin/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getLinkedInAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getLinkedInAuthUrl(workspaceId, req.user.sub);
   }
@@ -86,7 +87,7 @@ export class SocialController {
   // ─── LinkedIn Community Management API (Company Pages — second OAuth app) ────
 
   @Get('linkedin-org/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getLinkedInOrgAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getLinkedInOrgAuthUrl(workspaceId, req.user.sub);
   }
@@ -111,7 +112,7 @@ export class SocialController {
   }
 
   @Post('publish/:postId')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   async publishPost(
     @Param('postId') postId: string,
     @Body() body: { platform: string },
@@ -126,21 +127,21 @@ export class SocialController {
   }
 
   @Post('bluesky/connect')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   connectBluesky(@Body() body: { workspaceId: string; identifier: string; appPassword: string }) {
     return this.socialService.connectBluesky(body.workspaceId, body.identifier, body.appPassword);
   }
 
   // Temporary: manually set a Threads access token generated from Meta Developer Console
   @Post('threads/manual-token')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   setThreadsToken(@Body() body: { workspaceId: string; accessToken: string }) {
     return this.socialService.setThreadsTokenManually(body.workspaceId, body.accessToken);
   }
 
 
   @Get('youtube/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getYouTubeAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getYouTubeAuthUrl(workspaceId, req.user.sub);
   }
@@ -164,13 +165,13 @@ export class SocialController {
   }
 
   @Get('tiktok/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub);
   }
 
   @Get('threads/auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getThreadsAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
     return this.socialService.getThreadsAuthUrl(workspaceId, req.user.sub);
   }

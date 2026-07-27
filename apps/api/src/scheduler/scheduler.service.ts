@@ -27,6 +27,28 @@ export class SchedulerService {
     });
   }
 
+  /**
+   * Tenant-isolation guard for record-by-id routes that don't carry a
+   * workspaceId. Confirms the post exists AND belongs to a workspace the
+   * caller is a member of — otherwise throws NotFound (not Forbidden, so we
+   * don't reveal that the record exists at all).
+   */
+  private async assertPostAccess(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, workspaceId: true },
+    });
+    if (!post) throw new NotFoundException('Post not found');
+
+    const member = await this.prisma.workspaceMember.findFirst({
+      where: { workspaceId: post.workspaceId, userId },
+      select: { id: true },
+    });
+    if (!member) throw new NotFoundException('Post not found');
+
+    return post;
+  }
+
   async createPost(dto: CreatePostDto) {
     // Plan gating — check post limit before creating
     await this.planGuard.checkPostLimit(dto.workspaceId);
@@ -53,7 +75,8 @@ export class SchedulerService {
     return post;
   }
 
-  async updatePost(id: string, dto: Partial<CreatePostDto>) {
+  async updatePost(id: string, dto: Partial<CreatePostDto>, userId: string) {
+    await this.assertPostAccess(id, userId);
     return this.prisma.post.update({
       where: { id },
       data: {
@@ -66,7 +89,8 @@ export class SchedulerService {
     });
   }
 
-  async deletePost(id: string) {
+  async deletePost(id: string, userId: string) {
+    await this.assertPostAccess(id, userId);
     return this.prisma.post.delete({ where: { id } });
   }
 
@@ -161,7 +185,8 @@ export class SchedulerService {
     }
   }
 
-  async retryPost(postId: string) {
+  async retryPost(postId: string, userId: string) {
+    await this.assertPostAccess(postId, userId);
     return this.prisma.post.update({
       where: { id: postId },
       data: { status: 'SCHEDULED' },
@@ -169,7 +194,8 @@ export class SchedulerService {
   }
 
 
-  async publishNow(postId: string) {
+  async publishNow(postId: string, userId: string) {
+    await this.assertPostAccess(postId, userId);
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: { socialAccount: true },

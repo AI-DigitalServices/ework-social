@@ -6,9 +6,10 @@ import { ResponderService } from './responder.service';
 import { CreateRuleDto } from './dto/create-rule.dto';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
 @Controller('responder')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class ResponderController {
   constructor(
     private responderService: ResponderService,

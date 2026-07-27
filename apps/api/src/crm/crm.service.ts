@@ -35,7 +35,27 @@ export class CrmService {
     });
   }
 
-  async getClient(id: string) {
+  /**
+   * Tenant-isolation guard for CRM record-by-id routes that don't carry a
+   * workspaceId. Confirms the client belongs to a workspace the caller is a
+   * member of — otherwise throws NotFound (so record existence isn't revealed).
+   */
+  private async assertClientAccess(clientId: string, userId: string) {
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientId },
+      select: { workspaceId: true },
+    });
+    if (!client) throw new NotFoundException('Client not found');
+
+    const member = await this.prisma.workspaceMember.findFirst({
+      where: { workspaceId: client.workspaceId, userId },
+      select: { id: true },
+    });
+    if (!member) throw new NotFoundException('Client not found');
+  }
+
+  async getClient(id: string, userId: string) {
+    await this.assertClientAccess(id, userId);
     const client = await this.prisma.client.findUnique({
       where: { id },
       include: {
@@ -131,9 +151,10 @@ export class CrmService {
       dealValue?: number;
       nextFollowUpAt?: string;
       assignedToId?: string | null;
-      userId?: string;
+      userId: string;
     },
   ) {
+    await this.assertClientAccess(id, updates.userId);
     const existing = await this.prisma.client.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Client not found');
 
@@ -179,7 +200,8 @@ export class CrmService {
     return updated;
   }
 
-  async updateStage(id: string, stage: string, userId?: string) {
+  async updateStage(id: string, stage: string, userId: string) {
+    await this.assertClientAccess(id, userId);
     const existing = await this.prisma.client.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Client not found');
 
@@ -206,11 +228,13 @@ export class CrmService {
     return client;
   }
 
-  async deleteClient(id: string) {
+  async deleteClient(id: string, userId: string) {
+    await this.assertClientAccess(id, userId);
     return this.prisma.client.delete({ where: { id } });
   }
 
-  async addNote(dto: CreateNoteDto & { userId?: string }) {
+  async addNote(dto: CreateNoteDto & { userId: string }) {
+    await this.assertClientAccess(dto.clientId, dto.userId);
     const note = await this.prisma.note.create({
       data: { content: dto.content, clientId: dto.clientId },
     });
@@ -227,7 +251,8 @@ export class CrmService {
     return note;
   }
 
-  async addTask(dto: CreateTaskDto & { userId?: string }) {
+  async addTask(dto: CreateTaskDto & { userId: string }) {
+    await this.assertClientAccess(dto.clientId, dto.userId);
     const task = await this.prisma.task.create({
       data: {
         title: dto.title,
@@ -249,9 +274,10 @@ export class CrmService {
     return task;
   }
 
-  async toggleTask(id: string, userId?: string) {
+  async toggleTask(id: string, userId: string) {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task not found');
+    await this.assertClientAccess(task.clientId, userId);
     const updated = await this.prisma.task.update({
       where: { id },
       data: { isDone: !task.isDone },
@@ -271,7 +297,8 @@ export class CrmService {
     return updated;
   }
 
-  async getActivityLog(clientId: string) {
+  async getActivityLog(clientId: string, userId: string) {
+    await this.assertClientAccess(clientId, userId);
     return this.prisma.activity.findMany({
       where: { clientId },
       orderBy: { createdAt: 'desc' },

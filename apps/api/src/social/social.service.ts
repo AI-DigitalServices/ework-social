@@ -16,6 +16,17 @@ export class SocialService {
     private posthog: PostHogService,
   ) {}
 
+  /**
+   * Dev-only debug logging. These statements dump raw Graph API responses that
+   * contain page access tokens and PII, so they must never run in production.
+   */
+  private dbg(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log(...args);
+    }
+  }
+
   // Encrypt token before saving to database
   private encryptToken(token: string): string {
     const key = Buffer.from(this.config.get<string>('ENCRYPTION_KEY')!, 'hex');
@@ -68,10 +79,10 @@ export class SocialService {
     const appSecret = this.config.get('META_APP_SECRET');
     const redirectUri = this.config.get('META_REDIRECT_URI');
 
-    console.log('--- handleFacebookCallback ---');
-    console.log('appId:', appId);
-    console.log('redirectUri:', redirectUri);
-    console.log('code length:', code?.length);
+    this.dbg('--- handleFacebookCallback ---');
+    this.dbg('appId:', appId);
+    this.dbg('redirectUri:', redirectUri);
+    this.dbg('code length:', code?.length);
 
     let workspaceId: string;
     let userId: string;
@@ -79,67 +90,67 @@ export class SocialService {
       const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
-      console.log('workspaceId:', workspaceId);
-      console.log('userId:', userId);
+      this.dbg('workspaceId:', workspaceId);
+      this.dbg('userId:', userId);
     } catch {
       throw new BadRequestException('Invalid state parameter');
     }
 
     // Step 1: Exchange code for short-lived token
-    console.log('Step 1: Exchanging code for token...');
+    this.dbg('Step 1: Exchanging code for token...');
     let shortLivedToken: string;
     try {
       const tokenRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: { client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code },
       });
       shortLivedToken = tokenRes.data.access_token;
-      console.log('Short-lived token received:', !!shortLivedToken);
+      this.dbg('Short-lived token received:', !!shortLivedToken);
     } catch (err: any) {
       console.error('Token exchange error:', err?.response?.data || err?.message);
       throw new BadRequestException('Token exchange failed: ' + JSON.stringify(err?.response?.data));
     }
 
     // Step 2: Exchange for long-lived token
-    console.log('Step 2: Getting long-lived token...');
+    this.dbg('Step 2: Getting long-lived token...');
     let longLivedToken: string;
     try {
       const longLivedRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: { grant_type: 'fb_exchange_token', client_id: appId, client_secret: appSecret, fb_exchange_token: shortLivedToken },
       });
       longLivedToken = longLivedRes.data.access_token;
-      console.log('Long-lived token received:', !!longLivedToken);
+      this.dbg('Long-lived token received:', !!longLivedToken);
     } catch (err: any) {
       console.error('Long-lived token error:', err?.response?.data || err?.message);
       throw new BadRequestException('Long-lived token failed');
     }
 
     // Step 3: Get Facebook Pages
-    console.log('Step 3: Getting Facebook pages...');
+    this.dbg('Step 3: Getting Facebook pages...');
     let pages: any[] = [];
     try {
       const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
         params: { access_token: longLivedToken, fields: 'id,name,category,tasks,access_token' },
       });
       pages = pagesRes.data.data || [];
-      console.log('Pages found:', pages.length);
-      console.log('Pages raw response:', JSON.stringify(pagesRes.data));
+      this.dbg('Pages found:', pages.length);
+      this.dbg('Pages raw response:', JSON.stringify(pagesRes.data));
 
       // Fallback: try Business Management API if me/accounts returns empty
       if (pages.length === 0) {
-        console.log('me/accounts empty — trying Business Management API...');
+        this.dbg('me/accounts empty — trying Business Management API...');
         try {
           const bizRes = await axios.get('https://graph.facebook.com/v19.0/me/businesses', {
             params: { access_token: longLivedToken, fields: 'id,name,owned_pages{id,name,access_token,category}' },
           });
-          console.log('Businesses response:', JSON.stringify(bizRes.data));
+          this.dbg('Businesses response:', JSON.stringify(bizRes.data));
           const businesses = bizRes.data.data || [];
           for (const biz of businesses) {
             const bizPages = biz.owned_pages?.data || [];
             pages = [...pages, ...bizPages];
           }
-          console.log('Pages from Business API:', pages.length);
+          this.dbg('Pages from Business API:', pages.length);
         } catch (bizErr: any) {
-          console.log('Business API error:', JSON.stringify(bizErr?.response?.data));
+          this.dbg('Business API error:', JSON.stringify(bizErr?.response?.data));
         }
       }
 
@@ -148,7 +159,7 @@ export class SocialService {
         const debugRes = await axios.get('https://graph.facebook.com/v19.0/me', {
           params: { fields: 'id,name,accounts', access_token: longLivedToken },
         });
-        console.log('ME response:', JSON.stringify(debugRes.data));
+        this.dbg('ME response:', JSON.stringify(debugRes.data));
         
         // Try direct accounts call with different fields
         const acctRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
@@ -158,9 +169,9 @@ export class SocialService {
             limit: 100,
           },
         });
-        console.log('Accounts with fields:', JSON.stringify(acctRes.data));
+        this.dbg('Accounts with fields:', JSON.stringify(acctRes.data));
       } catch (dbgErr: any) {
-        console.log('Debug error:', JSON.stringify(dbgErr?.response?.data));
+        this.dbg('Debug error:', JSON.stringify(dbgErr?.response?.data));
       }
     } catch (err: any) {
       console.error('Pages fetch error:', err?.response?.data || err?.message);
@@ -170,7 +181,7 @@ export class SocialService {
     const connectedAccounts: any[] = [];
 
     for (const page of pages) {
-      console.log('Processing page:', page.name, page.id, 'has_token:', !!page.access_token);
+      this.dbg('Processing page:', page.name, page.id, 'has_token:', !!page.access_token);
 
       if (!page.access_token) {
         console.warn(`Skipping page ${page.name} — no access_token returned by Facebook API`);
@@ -189,7 +200,7 @@ export class SocialService {
       });
       this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'FACEBOOK' });
       connectedAccounts.push(fbAccount);
-      console.log('Facebook page saved:', fbAccount.id);
+      this.dbg('Facebook page saved:', fbAccount.id);
 
       // Page-level webhook subscription — split into separate calls so an
       // ungranted field (messages, pending pages_messaging) doesn't block
@@ -200,7 +211,7 @@ export class SocialService {
           null,
           { params: { subscribed_fields: 'feed', access_token: page.access_token } }
         );
-        console.log('Facebook page FEED webhook subscription result:', JSON.stringify(feedSubRes.data));
+        this.dbg('Facebook page FEED webhook subscription result:', JSON.stringify(feedSubRes.data));
       } catch (subErr: any) {
         console.error('Facebook page FEED webhook subscription failed:', subErr?.response?.data || subErr?.message);
       }
@@ -211,7 +222,7 @@ export class SocialService {
           null,
           { params: { subscribed_fields: 'messages', access_token: page.access_token } }
         );
-        console.log('Facebook page MESSAGES webhook subscription result:', JSON.stringify(msgSubRes.data));
+        this.dbg('Facebook page MESSAGES webhook subscription result:', JSON.stringify(msgSubRes.data));
       } catch (subErr: any) {
         console.error('Facebook page MESSAGES webhook subscription failed:', subErr?.response?.data || subErr?.message);
       }
@@ -228,7 +239,7 @@ export class SocialService {
             params: { fields: 'id,name,username,profile_picture_url', access_token: page.access_token },
           });
           const igDetails = igDetailsRes.data;
-          console.log('Instagram found:', igDetails.username || igDetails.name);
+          this.dbg('Instagram found:', igDetails.username || igDetails.name);
 
           const igAccount = await this.prisma.socialAccount.upsert({
             where: { workspaceId_platform_accountId: { workspaceId, platform: 'INSTAGRAM', accountId: igId } },
@@ -237,7 +248,7 @@ export class SocialService {
           });
           this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'INSTAGRAM' });
           connectedAccounts.push(igAccount);
-          console.log('Instagram saved:', igAccount.id);
+          this.dbg('Instagram saved:', igAccount.id);
 
           // Account-level webhook subscription — required per Meta docs for comments+messages
           // Must be called after connect with the page access token
@@ -247,17 +258,17 @@ export class SocialService {
               null,
               { params: { subscribed_fields: 'comments,messages', access_token: page.access_token } }
             );
-            console.log('Instagram account webhook subscription result:', JSON.stringify(subRes.data));
+            this.dbg('Instagram account webhook subscription result:', JSON.stringify(subRes.data));
           } catch (subErr: any) {
-            console.log('Instagram account webhook subscription error:', JSON.stringify(subErr?.response?.data ?? subErr?.message));
+            this.dbg('Instagram account webhook subscription error:', JSON.stringify(subErr?.response?.data ?? subErr?.message));
           }
         }
       } catch (igErr: any) {
-        console.log('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
+        this.dbg('No Instagram for page:', page.name, igErr?.response?.data || igErr?.message);
       }
     }
 
-    console.log('Total connected:', connectedAccounts.length);
+    this.dbg('Total connected:', connectedAccounts.length);
 
     if (connectedAccounts.length === 0) {
       throw new BadRequestException('no_pages_found');

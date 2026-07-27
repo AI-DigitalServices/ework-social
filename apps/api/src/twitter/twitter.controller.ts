@@ -6,6 +6,7 @@ import type { Response } from 'express';
 import { TwitterPollerService } from './twitter-poller.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('twitter')
@@ -21,7 +22,7 @@ export class TwitterController {
    * Returns connected Twitter accounts for this workspace.
    */
   @Get('status')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   async getStatus(@Query('workspaceId') workspaceId: string) {
     const accounts = await this.prisma.socialAccount.findMany({
       where: { workspaceId, platform: 'TWITTER' },
@@ -42,7 +43,7 @@ export class TwitterController {
    * then redirects back to /twitter/callback.
    */
   @Get('auth-url')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getAuthUrl(
     @Query('workspaceId') workspaceId: string,
     @Request() req: any,
@@ -90,7 +91,7 @@ export class TwitterController {
    * The new OAuth flow via /auth-url + /callback supersedes this.
    */
   @Post('connect')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   async connect(
     @Body() body: { workspaceId: string; handle: string },
     @Request() req: any,
@@ -147,7 +148,7 @@ export class TwitterController {
    * Body: { workspaceId, accountId }
    */
   @Delete('disconnect')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   async disconnect(@Body() body: { workspaceId: string; accountId: string }) {
     await this.prisma.socialAccount.updateMany({
       where: {
@@ -165,7 +166,7 @@ export class TwitterController {
    * Manually trigger a poll for a workspace (for testing / on-demand refresh).
    */
   @Post('poll')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   async manualPoll(@Body() body: { workspaceId: string }) {
     await this.poller.triggerPollForWorkspace(body.workspaceId);
     return { success: true, message: 'Poll triggered' };

@@ -32,7 +32,7 @@ export class AuthService {
 
     if (existing) throw new ConflictException('Email already in use');
 
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashed = await bcrypt.hash(dto.password, 12);
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
@@ -280,7 +280,7 @@ export class AuthService {
     if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
       throw new BadRequestException('Reset link has expired. Please request a new one.');
     }
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({
       where: { id: user.id },
       data: { password: hashed, resetToken: null, resetTokenExpiry: null },
@@ -297,7 +297,7 @@ export class AuthService {
 
     if (newPassword.length < 8) throw new BadRequestException('New password must be at least 8 characters.');
 
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({ where: { id: userId }, data: { password: hashed } });
     return { message: 'Password updated successfully.' };
   }

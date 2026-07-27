@@ -11,9 +11,10 @@ import { UpdateStageDto } from './dto/update-stage.dto';
 import { AutomationService } from './automation.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
 @Controller('crm')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class CrmController {
   constructor(
     private crmService: CrmService,
@@ -45,18 +46,19 @@ export class CrmController {
   }
 
   @Get('clients/:id')
-  getClient(@Param('id') id: string) {
-    return this.crmService.getClient(id);
+  getClient(@Param('id') id: string, @Req() req: any) {
+    return this.crmService.getClient(id, req.user.sub);
   }
 
   @Get('clients/:id/activity')
   async getActivityLog(
     @Param('id') clientId: string,
     @Query('workspaceId') workspaceId: string,
+    @Req() req: any,
   ) {
     // 🔒 Growth+ required — activity history is a full-CRM feature
     await this.planGuard.checkCrmActivityLogAccess(workspaceId);
-    return this.crmService.getActivityLog(clientId);
+    return this.crmService.getActivityLog(clientId, req.user.sub);
   }
 
   @Post('clients')
@@ -72,32 +74,32 @@ export class CrmController {
   ) {
     // 🔒 Growth+ required — editing full client profile (deal value, source, company, etc.)
     await this.planGuard.checkCrmFullAccess(body.workspaceId);
-    return this.crmService.updateClient(id, { ...body, userId: req.user?.id });
+    return this.crmService.updateClient(id, { ...body, userId: req.user.sub });
   }
 
   @Patch('clients/:id/stage')
   updateStage(@Param('id') id: string, @Body() dto: UpdateStageDto, @Req() req: any) {
-    return this.crmService.updateStage(id, dto.stage, req.user?.id);
+    return this.crmService.updateStage(id, dto.stage, req.user.sub);
   }
 
   @Delete('clients/:id')
-  deleteClient(@Param('id') id: string) {
-    return this.crmService.deleteClient(id);
+  deleteClient(@Param('id') id: string, @Req() req: any) {
+    return this.crmService.deleteClient(id, req.user.sub);
   }
 
   @Post('notes')
   addNote(@Body() dto: CreateNoteDto, @Req() req: any) {
-    return this.crmService.addNote({ ...dto, userId: req.user?.id });
+    return this.crmService.addNote({ ...dto, userId: req.user.sub });
   }
 
   @Post('tasks')
   addTask(@Body() dto: CreateTaskDto, @Req() req: any) {
-    return this.crmService.addTask({ ...dto, userId: req.user?.id });
+    return this.crmService.addTask({ ...dto, userId: req.user.sub });
   }
 
   @Patch('tasks/:id/toggle')
   toggleTask(@Param('id') id: string, @Req() req: any) {
-    return this.crmService.toggleTask(id, req.user?.id);
+    return this.crmService.toggleTask(id, req.user.sub);
   }
 
   @Get('pipeline/:workspaceId')
