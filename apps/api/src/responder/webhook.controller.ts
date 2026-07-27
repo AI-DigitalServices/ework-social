@@ -43,11 +43,24 @@ export class WebhookController {
     @Headers('x-hub-signature-256') signature: string,
     @Res() res: Response,
   ) {
-    // Signature verification — BLOCK on mismatch. The x-hub-signature-256 is the
-    // only proof the payload genuinely came from Meta; an unverified event could
-    // be forged. Facebook and Instagram may sign with different app secrets, so
-    // accept the request if it validates against either.
-    const rawBody = (req as any).rawBody ?? Buffer.from(JSON.stringify(body));
+    // Confirm delivery + structure without logging any message content (PII-safe):
+    // object tells us page vs instagram; entryCount tells us events are present.
+    this.logger.log(
+      `Webhook POST received — object:${body?.object ?? 'unknown'} entries:${Array.isArray(body?.entry) ? body.entry.length : 0}`,
+    );
+
+    // Signature verification. Meta signs the raw body with an app secret and
+    // sends it as x-hub-signature-256. We verify against both the Facebook and
+    // Instagram app secrets (they can differ).
+    //
+    // Enforcement is gated behind WEBHOOK_ENFORCE_SIGNATURE. It defaults OFF so
+    // a verification/config issue can never silently drop real events (Engagement
+    // Hub depends on this). When a mismatch happens we log rich, non-sensitive
+    // diagnostics so the secret/rawBody problem can be pinpointed, THEN the flag
+    // can be turned on to hard-block. This restores the pre-hardening behaviour
+    // while keeping a clear path to strict verification.
+    const hasRaw = !!(req as any).rawBody;
+    const rawBody: Buffer = (req as any).rawBody ?? Buffer.from(JSON.stringify(body));
     const secrets = [
       this.config.get('META_APP_SECRET'),
       this.config.get('INSTAGRAM_APP_SECRET'),
@@ -60,9 +73,18 @@ export class WebhookController {
       return a.length === b.length && timingSafeEqual(a, b);
     });
 
+    const enforce = this.config.get('WEBHOOK_ENFORCE_SIGNATURE') === 'true';
+
     if (!valid) {
-      this.logger.warn('Webhook signature verification failed — rejecting');
-      return res.status(401).send('invalid signature');
+      // Diagnostics only — no secrets, no message content. `rawBodyCaptured:false`
+      // means NestJS didn't buffer the raw body (verification can't work); if it's
+      // true and this still fails, the configured app secret is wrong.
+      this.logger.warn(
+        `Webhook signature mismatch — rawBodyCaptured:${hasRaw} rawBodyLen:${rawBody.length} ` +
+        `sigHeaderPresent:${!!signature} secretsConfigured:${secrets.length} enforce:${enforce}`,
+      );
+      if (enforce) return res.status(401).send('invalid signature');
+      // Not enforcing → fall through and process, so legitimate events aren't lost.
     }
 
     // Respond immediately — process async (never log the raw payload body: it can
