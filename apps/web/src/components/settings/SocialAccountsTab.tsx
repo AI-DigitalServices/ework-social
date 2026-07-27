@@ -6,6 +6,7 @@ import { CheckCircle, Plus, Trash2, ExternalLink, RefreshCw, AlertCircle } from 
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
+import { ConfirmDialog } from '@/components/patterns';
 
 const platforms = [
   { id: 'facebook',  name: 'Facebook',          description: 'Pages, posts, analytics & auto-responder',        phase: 1, apiPlatform: 'FACEBOOK'  },
@@ -149,6 +150,7 @@ export default function SocialAccountsTab() {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [pendingDisconnect, setPendingDisconnect] = useState<{ id: string; name: string } | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBlueskyModal, setShowBlueskyModal] = useState(false);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
@@ -260,6 +262,7 @@ export default function SocialAccountsTab() {
       showToast('error', 'Failed to disconnect. Try again.');
     } finally {
       setDisconnecting(null);
+      setPendingDisconnect(null);
     }
   };
 
@@ -331,7 +334,7 @@ export default function SocialAccountsTab() {
                       {isConnected ? (
                         <>
                           <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition"><ExternalLink className="w-4 h-4" /></button>
-                          <button onClick={() => handleDisconnect(account.id, account.accountName)} disabled={isDisconnecting} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-50">
+                          <button onClick={() => setPendingDisconnect({ id: account.id, name: account.accountName })} disabled={isDisconnecting} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-50">
                             {isDisconnecting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                           </button>
                         </>
@@ -386,6 +389,21 @@ export default function SocialAccountsTab() {
           onClose={() => setShowTwitterModal(false)}
         />
       )}
+
+      {/* Disconnect confirmation — disconnecting stops publishing and needs re-auth */}
+      <ConfirmDialog
+        open={!!pendingDisconnect}
+        onOpenChange={(o) => { if (!o) setPendingDisconnect(null); }}
+        title={pendingDisconnect ? `Disconnect ${pendingDisconnect.name}?` : 'Disconnect account?'}
+        description="Scheduled posts to this account will stop publishing until you reconnect."
+        confirmLabel="Disconnect"
+        cancelLabel="Keep connected"
+        destructive
+        isLoading={!!disconnecting}
+        onConfirm={() => {
+          if (pendingDisconnect) handleDisconnect(pendingDisconnect.id, pendingDisconnect.name);
+        }}
+      />
     </div>
   );
 }

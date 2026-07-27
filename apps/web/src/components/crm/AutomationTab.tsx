@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { Plus, Trash2, Mail, ToggleLeft, ToggleRight, Zap, Edit2, X, Save } from 'lucide-react';
 import api from '@/lib/api';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { ConfirmDialog } from '@/components/patterns';
 
 const STAGES = [
   { value: 'LEAD', label: 'Lead', color: 'bg-slate-100 text-slate-600' },
@@ -42,6 +43,8 @@ export default function AutomationTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingRule, setDeletingRule] = useState(false);
   const [form, setForm] = useState({
     name: '',
     triggerStage: 'CONTACTED',
@@ -97,10 +100,13 @@ export default function AutomationTab() {
   };
 
   const handleDelete = async (id: string) => {
+    setDeletingRule(true);
     try {
       await api.delete(`/crm/automations/${id}`);
       setRules(prev => prev.filter(r => r.id !== id));
+      setPendingDelete(null);
     } catch (err) { console.error(err); }
+    finally { setDeletingRule(false); }
   };
 
   const handleEdit = (rule: any) => {
@@ -257,7 +263,7 @@ export default function AutomationTab() {
                     <button onClick={() => handleEdit(rule)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
                       <Edit2 className="w-4 h-4 text-slate-400" />
                     </button>
-                    <button onClick={() => handleDelete(rule.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                    <button onClick={() => setPendingDelete({ id: rule.id, name: rule.name })} className="p-1.5 hover:bg-red-50 rounded-lg transition">
                       <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-500" />
                     </button>
                   </div>
@@ -267,6 +273,19 @@ export default function AutomationTab() {
           })}
         </div>
       )}
+
+      {/* Delete automation confirmation */}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        title={pendingDelete ? `Delete "${pendingDelete.name}"?` : 'Delete automation?'}
+        description="This automation rule will stop running and can't be recovered."
+        confirmLabel="Delete rule"
+        cancelLabel="Keep it"
+        destructive
+        isLoading={deletingRule}
+        onConfirm={() => { if (pendingDelete) handleDelete(pendingDelete.id); }}
+      />
     </div>
   );
 }
