@@ -185,7 +185,7 @@ export default function DashboardPage() {
             <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>
               Welcome back, {user?.name?.split(' ')[0]} 👋
             </h2>
-            <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.85)' }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#cbd5e1' }}>
               Here&apos;s what&apos;s happening with <span style={{ color: '#93c5fd', fontWeight: 600 }}>{workspace?.name}</span> today.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function DashboardPage() {
                   <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>
                     {loading ? '—' : (stats?.[card.key] ?? 0)}
                   </p>
-                  <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {card.label}
                   </p>
                 </div>

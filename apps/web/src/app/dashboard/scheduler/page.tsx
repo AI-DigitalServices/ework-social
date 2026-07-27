@@ -124,7 +124,7 @@ export default function SchedulerPage() {
               </div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>Post Scheduler</h1>
             </div>
-            <p style={{ fontSize: 13, color: 'rgba(148,163,184,0.9)', margin: 0 }}>
+            <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0 }}>
               Create, schedule and manage content across all your connected accounts
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function SchedulerPage() {
         {/* Connected accounts bar */}
         {accounts.length > 0 && (
           <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(148,163,184,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
               Posting to:
             </span>
             {accounts.map(acc => (
@@ -270,7 +270,7 @@ export default function SchedulerPage() {
                   <Icon size={14} color={style.accent} />
                 </div>
                 <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>{value}</p>
-                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
               </div>
             </div>
           );
@@ -342,7 +342,7 @@ export default function SchedulerPage() {
               <FileText size={26} color="#a5b4fc" />
             </div>
             <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>No posts here yet</p>
-            <p style={{ margin: '0 0 24px', fontSize: 13, color: 'rgba(148,163,184,0.7)' }}>
+            <p style={{ margin: '0 0 24px', fontSize: 13, color: '#cbd5e1' }}>
               {accounts.length === 0 ? 'Connect a social account first to start scheduling.' : 'Create your first post to fill up this calendar.'}
             </p>
             {accounts.length > 0 && (
