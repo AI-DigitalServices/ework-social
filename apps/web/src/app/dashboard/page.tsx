@@ -51,7 +51,7 @@ function WelcomeModal({ open, name, onClose }: { open: boolean; name: string; on
     >
       <div style={{
         background: '#fff', borderRadius: 24, padding: '44px 40px',
-        width: '100%', textAlign: 'center',
+        width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', textAlign: 'center',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)', position: 'relative',
       }}>
         <button onClick={onClose} aria-label="Close welcome" style={{ position: 'absolute', top: 16, right: 16, background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
