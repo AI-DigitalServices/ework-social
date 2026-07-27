@@ -15,11 +15,12 @@ import type { NextConfig } from "next";
 // restricts where data can be sent — stopping exfiltration to attacker domains.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us.i.posthog.com https://us-assets.i.posthog.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us.i.posthog.com https://us-assets.i.posthog.com https://www.clarity.ms https://*.clarity.ms",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob: https:",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "connect-src 'self' https://api.eworksocial.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+  "connect-src 'self' https://api.eworksocial.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.clarity.ms https://c.clarity.ms https://k.clarity.ms",
   "frame-src 'self' https://js.paystack.co https://checkout.paystack.com",
   "object-src 'none'",
   "base-uri 'self'",
