@@ -14,6 +14,12 @@ export interface DialogProps {
   footer?: ReactNode;
   /** Hide the default close (X) button, e.g. for a forced choice. */
   hideClose?: boolean;
+  /**
+   * Render only the accessible shell (focus trap, Esc, backdrop, aria-label
+   * from `title`) with no default header/padding — for rich custom modals that
+   * supply their own layout. `title` is still used as the accessible name.
+   */
+  bare?: boolean;
   className?: string;
 }
 
@@ -30,6 +36,7 @@ export function Dialog({
   children,
   footer,
   hideClose,
+  bare,
   className,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -40,6 +47,26 @@ export function Dialog({
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
   }, [open]);
+
+  if (bare) {
+    return (
+      <dialog
+        ref={ref}
+        aria-label={title}
+        onClose={() => onOpenChange(false)}
+        onClick={(e) => {
+          if (e.target === ref.current) onOpenChange(false);
+        }}
+        className={cn(
+          'm-auto w-full max-w-lg rounded-[var(--radius-card)] bg-transparent p-0',
+          'backdrop:bg-black/60',
+          className,
+        )}
+      >
+        {children}
+      </dialog>
+    );
+  }
 
   return (
     <dialog

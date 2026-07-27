@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import PlatformIcon from '@/components/ui/PlatformIcon';
+import { Dialog } from '@/components/ui';
 
 /* ─── Stat card gradient config ──────────────────────────────── */
 const STAT_CARD = [
@@ -38,15 +39,22 @@ const STATUS_META: Record<string, { icon: any; gradient: string; textColor: stri
 
 
 /* ─── Welcome modal ──────────────────────────────────────────── */
-function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) {
+// Rendered inside the accessible <Dialog bare> shell: keeps the original
+// visual design but gains focus-trap, Esc-to-close, backdrop and aria (WCAG).
+function WelcomeModal({ open, name, onClose }: { open: boolean; name: string; onClose: () => void }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <Dialog
+      bare
+      open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
+      title="Welcome to eWork Social"
+    >
       <div style={{
         background: '#fff', borderRadius: 24, padding: '44px 40px',
-        maxWidth: 520, width: '100%', textAlign: 'center',
+        width: '100%', textAlign: 'center',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)', position: 'relative',
       }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+        <button onClick={onClose} aria-label="Close welcome" style={{ position: 'absolute', top: 16, right: 16, background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
           <X size={16} />
         </button>
         <div style={{ fontSize: 52, marginBottom: 12 }}>👋</div>
@@ -75,7 +83,7 @@ function WelcomeModal({ name, onClose }: { name: string; onClose: () => void }) 
         </button>
         <p style={{ color: '#cbd5e1', fontSize: 12, marginTop: 12 }}>You have a 7-day free trial · No credit card needed</p>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -128,8 +136,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      {showWelcome && user && (
-        <WelcomeModal name={user.name?.split(' ')[0] || 'there'} onClose={() => setShowWelcome(false)} />
+      {user && (
+        <WelcomeModal open={showWelcome} name={user.name?.split(' ')[0] || 'there'} onClose={() => setShowWelcome(false)} />
       )}
 
       {/* ── Inactive account banners ──────────────────────────────── */}

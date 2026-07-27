@@ -406,10 +406,10 @@ export default function LandingPage() {
               { platform: 'LINKEDIN',  name: 'LinkedIn',  status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'TIKTOK',   name: 'TikTok',    status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'BLUESKY',  name: 'Bluesky',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
-              { platform: 'YOUTUBE',  name: 'YouTube',   status: 'Beta',        textColor: '#F59E0B', bgColor: '#451A03' },
+              { platform: 'YOUTUBE',  name: 'YouTube',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'TWITTER',  name: 'Twitter/X', status: 'Growth+',     textColor: '#3B82F6', bgColor: '#1E3A5F' },
-              { platform: 'FACEBOOK', name: 'Facebook',  status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
-              { platform: 'INSTAGRAM',name: 'Instagram', status: 'Pending',     textColor: '#F97316', bgColor: '#431407' },
+              { platform: 'FACEBOOK', name: 'Facebook',  status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
+              { platform: 'INSTAGRAM',name: 'Instagram', status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'PINTEREST',name: 'Pinterest', status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
               { platform: 'WHATSAPP', name: 'WhatsApp',  status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
             ].map((p, i) => (
@@ -593,7 +593,7 @@ export default function LandingPage() {
             {[
               {
                 q: "What social media platforms does eWork Social support?",
-                a: "LinkedIn, TikTok, and Bluesky are fully live. YouTube is in beta. Facebook and Instagram are pending Meta app review — coming very soon. Twitter/X is available on Growth plan and above.",
+                a: "LinkedIn, TikTok, Bluesky, YouTube, Facebook, and Instagram are all fully live. Twitter/X is available on Growth plan and above. Pinterest and WhatsApp are coming soon.",
               },
               {
                 q: "Can I manage multiple clients from one account?",
