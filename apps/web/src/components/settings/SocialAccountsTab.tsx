@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import BlueskyConnectModal from '@/components/settings/BlueskyConnectModal';
 import { ConfirmDialog } from '@/components/patterns';
+import { Dialog } from '@/components/ui';
 
 const platforms = [
   { id: 'facebook',  name: 'Facebook',          description: 'Pages, posts, analytics & auto-responder',        phase: 1, apiPlatform: 'FACEBOOK'  },
@@ -82,7 +83,7 @@ function TwitterConnectModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+    <Dialog bare open onOpenChange={(o) => { if (!o) onClose(); }} title="Connect Twitter / X">
       <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 420, boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
@@ -141,7 +142,7 @@ function TwitterConnectModal({ onClose }: { onClose: () => void }) {
           You'll be redirected to Twitter to approve access, then brought back here automatically.
         </p>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

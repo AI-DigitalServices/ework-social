@@ -58,8 +58,10 @@ export function Dialog({
           if (e.target === ref.current) onOpenChange(false);
         }}
         className={cn(
-          'm-auto w-full max-w-lg rounded-[var(--radius-card)] bg-transparent p-0',
-          'backdrop:bg-black/60',
+          // Full-viewport transparent shell that centers the child panel — the
+          // panel controls its own width/height, so any modal size fits.
+          'fixed inset-0 m-0 h-screen w-screen max-w-none max-h-none bg-transparent p-4',
+          'flex items-center justify-center backdrop:bg-black/60',
           className,
         )}
       >

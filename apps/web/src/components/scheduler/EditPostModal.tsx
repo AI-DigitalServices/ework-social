@@ -7,6 +7,7 @@ import { updatePostAction, createPostAction } from '@/actions/scheduler.actions'
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { uploadMedia } from '@/lib/supabase';
+import { Dialog } from '@/components/ui';
 
 const platformLimits: Record<string, { limit: number }> = {
   TWITTER:   { limit: 280 },
@@ -180,7 +181,8 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <>
+    <Dialog bare open onOpenChange={(o) => { if (!o) onClose(); }} title="Edit post">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '92vh' }}>
 
         {/* ── LEFT: Editor ───────────────────────────────────────────────────── */}
@@ -449,6 +451,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           )}
         </div>
       </div>
+    </Dialog>
 
       {showAiDrawer && (
         <AiCaptionDrawer
@@ -458,6 +461,6 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           onClose={() => setShowAiDrawer(false)}
         />
       )}
-    </div>
+    </>
   );
 }

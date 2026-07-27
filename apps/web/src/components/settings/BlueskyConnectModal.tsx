@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { Dialog } from '@/components/ui';
 
 interface Props {
   onClose: () => void;
@@ -38,7 +39,7 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+    <Dialog bare open onOpenChange={(o) => { if (!o) onClose(); }} title="Connect Bluesky">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100">
@@ -143,6 +144,6 @@ export default function BlueskyConnectModal({ onClose, onConnected }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

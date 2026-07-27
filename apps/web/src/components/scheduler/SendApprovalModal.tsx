@@ -5,6 +5,7 @@ import { X, Send, User, Mail } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
+import { Dialog } from '@/components/ui';
 
 interface Props {
   post: any;
@@ -68,7 +69,7 @@ export default function SendApprovalModal({ post, onClose, onSent }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <Dialog bare open onOpenChange={(o) => { if (!o) onClose(); }} title="Send for Client Approval">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
 
         {/* Header */}
@@ -223,6 +224,6 @@ export default function SendApprovalModal({ post, onClose, onSent }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
