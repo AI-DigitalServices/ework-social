@@ -2,7 +2,8 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
-  withCredentials: false,
+  // Send/receive the HttpOnly refresh-token cookie on cross-origin API calls
+  withCredentials: true,
 });
 
 // Attach access token to every request
@@ -106,7 +107,8 @@ api.interceptors.response.use(
       try {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/refresh`,
-          { refreshToken },
+          { refreshToken }, // body fallback; the HttpOnly cookie is preferred server-side
+          { withCredentials: true },
         );
 
         const newAccessToken = response.data.accessToken;

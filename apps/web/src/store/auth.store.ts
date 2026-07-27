@@ -52,6 +52,20 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, isVerified: true } : null,
         })),
       logout: () => {
+        // Best-effort server-side logout: clears the HttpOnly refresh cookie and
+        // revokes all refresh tokens for this user. Fire-and-forget so the UI
+        // logs out instantly even if the network call fails.
+        try {
+          const token = (useAuthStore.getState() as AuthState).token;
+          const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+          fetch(`${base}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }).catch(() => {});
+        } catch {
+          // ignore — always proceed to clear local state
+        }
         document.cookie = 'auth-token=; path=/; max-age=0';
         set({ user: null, workspace: null, workspaces: [], token: null, refreshToken: null });
       },

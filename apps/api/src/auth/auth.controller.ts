@@ -1,12 +1,14 @@
-import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request, Res } from '@nestjs/common';
+import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
-import type { Response } from 'express';
+import type { Response, Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './jwt.guard';
+
+const REFRESH_COOKIE = 'refresh_token';
 
 @Controller('auth')
 export class AuthController {
@@ -15,24 +17,79 @@ export class AuthController {
     private config: ConfigService,
   ) {}
 
+  /**
+   * Store the refresh token in an HttpOnly, Secure cookie so it can't be read
+   * by JavaScript (caps the blast radius of any XSS). Scoped to the parent
+   * domain so app.eworksocial.com and api.eworksocial.com share it.
+   */
+  private setRefreshCookie(res: Response, refreshToken: string) {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie(REFRESH_COOKIE, refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      domain: isProd ? '.eworksocial.com' : undefined,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+  }
+
+  private clearRefreshCookie(res: Response) {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie(REFRESH_COOKIE, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      domain: isProd ? '.eworksocial.com' : undefined,
+      path: '/',
+    });
+  }
+
+  /** Read the refresh token from the HttpOnly cookie (no cookie-parser needed). */
+  private readRefreshCookie(req: ExpressRequest): string | null {
+    const header = req.headers?.cookie;
+    if (!header) return null;
+    for (const part of header.split(';')) {
+      const [name, ...rest] = part.trim().split('=');
+      if (name === REFRESH_COOKIE) return decodeURIComponent(rest.join('='));
+    }
+    return null;
+  }
+
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(dto);
+    if (result?.refreshToken) this.setRefreshCookie(res, result.refreshToken);
+    return result;
   }
 
   @Post('login')
   @HttpCode(200)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(dto);
+    if (result?.refreshToken) this.setRefreshCookie(res, result.refreshToken);
+    return result;
   }
 
   @Post('refresh')
   @HttpCode(200)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  refresh(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshAccessToken(body.refreshToken);
+  refresh(@Body() body: { refreshToken?: string }, @Req() req: ExpressRequest) {
+    // Prefer the HttpOnly cookie; fall back to the request body for older
+    // clients that haven't migrated to the cookie flow yet.
+    const token = this.readRefreshCookie(req) || body?.refreshToken;
+    return this.authService.refreshAccessToken(token as string);
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  @UseGuards(JwtGuard)
+  async logout(@Request() req: any, @Res({ passthrough: true }) res: Response) {
+    this.clearRefreshCookie(res);
+    // Revoke every refresh token for this user (logout everywhere)
+    return this.authService.revokeAllSessions(req.user.sub);
   }
 
   @Get('me')
@@ -93,6 +150,10 @@ export class AuthController {
   async googleCallback(@Request() req: any, @Res() res: Response) {
     const user = req.user;
     const tokens = await this.authService.generateTokensPublic(user.id, user.email);
+
+    // Also set the refresh token as an HttpOnly cookie (backward-compatible —
+    // it's still passed in the URL for the current frontend callback handler)
+    this.setRefreshCookie(res, tokens.refreshToken);
 
     // Find primary workspace
     const workspace = await this.authService.getPrimaryWorkspace(user.id);

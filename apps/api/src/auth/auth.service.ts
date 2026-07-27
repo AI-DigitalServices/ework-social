@@ -283,7 +283,13 @@ export class AuthService {
     const hashed = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { password: hashed, resetToken: null, resetTokenExpiry: null },
+      // Bump tokenVersion so any sessions opened with the old password are revoked
+      data: {
+        password: hashed,
+        resetToken: null,
+        resetTokenExpiry: null,
+        tokenVersion: { increment: 1 },
+      },
     });
     return { message: 'Password reset successfully. You can now log in.' };
   }
@@ -323,11 +329,26 @@ export class AuthService {
     return { message: 'Account deleted successfully' };
   }
 
-  async generateTokens(userId: string, email: string) {
+  async generateTokens(userId: string, email: string, tokenVersion?: number) {
+    // The refresh token carries the user's current tokenVersion. Bumping the
+    // stored tokenVersion (on logout, password change, or reset) instantly
+    // invalidates every refresh token issued before the bump.
+    let version = tokenVersion;
+    if (version === undefined) {
+      const u = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { tokenVersion: true },
+      });
+      version = u?.tokenVersion ?? 0;
+    }
+
     const payload = { sub: userId, email };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, { expiresIn: '15m' }),
-      this.jwt.signAsync({ ...payload, tokenType: 'refresh' }, { expiresIn: '30d' }),
+      this.jwt.signAsync(
+        { ...payload, tokenType: 'refresh', tokenVersion: version },
+        { expiresIn: '30d' },
+      ),
     ]);
     return { accessToken, refreshToken };
   }
@@ -354,6 +375,14 @@ export class AuthService {
         where: { id: payload.sub },
       });
       if (!user) throw new UnauthorizedException('User not found');
+
+      // Reject tokens issued before the user's tokenVersion was bumped
+      // (logout-everywhere, password change/reset). Older tokens carrying
+      // no tokenVersion are treated as version 0.
+      if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
+        throw new UnauthorizedException('Refresh token has been revoked');
+      }
+
       const newAccessToken = await this.jwt.signAsync(
         { sub: user.id, email: user.email },
         { expiresIn: '15m' },
@@ -362,5 +391,17 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+  }
+
+  /**
+   * Invalidate every refresh token for a user by bumping their tokenVersion.
+   * Used for logout-everywhere and after credential changes.
+   */
+  async revokeAllSessions(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    return { message: 'All sessions revoked' };
   }
 }
