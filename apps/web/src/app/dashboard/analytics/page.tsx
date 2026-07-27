@@ -64,7 +64,7 @@ const darkTooltip = {
     fontSize: 12,
     boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
   },
-  labelStyle: { color: '#94a3b8', marginBottom: 4 },
+  labelStyle: { color: '#cbd5e1', marginBottom: 4 },
   itemStyle: { color: '#e2e8f0' },
 };
 
@@ -100,7 +100,7 @@ export default function AnalyticsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,0.3)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 14px' }} />
-          <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading analytics…</p>
+          <p style={{ color: '#cbd5e1', fontSize: 13 }}>Loading analytics…</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Analytics</h2>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(148,163,184,0.85)' }}>Track performance across all your platforms and clients</p>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#cbd5e1' }}>Track performance across all your platforms and clients</p>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
                   <Icon size={14} color={card.accent} />
                 </div>
                 <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>{stats?.[card.key] ?? 0}</p>
-                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
+                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
               </div>
             </div>
           );
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
                   <Icon size={14} color={card.accent} />
                 </div>
                 <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>{stats?.[card.key] ?? 0}</p>
-                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
+                <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
               </div>
             </div>
           );
@@ -192,7 +192,7 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         ) : (
           <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: 13 }}>No post activity yet — start scheduling posts to see data here.</p>
+            <p style={{ color: '#cbd5e1', fontSize: 13 }}>No post activity yet — start scheduling posts to see data here.</p>
           </div>
         )}
       </div>
@@ -216,21 +216,21 @@ export default function AnalyticsPage() {
                     ))}
                   </Pie>
                   <Tooltip {...darkTooltip} />
-                  <Legend formatter={(v) => <span style={{ fontSize: 11, color: 'rgba(148,163,184,0.85)' }}>{v}</span>} />
+                  <Legend formatter={(v) => <span style={{ fontSize: 11, color: '#cbd5e1' }}>{v}</span>} />
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 12 }}>
                 {pipeline.map(p => (
                   <div key={p.stage} style={{ textAlign: 'center', padding: '8px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: 10 }}>
                     <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: PIPELINE_COLORS[p.stage] || '#f1f5f9' }}>{p.count}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 10, fontWeight: 600, color: 'rgba(148,163,184,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.stage}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 10, fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.stage}</p>
                   </div>
                 ))}
               </div>
             </>
           ) : (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: 13, textAlign: 'center' }}>No CRM data yet — add contacts to see your pipeline.</p>
+              <p style={{ color: '#cbd5e1', fontSize: 13, textAlign: 'center' }}>No CRM data yet — add contacts to see your pipeline.</p>
             </div>
           )}
         </div>
@@ -257,7 +257,7 @@ export default function AnalyticsPage() {
             </ResponsiveContainer>
           ) : (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: 13, textAlign: 'center' }}>No platform data yet — schedule posts to see breakdown.</p>
+              <p style={{ color: '#cbd5e1', fontSize: 13, textAlign: 'center' }}>No platform data yet — schedule posts to see breakdown.</p>
             </div>
           )}
         </div>
@@ -271,7 +271,7 @@ export default function AnalyticsPage() {
         </div>
         {recentPosts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0' }}>
-            <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: 13 }}>No posts yet — start creating content from the Scheduler.</p>
+            <p style={{ color: '#cbd5e1', fontSize: 13 }}>No posts yet — start creating content from the Scheduler.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -290,7 +290,7 @@ export default function AnalyticsPage() {
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {post.content}
                     </p>
-                    <p style={{ margin: '3px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.65)' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: 11, color: '#cbd5e1' }}>
                       {post.socialAccount?.accountName} · {new Date(post.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>

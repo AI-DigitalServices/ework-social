@@ -107,7 +107,7 @@ export default function ApprovalsPage() {
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Client Approvals</h2>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(148,163,184,0.85)' }}>Track content approval status across all your clients</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#cbd5e1' }}>Track content approval status across all your clients</p>
             </div>
           </div>
           <button
@@ -115,7 +115,7 @@ export default function ApprovalsPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
               background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 12, color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              borderRadius: 12, color: '#cbd5e1', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.color = '#e2e8f0'; }}
@@ -167,7 +167,7 @@ export default function ApprovalsPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid rgba(16,185,129,0.3)', borderTop: '3px solid #10b981', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 14px' }} />
-            <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading approvals…</p>
+            <p style={{ color: '#cbd5e1', fontSize: 13 }}>Loading approvals…</p>
           </div>
         </div>
       ) : filtered.length === 0 ? (
@@ -181,7 +181,7 @@ export default function ApprovalsPage() {
             <Send size={26} color="#fff" />
           </div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#f1f5f9' }}>No approvals yet</h3>
-          <p style={{ margin: '10px auto 0', fontSize: 13, color: 'rgba(148,163,184,0.7)', maxWidth: 340, lineHeight: 1.6 }}>
+          <p style={{ margin: '10px auto 0', fontSize: 13, color: '#cbd5e1', maxWidth: 340, lineHeight: 1.6 }}>
             Send posts for client approval from the Scheduler. Clients receive an email with a review link — no login needed.
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function ApprovalsPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>{approval.clientName}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(148,163,184,0.6)' }}>{approval.clientEmail}</span>
+                      <span style={{ fontSize: 11, color: '#cbd5e1' }}>{approval.clientEmail}</span>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 5,
                         padding: '4px 10px', borderRadius: 99,
@@ -228,7 +228,7 @@ export default function ApprovalsPage() {
                       </span>
                     </div>
 
-                    <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.75)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    <p style={{ margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {approval.post?.content?.slice(0, 160)}
                     </p>
 
@@ -244,7 +244,7 @@ export default function ApprovalsPage() {
                       </div>
                     )}
 
-                    <p style={{ margin: '10px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.5)' }}>
+                    <p style={{ margin: '10px 0 0', fontSize: 11, color: '#cbd5e1' }}>
                       Sent {formatDate(approval.createdAt)}
                       {approval.respondedAt && (
                         <span style={{ color: sMeta.textColor }}> · Responded {formatDate(approval.respondedAt)}</span>
