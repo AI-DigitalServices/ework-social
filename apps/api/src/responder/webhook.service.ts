@@ -319,6 +319,24 @@ export class WebhookService {
 
       const externalId = messageData.message?.mid || senderId;
 
+      // Best-effort: fetch the sender's Instagram profile (name + picture) so the
+      // inbox shows their real photo instead of a placeholder. Requires
+      // instagram_manage_messages (now approved). Never blocks saving the message.
+      let senderName = messageData.sender?.username || senderId;
+      let senderAvatar: string | undefined;
+      if (senderId && account.accessToken) {
+        try {
+          const token = this.decryptToken(account.accessToken);
+          const profileRes = await axios.get(`https://graph.facebook.com/v19.0/${senderId}`, {
+            params: { fields: 'name,username,profile_pic', access_token: token },
+          });
+          senderName = profileRes.data?.username || profileRes.data?.name || senderName;
+          senderAvatar = profileRes.data?.profile_pic;
+        } catch {
+          // enrichment failed — keep fallback name, no avatar
+        }
+      }
+
       // Always save to inbox — every DM regardless of auto-responder rule match
       await this.saveInboxMessage({
         workspaceId: account.workspaceId,
@@ -326,7 +344,8 @@ export class WebhookService {
         type: InboxMessageType.DM,
         externalId,
         senderId,
-        senderName: messageData.sender?.username || senderId,
+        senderName,
+        senderAvatar,
         content: messageText,
         socialAccountId: account.id,
       });

@@ -243,20 +243,30 @@ function PlatformBadge({ platform }: { platform: string }) {
 
 /* ─────────────── avatar ─────────────────────────────────────── */
 
-function Avatar({ name, platform, size = 40 }: { name?: string; platform: string; size?: number }) {
+function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platform: string; size?: number; avatarUrl?: string | null }) {
   const p = PLATFORM[platform];
   const initial = (name || '?').charAt(0).toUpperCase();
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!avatarUrl && !imgError;
   return (
     <div style={{
       width: size, height: size, borderRadius: size / 2,
-      background: p?.gradient || 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+      background: showImg ? '#e2e8f0' : (p?.gradient || 'linear-gradient(135deg, #6366F1, #8B5CF6)'),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontSize: size * 0.35, fontWeight: 800,
       flexShrink: 0, boxShadow: `0 4px 12px ${p?.glow || 'rgba(99,102,241,0.3)'}`,
-      position: 'relative',
+      position: 'relative', overflow: 'visible',
     }}>
-      {initial}
-      {/* Platform dot */}
+      {showImg ? (
+        <img
+          src={avatarUrl!}
+          alt={name || 'Profile'}
+          referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', borderRadius: size / 2, objectFit: 'cover' }}
+        />
+      ) : initial}
+      {/* Platform dot — small badge identifying which channel the message came from */}
       <div style={{
         position: 'absolute', bottom: 0, right: 0,
         width: size * 0.3, height: size * 0.3, borderRadius: '50%',
@@ -315,7 +325,7 @@ function MessageCard({ msg, isSelected, onClick }: { msg: any; isSelected: boole
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ position: 'relative' }}>
-          <Avatar name={msg.senderName} platform={msg.platform} size={40} />
+          <Avatar name={msg.senderName} platform={msg.platform} size={40} avatarUrl={msg.senderAvatar} />
           {unread && (
             <div style={{
               position: 'absolute', top: -2, right: -2,
@@ -1193,7 +1203,7 @@ export default function InboxPage() {
                   {/* Sender row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <Avatar name={selected.senderName} platform={selected.platform} size={44} />
+                      <Avatar name={selected.senderName} platform={selected.platform} size={44} avatarUrl={selected.senderAvatar} />
                       <div>
                         <p style={{ fontWeight: 800, fontSize: 15, color: '#1E293B', marginBottom: 4 }}>{selected.senderName || 'Unknown'}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -1295,7 +1305,7 @@ export default function InboxPage() {
                 <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, background: '#FAFBFF' }}>
                   {/* Original message */}
                   <div style={{ display: 'flex', gap: 12, animation: 'fadeIn 0.2s ease' }}>
-                    <Avatar name={selected.senderName} platform={selected.platform} size={36} />
+                    <Avatar name={selected.senderName} platform={selected.platform} size={36} avatarUrl={selected.senderAvatar} />
                     <div style={{ maxWidth: '70%' }}>
                       <div style={{
                         background: '#fff', border: '1px solid #EEF2FF',
