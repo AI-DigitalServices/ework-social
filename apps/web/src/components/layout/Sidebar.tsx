@@ -85,6 +85,14 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
   // Close sidebar on route change (mobile)
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
+  // Close the mobile drawer on Escape (keyboard accessibility)
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
   // Close workspace dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -153,18 +161,24 @@ export default function Sidebar({ onToggle }: { onToggle?: (open: boolean) => vo
       {/* Mobile hamburger */}
       <button
         onClick={() => toggle(!isOpen)}
-        className="fixed top-4 left-4 z-[60] p-2 bg-slate-900 rounded-lg text-white lg:hidden"
+        aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        aria-expanded={isOpen}
+        aria-controls="mobile-sidebar"
+        className="fixed top-4 left-4 z-[60] p-2 bg-slate-900 rounded-lg text-white lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        {isOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
       </button>
 
       {/* Mobile overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[45] lg:hidden" onClick={() => toggle(false)} />
+        <div className="fixed inset-0 bg-black/50 z-[45] lg:hidden" aria-hidden="true" onClick={() => toggle(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`
+      <aside
+        id="mobile-sidebar"
+        aria-label="Main navigation"
+        className={`
         fixed left-0 top-0 h-screen w-64 bg-slate-900 flex flex-col z-50
         transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
