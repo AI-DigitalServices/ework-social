@@ -530,7 +530,7 @@ export default function LandingPage() {
               What agencies are saying
             </h2>
             <p style={{ color: '#6B8299', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
-              Real feedback from our beta users and early community members.
+              Real feedback from our early users and founding community members.
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
@@ -575,7 +575,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p style={{ textAlign: 'center', color: '#2A3A52', fontSize: 13, marginTop: 40 }}>
-            🔒 Beta users — names anonymized for privacy
+            🔒 Early users — names anonymized for privacy
           </p>
         </div>
       </section>
