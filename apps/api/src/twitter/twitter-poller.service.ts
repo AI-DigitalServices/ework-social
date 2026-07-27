@@ -323,8 +323,15 @@ export class TwitterPollerService {
 
     // Find the most recent mention we already have — use as since_id
     // Twitter snowflake IDs are chronologically ordered, so newest externalId = highest ID
+    //
+    // NOTE: `platform` is intentionally omitted from the WHERE. Prisma binds an
+    // enum value as text, which PostgreSQL rejects against the native enum
+    // column ("operator does not exist: text = Platform"). socialAccountId
+    // already scopes this to the specific Twitter account, so the filter is
+    // redundant — same result, no enum comparison. (Same workaround as
+    // WebhookService.saveInboxMessage.)
     const lastMessage = await this.prisma.inboxMessage.findFirst({
-      where: { workspaceId, platform: 'TWITTER', socialAccountId: account.id },
+      where: { workspaceId, socialAccountId: account.id },
       orderBy: { createdAt: 'desc' },
       select: { externalId: true },
     });
@@ -385,29 +392,33 @@ export class TwitterPollerService {
       const author = users.find((u: any) => u.id === tweet.author_id);
 
       try {
-        await this.prisma.inboxMessage.upsert({
-          where: {
-            platform_externalId: {
-              platform: 'TWITTER',
-              externalId: tweet.id,
-            },
-          },
-          create: {
-            workspaceId,
-            platform: 'TWITTER',
-            type: 'COMMENT',
-            externalId: tweet.id,
-            senderId: tweet.author_id,
-            senderName: author ? `@${author.username}` : `@user_${tweet.author_id}`,
-            senderAvatar: author?.profile_image_url || null,
-            content: tweet.text,
-            postContent: `Mentioned @${handle} on X / Twitter`,
-            isRead: false,
-            isResolved: false,
-            socialAccountId: account.id,
-          },
-          update: {}, // already exists — no-op
+        // Avoid the `platform_externalId` compound unique in the WHERE — it puts
+        // the platform enum into the query, which Prisma binds as text and
+        // PostgreSQL rejects against the native enum column. Find by externalId
+        // only (globally-unique tweet id), then INSERT if new. INSERT casts
+        // text→enum fine. (Same workaround as WebhookService.saveInboxMessage.)
+        const existing = await this.prisma.inboxMessage.findFirst({
+          where: { externalId: tweet.id },
+          select: { id: true },
         });
+        if (!existing) {
+          await this.prisma.inboxMessage.create({
+            data: {
+              workspaceId,
+              platform: 'TWITTER',
+              type: 'COMMENT',
+              externalId: tweet.id,
+              senderId: tweet.author_id,
+              senderName: author ? `@${author.username}` : `@user_${tweet.author_id}`,
+              senderAvatar: author?.profile_image_url || null,
+              content: tweet.text,
+              postContent: `Mentioned @${handle} on X / Twitter`,
+              isRead: false,
+              isResolved: false,
+              socialAccountId: account.id,
+            },
+          });
+        }
       } catch (err: any) {
         if (!err.message?.includes('Unique constraint')) {
           this.logger.error(`Failed to save tweet ${tweet.id}: ${err.message}`);
