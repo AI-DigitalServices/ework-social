@@ -6,6 +6,7 @@ import { deletePostAction, retryPostAction, publishNowAction } from '@/actions/s
 import EditPostModal from '@/components/scheduler/EditPostModal';
 import SendApprovalModal from '@/components/scheduler/SendApprovalModal';
 import PlatformIcon from '@/components/ui/PlatformIcon';
+import { ConfirmDialog } from '@/components/patterns';
 
 const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
   DRAFT:     { icon: FileText,      color: 'text-slate-500 bg-slate-100',  label: 'Draft' },
@@ -29,6 +30,7 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
   const [showMenu, setShowMenu] = useState(false);
   const [editMode, setEditMode] = useState<'edit' | 'duplicate' | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const status = statusConfig[post.status] || statusConfig.DRAFT;
   const StatusIcon = status.icon;
@@ -37,6 +39,7 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
     setDeleting(true);
     try {
       await deletePostAction(post.id);
+      setShowDeleteConfirm(false);
       onDeleted?.(post.id);
     } catch (err) { console.error(err); }
     finally { setDeleting(false); }
@@ -110,7 +113,7 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
                     className="flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-50 text-sm w-full">
                     <X className="w-4 h-4 rotate-45" /> Duplicate
                   </button>
-                  <button onClick={() => { handleDelete(); setShowMenu(false); }} disabled={deleting}
+                  <button onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }} disabled={deleting}
                     className="flex items-center gap-2 px-4 py-2.5 text-red-500 hover:bg-red-50 text-sm w-full">
                     <Trash2 className="w-4 h-4" /> {deleting ? 'Deleting...' : 'Delete'}
                   </button>
@@ -183,6 +186,19 @@ export default function PostCard({ post, accounts, onDeleted, onUpdate }: Props)
           onSent={() => { setShowApprovalModal(false); onUpdate?.(); }}
         />
       )}
+
+      {/* Delete confirmation — prevents accidental, irreversible deletion */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete this post?"
+        description="This permanently removes the post and can't be undone."
+        confirmLabel="Delete post"
+        cancelLabel="Keep it"
+        destructive
+        isLoading={deleting}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }
