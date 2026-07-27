@@ -407,7 +407,7 @@ export default function LandingPage() {
               { platform: 'TIKTOK',   name: 'TikTok',    status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'BLUESKY',  name: 'Bluesky',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'YOUTUBE',  name: 'YouTube',   status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
-              { platform: 'TWITTER',  name: 'Twitter/X', status: 'Growth+',     textColor: '#3B82F6', bgColor: '#1E3A5F' },
+              { platform: 'TWITTER',  name: 'Twitter/X', status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'FACEBOOK', name: 'Facebook',  status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'INSTAGRAM',name: 'Instagram', status: 'Live',        textColor: '#10B981', bgColor: '#064E3B' },
               { platform: 'PINTEREST',name: 'Pinterest', status: 'Coming Soon', textColor: '#6B8299', bgColor: '#1A2840' },
