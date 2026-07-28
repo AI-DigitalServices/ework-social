@@ -238,12 +238,18 @@ export class WebhookService {
     try {
       const commentId = commentData.id;
       const commentText = commentData.text || '';
-      const fromName = commentData.from?.username || 'there';
 
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
       if (!account) return;
+
+      // Resolve the commenter's handle + photo so the inbox/CRM show a real
+      // identity rather than a numeric ID.
+      const profile = commentData.from?.id && account.accessToken
+        ? await this.fetchInstagramProfile(commentData.from.id, account.accessToken)
+        : {};
+      const fromName = profile.name || commentData.from?.username || 'there';
 
       // Always save to inbox — every comment regardless of rule match
       await this.saveInboxMessage({
@@ -253,6 +259,7 @@ export class WebhookService {
         externalId: commentId,
         senderId: commentData.from?.id,
         senderName: fromName,
+        senderAvatar: profile.avatar,
         content: commentText,
         socialAccountId: account.id,
       });
@@ -266,17 +273,29 @@ export class WebhookService {
       });
 
       const matchingRule = this.findMatchingRule(rules, commentText, 'comment');
-      if (!matchingRule) return;
+      if (!matchingRule) {
+        this.logger.log(`IG comment: no matching auto-responder rule for "${commentText.slice(0, 40)}"`);
+        return;
+      }
 
       const accessToken = this.decryptToken(account.accessToken!);
 
       if (matchingRule.responseType === 'comment' || matchingRule.responseType === 'both') {
         const message = matchingRule.responseMessage.replace('{name}', fromName);
-        await axios.post(
-          `https://graph.facebook.com/v19.0/${commentId}/replies`,
-          null,
-          { params: { message, access_token: accessToken } }
-        );
+        try {
+          await axios.post(
+            `https://graph.facebook.com/v19.0/${commentId}/replies`,
+            null,
+            { params: { message, access_token: accessToken } }
+          );
+          this.logger.log(`IG comment auto-reply sent for ${commentId}`);
+        } catch (replyErr: any) {
+          // Replying to IG comments requires instagram_manage_comments — if that
+          // scope isn't granted yet, this is where it fails.
+          this.logger.error(
+            `IG comment reply failed (needs instagram_manage_comments?): ${JSON.stringify(replyErr?.response?.data ?? replyErr?.message)}`,
+          );
+        }
       }
 
       if (matchingRule) {
@@ -319,23 +338,13 @@ export class WebhookService {
 
       const externalId = messageData.message?.mid || senderId;
 
-      // Best-effort: fetch the sender's Instagram profile (name + picture) so the
-      // inbox shows their real photo instead of a placeholder. Requires
-      // instagram_manage_messages (now approved). Never blocks saving the message.
-      let senderName = messageData.sender?.username || senderId;
-      let senderAvatar: string | undefined;
-      if (senderId && account.accessToken) {
-        try {
-          const token = this.decryptToken(account.accessToken);
-          const profileRes = await axios.get(`https://graph.facebook.com/v19.0/${senderId}`, {
-            params: { fields: 'name,username,profile_pic', access_token: token },
-          });
-          senderName = profileRes.data?.username || profileRes.data?.name || senderName;
-          senderAvatar = profileRes.data?.profile_pic;
-        } catch {
-          // enrichment failed — keep fallback name, no avatar
-        }
-      }
+      // Fetch the sender's Instagram profile (handle + picture) so the inbox and
+      // CRM show a real name/photo instead of the numeric ID.
+      const profile = senderId && account.accessToken
+        ? await this.fetchInstagramProfile(senderId, account.accessToken)
+        : {};
+      const senderName = profile.name || messageData.sender?.username || senderId;
+      const senderAvatar = profile.avatar;
 
       // Always save to inbox — every DM regardless of auto-responder rule match
       await this.saveInboxMessage({
@@ -360,19 +369,30 @@ export class WebhookService {
       });
 
       const matchingRule = this.findMatchingRule(rules, messageText, 'dm');
-      if (!matchingRule) return;
+      if (!matchingRule) {
+        this.logger.log(`IG DM: saved to inbox but no matching auto-responder rule (${rules.length} active rule(s))`);
+        return;
+      }
 
       const accessToken = this.decryptToken(account.accessToken!);
-      const message = matchingRule.responseMessage.replace('{name}', 'there');
+      const message = matchingRule.responseMessage.replace('{name}', senderName);
 
-      await axios.post(
-        `https://graph.facebook.com/v19.0/me/messages`,
-        {
-          recipient: { id: senderId },
-          message: { text: message },
-          access_token: accessToken,
-        }
-      );
+      try {
+        await axios.post(
+          `https://graph.facebook.com/v19.0/me/messages`,
+          {
+            recipient: { id: senderId },
+            message: { text: message },
+            access_token: accessToken,
+          }
+        );
+        this.logger.log(`IG DM auto-reply sent to ${senderId}`);
+      } catch (replyErr: any) {
+        // Log but don't throw — a failed auto-reply must not block CRM/inbox updates.
+        this.logger.error(
+          `IG DM reply failed: ${JSON.stringify(replyErr?.response?.data ?? replyErr?.message)}`,
+        );
+      }
 
       if (matchingRule) {
         await this.prisma.autoResponderRule.update({
@@ -383,12 +403,13 @@ export class WebhookService {
         // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
         await this.recordAutoReply(Platform.INSTAGRAM, messageData.message?.mid || senderId, matchingRule.responseMessage.replace('{name}', 'there'));
 
-        // Update CRM lead stage if the rule has that configured
+        // Update CRM lead stage if the rule has that configured — use the
+        // resolved handle (not the numeric IGSID) so contacts are readable.
         if (matchingRule.updateLeadStage && senderId) {
           await this.updateLeadStage(
             account.workspaceId,
             senderId,
-            senderId,
+            senderName,
             matchingRule.updateLeadStage,
             'INSTAGRAM_DM',
             accessToken,
@@ -441,6 +462,33 @@ export class WebhookService {
       });
     } catch (err: any) {
       this.logger.error(`handleInstagramDMByMid error: ${err?.message}`);
+    }
+  }
+
+  /**
+   * Fetch an Instagram user's public profile (handle + picture) from their IGSID,
+   * so the inbox shows a real name/photo instead of the numeric ID. Requires
+   * instagram_manage_messages. Logs the exact Graph API error on failure so we
+   * can diagnose why a profile didn't resolve (permissions, privacy, etc.).
+   */
+  private async fetchInstagramProfile(
+    userId: string,
+    encryptedToken: string,
+  ): Promise<{ name?: string; avatar?: string }> {
+    try {
+      const token = this.decryptToken(encryptedToken);
+      const res = await axios.get(`https://graph.facebook.com/v19.0/${userId}`, {
+        params: { fields: 'name,username,profile_pic', access_token: token },
+      });
+      return {
+        name: res.data?.username || res.data?.name,
+        avatar: res.data?.profile_pic,
+      };
+    } catch (err: any) {
+      this.logger.warn(
+        `IG profile fetch failed for ${userId}: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
+      return {};
     }
   }
 
