@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import PlatformIcon from '@/components/ui/PlatformIcon';
-import { Dialog } from '@/components/ui';
 
 /* ─── Stat card gradient config ──────────────────────────────── */
 const STAT_CARD = [
@@ -39,19 +38,17 @@ const STATUS_META: Record<string, { icon: any; gradient: string; textColor: stri
 
 
 /* ─── Welcome modal ──────────────────────────────────────────── */
-// Rendered inside the accessible <Dialog bare> shell: keeps the original
-// visual design but gains focus-trap, Esc-to-close, backdrop and aria (WCAG).
+// Plain fixed overlay (reliable, click-through-safe). Only rendered when `open`.
 function WelcomeModal({ open, name, onClose }: { open: boolean; name: string; onClose: () => void }) {
+  if (!open) return null;
   return (
-    <Dialog
-      bare
-      open={open}
-      onOpenChange={(o) => { if (!o) onClose(); }}
-      title="Welcome to eWork Social"
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
     >
       <div style={{
         background: '#fff', borderRadius: 24, padding: '44px 40px',
-        width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', textAlign: 'center',
+        width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto', textAlign: 'center',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)', position: 'relative',
       }}>
         <button onClick={onClose} aria-label="Close welcome" style={{ position: 'absolute', top: 16, right: 16, background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
@@ -83,7 +80,7 @@ function WelcomeModal({ open, name, onClose }: { open: boolean; name: string; on
         </button>
         <p style={{ color: '#cbd5e1', fontSize: 12, marginTop: 12 }}>You have a 7-day free trial · No credit card needed</p>
       </div>
-    </Dialog>
+    </div>
   );
 }
 
