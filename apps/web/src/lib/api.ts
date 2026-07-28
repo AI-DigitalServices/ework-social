@@ -38,17 +38,20 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const getRefreshToken = (): string | null => {
+// The refresh token now lives ONLY in the HttpOnly cookie (not JS-readable).
+// We just need to know whether a session exists — the presence of an access
+// token — to decide whether to attempt a cookie-based refresh.
+const hasSession = (): boolean => {
   try {
     const authStorage = localStorage.getItem('auth-storage');
     if (authStorage) {
       const parsed = JSON.parse(authStorage);
-      return parsed?.state?.refreshToken || null;
+      return !!parsed?.state?.token;
     }
   } catch {
-    return null;
+    return false;
   }
-  return null;
+  return false;
 };
 
 const updateAccessToken = (newToken: string) => {
@@ -94,9 +97,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = getRefreshToken();
-
-      if (!refreshToken) {
+      if (!hasSession()) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth-storage');
           window.location.href = '/login';
@@ -107,7 +108,7 @@ api.interceptors.response.use(
       try {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/refresh`,
-          { refreshToken }, // body fallback; the HttpOnly cookie is preferred server-side
+          {}, // no body — the HttpOnly refresh cookie carries the token
           { withCredentials: true },
         );
 

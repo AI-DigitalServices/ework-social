@@ -39,9 +39,12 @@ export const useAuthStore = create<AuthState>()(
       workspaces: [],
       token: null,
       refreshToken: null,
-      setAuth: (user, workspace, token, refreshToken?) => {
+      setAuth: (user, workspace, token, _refreshToken?) => {
         document.cookie = `auth-token=${token}; path=/; max-age=${15 * 60}`;
-        set({ user, workspace, token, refreshToken: refreshToken || null });
+        // Refresh token is NOT stored in JS-readable storage anymore — it lives
+        // in the HttpOnly cookie set by the API. Keeping it out of localStorage
+        // caps the blast radius of any XSS (completes security fix H-3).
+        set({ user, workspace, token, refreshToken: null });
       },
       setWorkspace: (workspace) => set({ workspace }),
       setWorkspaces: (workspaces) => set({ workspaces }),

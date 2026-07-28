@@ -20,8 +20,8 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' data: blob: https:",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "connect-src 'self' https://api.eworksocial.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.clarity.ms https://c.clarity.ms https://k.clarity.ms",
-  "frame-src 'self' https://js.paystack.co https://checkout.paystack.com",
+  "connect-src 'self' https://api.eworksocial.com https://*.supabase.co wss://*.supabase.co https://ipapi.co https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.clarity.ms https://c.clarity.ms https://k.clarity.ms",
+  "frame-src 'self' https://js.paystack.co https://checkout.paystack.com https://www.youtube.com https://youtube.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -40,8 +40,9 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: [
-          // Report-only for now — change to 'Content-Security-Policy' to enforce.
-          { key: 'Content-Security-Policy-Report-Only', value: csp },
+          // Enforcing. To roll back instantly, rename this key to
+          // 'Content-Security-Policy-Report-Only' (logs violations without blocking).
+          { key: 'Content-Security-Policy', value: csp },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'DENY' },
