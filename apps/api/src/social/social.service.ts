@@ -756,6 +756,11 @@ export class SocialService {
       return { success: true, postId: res.data.id };
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to publish to LinkedIn';
+      // Log LinkedIn's full response — the generic message alone rarely explains
+      // the cause (missing w_member_social scope, wrong author URN, expired token).
+      this.logger.error(
+        `LinkedIn publish failed — status:${err.response?.status} body:${JSON.stringify(err.response?.data ?? err?.message)}`,
+      );
       const isTokenExpired = errorMessage.toLowerCase().includes('expired') || err.response?.status === 401;
       await this.prisma.post.update({
         where: { id: postId },

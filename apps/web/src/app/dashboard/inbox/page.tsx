@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
+import PlatformIcon from '@/components/ui/PlatformIcon';
 import {
   MessageSquare, CheckCircle, RefreshCw, Send, Sparkles,
   Tag, Users, Link2, X, ChevronDown, Search, Plus,
@@ -243,11 +244,21 @@ function PlatformBadge({ platform }: { platform: string }) {
 
 /* ─────────────── avatar ─────────────────────────────────────── */
 
+/** Renders the brand logo SVG at an exact pixel size for the avatar corner badge. */
+function PlatformGlyph({ platform, px }: { platform: string; px: number }) {
+  return (
+    <span style={{ width: px, height: px, display: 'block', lineHeight: 0 }}>
+      <PlatformIcon platform={platform} size="xs" className="!w-full !h-full !ring-0 !rounded-none" />
+    </span>
+  );
+}
+
 function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platform: string; size?: number; avatarUrl?: string | null }) {
   const p = PLATFORM[platform];
   const initial = (name || '?').charAt(0).toUpperCase();
   const [imgError, setImgError] = useState(false);
   const showImg = !!avatarUrl && !imgError;
+  const badgePx = Math.round(size * 0.44);
   return (
     <div style={{
       width: size, height: size, borderRadius: size / 2,
@@ -266,17 +277,17 @@ function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platf
           style={{ width: '100%', height: '100%', borderRadius: size / 2, objectFit: 'cover' }}
         />
       ) : initial}
-      {/* Platform badge — brand-colored circle with the platform glyph, identifying the channel */}
+      {/* Platform badge — real brand logo SVG at a fixed corner size (no transform
+          scaling, which previously collapsed the icon into a sliver). */}
       <div style={{
-        position: 'absolute', bottom: -2, right: -2,
-        width: size * 0.42, height: size * 0.42, borderRadius: '50%',
-        background: p?.dot || '#6366F1',
-        border: '2px solid #fff',
+        position: 'absolute', bottom: -3, right: -3,
+        width: badgePx, height: badgePx,
+        borderRadius: '50%', overflow: 'hidden',
+        border: '2px solid #fff', background: '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
       }}>
-        {p?.icon}
+        <PlatformGlyph platform={platform} px={badgePx} />
       </div>
     </div>
   );
