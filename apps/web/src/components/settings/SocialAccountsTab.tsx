@@ -152,6 +152,7 @@ export default function SocialAccountsTab() {
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [pendingDisconnect, setPendingDisconnect] = useState<{ id: string; name: string } | null>(null);
+  const [resyncing, setResyncing] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBlueskyModal, setShowBlueskyModal] = useState(false);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
@@ -267,6 +268,20 @@ export default function SocialAccountsTab() {
     }
   };
 
+  const handleResyncWebhooks = async () => {
+    if (!workspace?.id) return;
+    setResyncing(true);
+    try {
+      const res = await api.post('/social/resync-webhooks', { workspaceId: workspace.id });
+      const ok = res.data?.resynced?.filter((r: any) => r.ok).length ?? 0;
+      showToast('success', `Resynced ${ok} Meta account(s). New comments & DMs will now flow to the Engagement Hub.`);
+    } catch {
+      showToast('error', 'Could not resync webhooks. Try again.');
+    } finally {
+      setResyncing(false);
+    }
+  };
+
   const getConnectedAccount = (apiPlatform: string) =>
     accounts.find(a => a.platform === apiPlatform);
 
@@ -292,6 +307,14 @@ export default function SocialAccountsTab() {
           <p className="text-blue-600 text-sm mt-0.5">Your current plan allows up to {MAX_ACCOUNTS} social accounts</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleResyncWebhooks}
+            disabled={resyncing}
+            title="Re-subscribe connected Facebook & Instagram accounts to comment/message webhooks"
+            className="text-xs font-semibold text-blue-700 hover:bg-blue-100 px-3 py-2 rounded-lg transition disabled:opacity-50"
+          >
+            {resyncing ? 'Resyncing…' : 'Resync webhooks'}
+          </button>
           <button onClick={loadAccounts} className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition" title="Refresh">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>

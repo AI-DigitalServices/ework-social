@@ -51,6 +51,14 @@ export class SocialController {
     return this.socialService.getAccounts(workspaceId);
   }
 
+  // Re-subscribe connected Meta accounts to their webhook fields (feed, messages,
+  // comments) — fixes pages connected before a scope was approved.
+  @Post('resync-webhooks')
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  resyncWebhooks(@Body() body: { workspaceId: string }) {
+    return this.socialService.resyncWebhooks(body.workspaceId);
+  }
+
   @Delete('accounts/:id')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
   disconnectAccount(

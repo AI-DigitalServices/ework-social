@@ -292,6 +292,47 @@ export class SocialService {
     });
   }
 
+  /**
+   * Re-subscribe all connected Meta accounts to their webhook fields.
+   * Pages connected before a scope (e.g. `messages`) was approved never got
+   * subscribed to that field — this re-runs the subscription with the now-granted
+   * permissions, so Facebook DMs/comments start flowing without a full reconnect.
+   */
+  async resyncWebhooks(workspaceId: string) {
+    // Filter platform in JS (not the WHERE) — avoids the Prisma-binds-enum-as-text
+    // vs native-enum-column issue seen elsewhere in the codebase.
+    const allAccounts = await this.prisma.socialAccount.findMany({
+      where: { workspaceId, isActive: true },
+    });
+    const accounts = allAccounts.filter(
+      (a) => a.platform === 'FACEBOOK' || a.platform === 'INSTAGRAM',
+    );
+
+    const results: { account: string; platform: string; fields: string; ok: boolean; error?: string }[] = [];
+
+    for (const account of accounts) {
+      if (!account.accessToken) continue;
+      const token = this.decryptToken(account.accessToken);
+      const fields =
+        account.platform === 'INSTAGRAM' ? 'comments,messages' : 'feed,messages';
+      try {
+        await axios.post(
+          `https://graph.facebook.com/v19.0/${account.accountId}/subscribed_apps`,
+          null,
+          { params: { subscribed_fields: fields, access_token: token } },
+        );
+        results.push({ account: account.accountName, platform: account.platform, fields, ok: true });
+        this.logger.log(`Resynced webhooks for ${account.platform} ${account.accountName} (${fields})`);
+      } catch (err: any) {
+        const detail = err?.response?.data?.error?.message || err?.message;
+        results.push({ account: account.accountName, platform: account.platform, fields, ok: false, error: detail });
+        this.logger.warn(`Resync failed for ${account.platform} ${account.accountName}: ${detail}`);
+      }
+    }
+
+    return { success: true, resynced: results };
+  }
+
   async publishToFacebook(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
