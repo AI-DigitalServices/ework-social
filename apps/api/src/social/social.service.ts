@@ -64,7 +64,11 @@ export class SocialService {
       'pages_manage_metadata',   // required for messages webhook subscription
       'instagram_basic',
       'instagram_content_publish',
-      // 'instagram_manage_comments' — pending Meta App Review approval; add back once approved
+      // ⚠️ DO NOT re-add 'instagram_manage_comments' until Meta grants Advanced
+      // Access for it. Requesting an unapproved scope makes Facebook degrade or
+      // decline the WHOLE permission set, producing tokens without
+      // instagram_content_publish — which breaks publishing entirely
+      // ("Media ID is not available"). See commit 1217034.
       'instagram_manage_messages',
       'business_management',
     ].join(',');
@@ -122,6 +126,29 @@ export class SocialService {
     } catch (err: any) {
       console.error('Long-lived token error:', err?.response?.data || err?.message);
       throw new BadRequestException('Long-lived token failed');
+    }
+
+    // Log which permissions Facebook ACTUALLY granted. Requesting an unapproved
+    // scope can cause Facebook to silently withhold others (e.g. dropping
+    // instagram_content_publish breaks publishing) — this makes that visible
+    // immediately instead of surfacing later as a confusing publish failure.
+    try {
+      const permsRes = await axios.get('https://graph.facebook.com/v19.0/me/permissions', {
+        params: { access_token: longLivedToken },
+      });
+      const granted = (permsRes.data?.data || [])
+        .filter((p: any) => p.status === 'granted')
+        .map((p: any) => p.permission);
+      const declined = (permsRes.data?.data || [])
+        .filter((p: any) => p.status !== 'granted')
+        .map((p: any) => p.permission);
+      this.logger.log(`Meta permissions GRANTED: ${granted.join(', ') || 'none'}`);
+      if (declined.length) this.logger.warn(`Meta permissions DECLINED: ${declined.join(', ')}`);
+      if (!granted.includes('instagram_content_publish')) {
+        this.logger.error('instagram_content_publish NOT granted — Instagram publishing will fail');
+      }
+    } catch {
+      // diagnostic only — never block the connection flow
     }
 
     // Step 3: Get Facebook Pages
