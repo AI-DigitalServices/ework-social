@@ -71,8 +71,8 @@ export class WebhookService {
       });
       if (!account) return;
 
-      // Always save to inbox — every comment lands here regardless of auto-responder rules
-      await this.saveInboxMessage({
+      // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
+      const { isNew } = await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.FACEBOOK,
         type: InboxMessageType.COMMENT,
@@ -83,6 +83,7 @@ export class WebhookService {
         postId: commentData.post_id,
         socialAccountId: account.id,
       });
+      if (!isNew) return;
 
       // Find matching rules
       const rules = await this.prisma.autoResponderRule.findMany({
@@ -161,8 +162,8 @@ export class WebhookService {
       });
       if (!account) return;
 
-      // Always save to inbox first — every DM lands here
-      await this.saveInboxMessage({
+      // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
+      const { isNew } = await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.FACEBOOK,
         type: InboxMessageType.DM,
@@ -172,6 +173,7 @@ export class WebhookService {
         content: messageText,
         socialAccountId: account.id,
       });
+      if (!isNew) return;
 
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
@@ -251,8 +253,8 @@ export class WebhookService {
         : {};
       const fromName = profile.name || commentData.from?.username || 'there';
 
-      // Always save to inbox — every comment regardless of rule match
-      await this.saveInboxMessage({
+      // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
+      const { isNew } = await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.INSTAGRAM,
         type: InboxMessageType.COMMENT,
@@ -263,6 +265,7 @@ export class WebhookService {
         content: commentText,
         socialAccountId: account.id,
       });
+      if (!isNew) return;
 
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
@@ -346,8 +349,8 @@ export class WebhookService {
       const senderName = profile.name || messageData.sender?.username || senderId;
       const senderAvatar = profile.avatar;
 
-      // Always save to inbox — every DM regardless of auto-responder rule match
-      await this.saveInboxMessage({
+      // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
+      const { isNew } = await this.saveInboxMessage({
         workspaceId: account.workspaceId,
         platform: Platform.INSTAGRAM,
         type: InboxMessageType.DM,
@@ -358,6 +361,7 @@ export class WebhookService {
         content: messageText,
         socialAccountId: account.id,
       });
+      if (!isNew) return;
 
       const rules = await this.prisma.autoResponderRule.findMany({
         where: {
@@ -378,7 +382,7 @@ export class WebhookService {
       const message = matchingRule.responseMessage.replace('{name}', senderName);
 
       try {
-        await axios.post(
+        const sendRes = await axios.post(
           `https://graph.facebook.com/v19.0/me/messages`,
           {
             recipient: { id: senderId },
@@ -386,7 +390,10 @@ export class WebhookService {
             access_token: accessToken,
           }
         );
-        this.logger.log(`IG DM auto-reply sent to ${senderId}`);
+        // Log the API response — a `message_id` here means Instagram accepted and
+        // delivered it. If replies "send" but don't appear natively, this confirms
+        // whether the issue is on our side or Instagram's delivery/policy side.
+        this.logger.log(`IG DM auto-reply sent to ${senderId} — response: ${JSON.stringify(sendRes.data)}`);
       } catch (replyErr: any) {
         // Log but don't throw — a failed auto-reply must not block CRM/inbox updates.
         this.logger.error(
@@ -504,41 +511,37 @@ export class WebhookService {
     postId?: string;
     postContent?: string;
     socialAccountId?: string;
-  }) {
+  }): Promise<{ isNew: boolean }> {
+    // Idempotent insert: Meta delivers each webhook more than once, so we rely on
+    // the (platform, externalId) unique constraint as the single source of truth.
+    // Attempt the INSERT directly (text→enum cast is fine in INSERT); a P2002
+    // unique-constraint error means this exact event was already saved by an
+    // earlier/concurrent delivery — return isNew:false so the caller skips the
+    // duplicate auto-reply. This is what stops the "responses sent twice" problem.
     try {
-      // NOTE: Prisma v5 binds enum values as `text` in WHERE clauses which
-      // PostgreSQL rejects for native enum columns (text ≠ "Platform").
-      // Workaround: find by externalId only (no enum in WHERE), then update
-      // or create. PostgreSQL accepts text→enum casts in INSERT fine.
-      const existing = await this.prisma.inboxMessage.findFirst({
-        where: { externalId: data.externalId },
-        select: { id: true },
+      await this.prisma.inboxMessage.create({
+        data: {
+          workspaceId: data.workspaceId,
+          platform: data.platform,
+          type: data.type,
+          externalId: data.externalId,
+          senderId: data.senderId,
+          senderName: data.senderName,
+          senderAvatar: data.senderAvatar,
+          content: data.content,
+          postId: data.postId,
+          postContent: data.postContent,
+          socialAccountId: data.socialAccountId,
+        },
       });
-
-      if (existing) {
-        await this.prisma.inboxMessage.update({
-          where: { id: existing.id },
-          data: { content: data.content, senderName: data.senderName },
-        });
-      } else {
-        await this.prisma.inboxMessage.create({
-          data: {
-            workspaceId: data.workspaceId,
-            platform: data.platform,
-            type: data.type,
-            externalId: data.externalId,
-            senderId: data.senderId,
-            senderName: data.senderName,
-            senderAvatar: data.senderAvatar,
-            content: data.content,
-            postId: data.postId,
-            postContent: data.postContent,
-            socialAccountId: data.socialAccountId,
-          },
-        });
-      }
+      return { isNew: true };
     } catch (err: any) {
+      if (err?.code === 'P2002') {
+        // Duplicate delivery — already have this event. Not an error.
+        return { isNew: false };
+      }
       this.logger.error('Failed to save inbox message:', err?.message);
+      return { isNew: false };
     }
   }
 
