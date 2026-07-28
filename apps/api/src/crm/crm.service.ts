@@ -51,7 +51,17 @@ export class CrmService {
       where: { workspaceId: client.workspaceId, userId },
       select: { id: true },
     });
-    if (!member) throw new NotFoundException('Client not found');
+    if (member) return;
+
+    // Owner fallback — legacy workspaces may have no membership row, and the
+    // owner must never be locked out of their own CRM records.
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: client.workspaceId },
+      select: { ownerId: true },
+    });
+    if (workspace?.ownerId === userId) return;
+
+    throw new NotFoundException('Client not found');
   }
 
   async getClient(id: string, userId: string) {

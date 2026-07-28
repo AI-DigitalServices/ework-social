@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -22,6 +23,8 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Injectable()
 export class WorkspaceMemberGuard implements CanActivate {
+  private readonly logger = new Logger(WorkspaceMemberGuard.name);
+
   constructor(private prisma: PrismaService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -42,11 +45,37 @@ export class WorkspaceMemberGuard implements CanActivate {
       select: { role: true },
     });
 
-    if (!member) {
-      throw new ForbiddenException('You do not have access to this workspace');
+    if (member) {
+      req.workspaceRole = member.role;
+      return true;
     }
 
-    req.workspaceRole = member.role;
-    return true;
+    // Safety net: the workspace OWNER always has access, even if no
+    // WorkspaceMember row exists. Legacy workspaces created before membership
+    // rows were written would otherwise lock their own owner out of every
+    // workspace-scoped page (Scheduler, Inbox, CRM, Responder).
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { ownerId: true },
+    });
+
+    if (workspace?.ownerId === userId) {
+      // Self-heal the missing membership row so this lookup isn't needed again.
+      try {
+        await this.prisma.workspaceMember.create({
+          data: { workspaceId, userId, role: 'OWNER' as any },
+        });
+        this.logger.warn(`Backfilled missing OWNER membership for workspace ${workspaceId}`);
+      } catch {
+        // race or constraint — access is still granted below
+      }
+      req.workspaceRole = 'OWNER';
+      return true;
+    }
+
+    this.logger.warn(
+      `Access denied: user ${userId} is not a member or owner of workspace ${workspaceId}`,
+    );
+    throw new ForbiddenException('You do not have access to this workspace');
   }
 }

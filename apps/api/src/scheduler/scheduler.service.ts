@@ -44,9 +44,17 @@ export class SchedulerService {
       where: { workspaceId: post.workspaceId, userId },
       select: { id: true },
     });
-    if (!member) throw new NotFoundException('Post not found');
+    if (member) return post;
 
-    return post;
+    // Owner fallback — legacy workspaces may have no membership row, and the
+    // owner must never be locked out of their own posts.
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: post.workspaceId },
+      select: { ownerId: true },
+    });
+    if (workspace?.ownerId === userId) return post;
+
+    throw new NotFoundException('Post not found');
   }
 
   async createPost(dto: CreatePostDto) {

@@ -24,7 +24,10 @@ const csp = [
   "frame-src 'self' https://js.paystack.co https://checkout.paystack.com https://www.youtube.com https://youtube.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  // OAuth consent flows submit/redirect to the provider then back to our API,
+  // so form-action must permit those origins — 'self' alone breaks connecting
+  // social accounts.
+  "form-action 'self' https://api.eworksocial.com https://www.facebook.com https://facebook.com https://www.linkedin.com https://linkedin.com https://twitter.com https://x.com https://api.twitter.com https://accounts.google.com https://www.tiktok.com https://open-api.tiktok.com https://checkout.paystack.com",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join('; ');
@@ -40,9 +43,13 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: [
-          // Enforcing. To roll back instantly, rename this key to
-          // 'Content-Security-Policy-Report-Only' (logs violations without blocking).
-          { key: 'Content-Security-Policy', value: csp },
+          // REPORT-ONLY (deliberate). Enforcing this CSP coincided with OAuth
+          // connect flows failing across Twitter/TikTok/YouTube/LinkedIn —
+          // `form-action 'self'` and `default-src 'self'` can block the
+          // provider→callback redirects OAuth depends on. Do NOT flip this to
+          // enforcing again until every OAuth flow has been re-verified end to
+          // end in production with violations logged and clean.
+          { key: 'Content-Security-Policy-Report-Only', value: csp },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'DENY' },
