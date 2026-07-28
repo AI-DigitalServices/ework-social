@@ -266,15 +266,18 @@ function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platf
           style={{ width: '100%', height: '100%', borderRadius: size / 2, objectFit: 'cover' }}
         />
       ) : initial}
-      {/* Platform dot — small badge identifying which channel the message came from */}
+      {/* Platform badge — brand-colored circle with the platform glyph, identifying the channel */}
       <div style={{
-        position: 'absolute', bottom: 0, right: 0,
-        width: size * 0.3, height: size * 0.3, borderRadius: '50%',
+        position: 'absolute', bottom: -2, right: -2,
+        width: size * 0.42, height: size * 0.42, borderRadius: '50%',
         background: p?.dot || '#6366F1',
         border: '2px solid #fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.12,
-      }} />
+        color: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }}>
+        {p?.icon}
+      </div>
     </div>
   );
 }
