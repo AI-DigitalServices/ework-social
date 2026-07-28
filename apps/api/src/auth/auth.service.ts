@@ -260,6 +260,19 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return { message: 'If that email exists, a reset link has been sent.' };
+
+    // Per-account cooldown: at most one reset email per 5 minutes. A token is
+    // issued with a 1-hour expiry, so if the current token still has more than
+    // 55 minutes left it was issued < 5 minutes ago — skip re-sending. This
+    // prevents email-bombing a single address within the global IP throttle.
+    if (user.resetTokenExpiry) {
+      const msLeft = user.resetTokenExpiry.getTime() - Date.now();
+      const issuedWithinCooldown = msLeft > 55 * 60 * 1000;
+      if (issuedWithinCooldown) {
+        return { message: 'If that email exists, a reset link has been sent.' };
+      }
+    }
+
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await this.prisma.user.update({
@@ -316,15 +329,18 @@ export class AuthService {
     });
     const workspaceIds = workspaces.map((w) => w.id);
 
-    // Delete all related data in correct order
-    await this.prisma.notification.deleteMany({ where: { userId } });
-    await this.prisma.post.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
-    await this.prisma.socialAccount.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
-    await this.prisma.client.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
-    await this.prisma.subscription.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
-    await this.prisma.workspaceMember.deleteMany({ where: { workspaceId: { in: workspaceIds } } });
-    await this.prisma.workspace.deleteMany({ where: { ownerId: userId } });
-    await this.prisma.user.delete({ where: { id: userId } });
+    // All-or-nothing: run every delete in a single transaction so a mid-way
+    // failure can't leave the account half-deleted (matters for GDPR erasure).
+    await this.prisma.$transaction([
+      this.prisma.notification.deleteMany({ where: { userId } }),
+      this.prisma.post.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      this.prisma.socialAccount.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      this.prisma.client.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      this.prisma.subscription.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      this.prisma.workspaceMember.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      this.prisma.workspace.deleteMany({ where: { ownerId: userId } }),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
 
     return { message: 'Account deleted successfully' };
   }
