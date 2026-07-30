@@ -724,6 +724,44 @@ export class SocialService {
     return asset;
   }
 
+  /** Escape LinkedIn "commentary" reserved characters (little-text format).
+   *  Unescaped ( ) [ ] { } < > @ # * _ ~ | \ cause the Posts API to reject the
+   *  text; LinkedIn strips the backslashes on display. */
+  private escapeLinkedInText(text: string): string {
+    return (text || '').replace(/[\\<>@|{}\[\]()#*_~]/g, '\\$&');
+  }
+
+  /** Upload an image via the new /rest/images flow; returns the image URN. */
+  private async uploadImageToLinkedInRest(
+    imageUrl: string,
+    token: string,
+    ownerUrn: string,
+    apiVersion: string,
+  ): Promise<string> {
+    const initRes = await axios.post(
+      'https://api.linkedin.com/rest/images?action=initializeUpload',
+      { initializeUploadRequest: { owner: ownerUrn } },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': apiVersion,
+        },
+      },
+    );
+    const uploadUrl = initRes.data?.value?.uploadUrl;
+    const imageUrn = initRes.data?.value?.image;
+    if (!uploadUrl || !imageUrn) throw new Error('LinkedIn image initializeUpload returned no upload URL');
+
+    const imgRes = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    await axios.put(uploadUrl, imgRes.data, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream' },
+    });
+
+    return imageUrn;
+  }
+
   async publishToLinkedIn(postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
@@ -731,63 +769,79 @@ export class SocialService {
     });
     if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
 
+    // LinkedIn's /v2/ugcPosts endpoint is deprecated — it returns a share id but
+    // the post never renders ("Post cannot be displayed"). We use the current
+    // Posts API (/rest/posts), which requires a dated LinkedIn-Version header.
+    const apiVersion = this.config.get<string>('LINKEDIN_API_VERSION') || '202405';
+
     try {
       const storedId = post.socialAccount.accountId;
-      // If the stored accountId is already a full URN (org or brand page), use it directly.
-      // Otherwise it's a plain member sub — wrap it in the person URN.
-      const authorUrn = storedId.startsWith('urn:li:')
-        ? storedId
-        : `urn:li:person:${storedId}`;
-
+      const authorUrn = storedId.startsWith('urn:li:') ? storedId : `urn:li:person:${storedId}`;
       const token = this.decryptToken(post.socialAccount.accessToken);
 
-      this.logger.log(`Publishing to LinkedIn as: ${authorUrn}`);
+      this.logger.log(`Publishing to LinkedIn (Posts API v${apiVersion}) as: ${authorUrn}`);
 
-      // Upload images if any
-      let media: any[] = [];
+      const restHeaders = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': apiVersion,
+      };
+
+      // Upload images via the new /rest/images flow (if any)
+      const imageUrns: string[] = [];
       if (post.mediaUrls && post.mediaUrls.length > 0) {
         for (const imageUrl of post.mediaUrls) {
           try {
-            const asset = await this.uploadImageToLinkedIn(imageUrl, token, authorUrn);
-            media.push({ status: 'READY', media: asset });
+            imageUrns.push(await this.uploadImageToLinkedInRest(imageUrl, token, authorUrn, apiVersion));
           } catch (err: any) {
-            this.logger.error('Failed to upload image to LinkedIn', err?.message);
+            this.logger.error(
+              `LinkedIn image upload failed: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+            );
           }
         }
       }
 
-      const res = await axios.post(
-        'https://api.linkedin.com/v2/ugcPosts',
-        {
-          author: authorUrn,
-          lifecycleState: 'PUBLISHED',
-          specificContent: {
-            'com.linkedin.ugc.ShareContent': {
-              shareCommentary: { text: post.content },
-              shareMediaCategory: media.length > 0 ? 'IMAGE' : 'NONE',
-              ...(media.length > 0 && { media }),
-            },
-          },
-          visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
+      const body: any = {
+        author: authorUrn,
+        commentary: this.escapeLinkedInText(post.content),
+        visibility: 'PUBLIC',
+        distribution: {
+          feedDistribution: 'MAIN_FEED',
+          targetEntities: [],
+          thirdPartyDistributionChannels: [],
         },
-        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
-      );
-      this.logger.log(`✅ LinkedIn post PUBLISHED — ugcPost id: ${res.data.id}`);
-      await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
-      return { success: true, postId: res.data.id };
+        lifecycleState: 'PUBLISHED',
+        isReshareDisabledByAuthor: false,
+      };
+      if (imageUrns.length === 1) {
+        body.content = { media: { id: imageUrns[0] } };
+      } else if (imageUrns.length > 1) {
+        body.content = { multiImage: { images: imageUrns.map((id) => ({ id })) } };
+      }
+
+      const res = await axios.post('https://api.linkedin.com/rest/posts', body, { headers: restHeaders });
+
+      // The created post URN is returned in the x-restli-id response header
+      const postUrn =
+        res.headers?.['x-restli-id'] || res.headers?.['x-linkedin-id'] || res.data?.id || 'unknown';
+      this.logger.log(`✅ LinkedIn post PUBLISHED — post id: ${postUrn}`);
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', externalId: String(postUrn) },
+      });
+      return { success: true, postId: String(postUrn) };
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to publish to LinkedIn';
-      // Log LinkedIn's full response — the generic message alone rarely explains
-      // the cause (missing w_member_social scope, wrong author URN, expired token).
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.error || err?.message || 'Failed to publish to LinkedIn';
       this.logger.error(
         `LinkedIn publish failed — status:${err.response?.status} body:${JSON.stringify(err.response?.data ?? err?.message)}`,
       );
-      const isTokenExpired = errorMessage.toLowerCase().includes('expired') || err.response?.status === 401;
+      const isTokenExpired = String(errorMessage).toLowerCase().includes('expired') || err.response?.status === 401;
       await this.prisma.post.update({
         where: { id: postId },
-        data: { status: 'FAILED', errorMessage },
+        data: { status: 'FAILED', errorMessage: String(errorMessage) },
       });
-      // If token expired, mark the account so user knows to reconnect
       if (isTokenExpired) {
         await this.prisma.socialAccount.update({
           where: { id: post.socialAccount!.id },
@@ -795,7 +849,7 @@ export class SocialService {
         });
         this.logger.warn(`LinkedIn token expired for account ${post.socialAccount!.id} — marked inactive`);
       }
-      throw new BadRequestException(errorMessage);
+      throw new BadRequestException(String(errorMessage));
     }
   }
 
