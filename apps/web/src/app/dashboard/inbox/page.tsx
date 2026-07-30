@@ -244,11 +244,109 @@ function PlatformBadge({ platform }: { platform: string }) {
 
 /* ─────────────── avatar ─────────────────────────────────────── */
 
-/** Renders the brand logo SVG at an exact pixel size for the avatar corner badge. */
-function PlatformGlyph({ platform, px }: { platform: string; px: number }) {
+/* ─────────────── platform filter (real logos) ───────────────── */
+// Native <option> can't render images, which is why this was emoji-based.
+// A small custom dropdown lets us show the actual brand logos.
+const PLATFORM_FILTER_OPTS: { value: string; label: string }[] = [
+  { value: '', label: 'All Platforms' },
+  { value: 'INSTAGRAM', label: 'Instagram' },
+  { value: 'FACEBOOK', label: 'Facebook' },
+  { value: 'TWITTER', label: 'Twitter / X' },
+  { value: 'LINKEDIN', label: 'LinkedIn' },
+  { value: 'THREADS', label: 'Threads' },
+];
+
+function PlatformFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const selected = PLATFORM_FILTER_OPTS.find(o => o.value === value) ?? PLATFORM_FILTER_OPTS[0];
+
   return (
-    <span style={{ width: px, height: px, display: 'block', lineHeight: 0 }}>
-      <PlatformIcon platform={platform} size="xs" className="!w-full !h-full !ring-0 !rounded-none" />
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Filter by platform"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 12px', borderRadius: 12, fontSize: 13,
+          border: '1.5px solid #E2E8F0', background: '#fff', color: '#334155',
+          outline: 'none', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+          minWidth: 160,
+        }}
+      >
+        {selected.value
+          ? <span style={{ width: 16, height: 16, display: 'block', lineHeight: 0, flexShrink: 0 }}>
+              <PlatformIcon platform={selected.value} size="xs" className="!ring-0 !rounded-[4px]" />
+            </span>
+          : <Inbox size={15} style={{ color: '#94A3B8', flexShrink: 0 }} />}
+        <span style={{ flex: 1, textAlign: 'left' }}>{selected.label}</span>
+        <ChevronDown size={14} style={{ color: '#94A3B8', flexShrink: 0 }} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 60,
+            background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12,
+            boxShadow: '0 12px 32px rgba(0,0,0,0.12)', overflow: 'hidden', minWidth: 190,
+          }}
+        >
+          {PLATFORM_FILTER_OPTS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              role="option"
+              aria-selected={opt.value === value}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+                padding: '9px 12px', fontSize: 13, textAlign: 'left',
+                background: opt.value === value ? '#F1F5F9' : 'transparent',
+                border: 'none', cursor: 'pointer', color: '#334155',
+              }}
+            >
+              {opt.value
+                ? <span style={{ width: 18, height: 18, display: 'block', lineHeight: 0, flexShrink: 0 }}>
+                    <PlatformIcon platform={opt.value} size="xs" className="!ring-0 !rounded-[4px]" />
+                  </span>
+                : <Inbox size={16} style={{ color: '#94A3B8', flexShrink: 0 }} />}
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Brand logo for the avatar corner badge. Rendered at the icon's native 'xs'
+ * size (20px) with no CSS transform — earlier attempts scaled it down, which
+ * collapsed the SVG and made it look like an empty placeholder.
+ */
+function PlatformGlyph({ platform }: { platform: string }) {
+  return (
+    <span style={{ display: 'block', lineHeight: 0 }}>
+      <PlatformIcon platform={platform} size="xs" className="!ring-0 !rounded-[5px]" />
     </span>
   );
 }
@@ -258,7 +356,6 @@ function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platf
   const initial = (name || '?').charAt(0).toUpperCase();
   const [imgError, setImgError] = useState(false);
   const showImg = !!avatarUrl && !imgError;
-  const badgePx = Math.round(size * 0.44);
   return (
     <div style={{
       width: size, height: size, borderRadius: size / 2,
@@ -280,14 +377,12 @@ function Avatar({ name, platform, size = 40, avatarUrl }: { name?: string; platf
       {/* Platform badge — real brand logo SVG at a fixed corner size (no transform
           scaling, which previously collapsed the icon into a sliver). */}
       <div style={{
-        position: 'absolute', bottom: -3, right: -3,
-        width: badgePx, height: badgePx,
-        borderRadius: '50%', overflow: 'hidden',
-        border: '2px solid #fff', background: '#fff',
+        position: 'absolute', bottom: -4, right: -4,
+        borderRadius: 7, border: '2px solid #fff', background: '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.25)', lineHeight: 0,
       }}>
-        <PlatformGlyph platform={platform} px={badgePx} />
+        <PlatformGlyph platform={platform} />
       </div>
     </div>
   );
@@ -1118,8 +1213,13 @@ export default function InboxPage() {
             />
           </div>
 
+          {/* Platform filter uses a custom dropdown so it can show real brand logos */}
+          <PlatformFilter
+            value={filter.platform}
+            onChange={(v) => setFilter(prev => ({ ...prev, platform: v }))}
+          />
+
           {[
-            { key: 'platform', opts: [['', 'All Platforms'], ['INSTAGRAM', '📷 Instagram'], ['FACEBOOK', '📘 Facebook'], ['TWITTER', '𝕏 Twitter'], ['LINKEDIN', '💼 LinkedIn'], ['THREADS', '🧵 Threads']] },
             { key: 'type',     opts: [['', 'All Types'], ['DM', '💬 DMs'], ['COMMENT', '💭 Comments']] },
             { key: 'tag',      opts: [['', 'All Tags'], ...AVAILABLE_TAGS.map(t => [t, t])] },
           ].map(f => (

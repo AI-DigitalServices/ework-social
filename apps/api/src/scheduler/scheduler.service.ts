@@ -6,6 +6,7 @@ import { PlanGuardService } from '../common/plan-guard.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SocialService } from '../social/social.service';
 import { PostHogService } from '../analytics/posthog.service';
+import { TwitterPollerService } from '../twitter/twitter-poller.service';
 
 @Injectable()
 export class SchedulerService {
@@ -17,6 +18,7 @@ export class SchedulerService {
     private notifications: NotificationsService,
     private socialService: SocialService,
     private posthog: PostHogService,
+    private twitterService: TwitterPollerService,
   ) {}
 
   async getPosts(workspaceId: string) {
@@ -152,11 +154,21 @@ export class SchedulerService {
           await this.socialService.publishToBluesky(post.id);
         } else if (platform === 'THREADS') {
           await this.socialService.publishToThreads(post.id);
+        } else if (platform === 'TIKTOK') {
+          await this.socialService.publishToTikTok(post.id);
+        } else if (platform === 'YOUTUBE') {
+          await this.socialService.publishToYouTube(post.id);
+        } else if (platform === 'TWITTER') {
+          await this.twitterService.publishTweet(post.id);
         } else {
+          // No publisher for this platform — mark FAILED rather than falsely
+          // reporting success (this previously marked PUBLISHED without posting).
+          const message = `Publishing to ${platform ?? 'this platform'} is not supported yet.`;
           await this.prisma.post.update({
             where: { id: post.id },
-            data: { status: 'PUBLISHED', publishedAt: now },
+            data: { status: 'FAILED', errorMessage: message },
           });
+          throw new Error(message);
         }
 
         // Notify workspace owner
@@ -215,12 +227,20 @@ export class SchedulerService {
     if (platform === 'LINKEDIN')  return this.socialService.publishToLinkedIn(postId);
     if (platform === 'THREADS')   return this.socialService.publishToThreads(postId);
     if (platform === 'BLUESKY')   return this.socialService.publishToBluesky(postId);
-    // For platforms without a dedicated publisher (Twitter, TikTok, YouTube)
-    // mark as published so the UI reflects the action
-    return this.prisma.post.update({
+    if (platform === 'TIKTOK')    return this.socialService.publishToTikTok(postId);
+    if (platform === 'YOUTUBE')   return this.socialService.publishToYouTube(postId);
+    if (platform === 'TWITTER')   return this.twitterService.publishTweet(postId);
+
+    // No publisher implemented for this platform (e.g. Twitter/X posting).
+    // Previously this silently marked the post PUBLISHED without sending it
+    // anywhere — the UI reported success while nothing reached the platform.
+    // Fail loudly instead so the user is never misled.
+    const message = `Publishing to ${platform ?? 'this platform'} is not supported yet.`;
+    await this.prisma.post.update({
       where: { id: postId },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      data: { status: 'FAILED', errorMessage: message },
     });
+    throw new Error(message);
   }
 
   async getStats(workspaceId: string) {

@@ -20,6 +20,9 @@ export class TwitterPollerService {
    *  Each entry self-destructs after 10 minutes (OAuth timeout guard). */
   private readonly oauthStateStore = new Map<string, OAuthState>();
 
+  /** Epoch ms until which mention polling is paused (set when X credits run out). */
+  private pollBackoffUntil = 0;
+
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
@@ -274,6 +277,98 @@ export class TwitterPollerService {
     }
   }
 
+  // ─── Publish a tweet (user OAuth token required) ──────────────────────────
+
+  /**
+   * Publish a post to Twitter/X.
+   *
+   * Text-only. The connected OAuth scopes are `tweet.read tweet.write users.read
+   * offline.access` — there is no media scope, so images/video cannot be
+   * uploaded with these tokens. Rather than silently dropping attached media
+   * (which would report a success the user didn't actually get), we fail with a
+   * clear message. Adding media support requires a media scope + reconnect.
+   */
+  async publishTweet(postId: string): Promise<{ success: boolean; postId: string }> {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { socialAccount: true },
+    });
+    if (!post) throw new Error('Post not found');
+
+    const account = post.socialAccount;
+    if (!account?.accessToken) {
+      throw new Error(
+        'No Twitter account with OAuth tokens connected — please reconnect via Settings → Social Accounts.',
+      );
+    }
+
+    const fail = async (message: string) => {
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage: message },
+      });
+      throw new Error(message);
+    };
+
+    if (post.mediaUrls && post.mediaUrls.length > 0) {
+      await fail(
+        'Twitter/X posts with images or video are not supported yet — post text only, or publish media via another platform.',
+      );
+    }
+
+    const text = (post.content || '').trim();
+    if (!text) await fail('Twitter/X requires post text.');
+    if (text.length > 280) {
+      await fail(`Twitter/X allows 280 characters; this post is ${text.length}.`);
+    }
+
+    let accessToken = this.decryptToken(account.accessToken);
+    const send = (token: string) =>
+      axios.post(
+        'https://api.twitter.com/2/tweets',
+        { text },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+      );
+
+    try {
+      let res;
+      try {
+        res = await send(accessToken);
+      } catch (err: any) {
+        // Access token expired — refresh once and retry
+        if (err?.response?.status === 401 && account.refreshToken) {
+          const newToken = await this.refreshAccessToken(account);
+          if (!newToken) throw new Error('Twitter access token expired and refresh failed — please reconnect.');
+          res = await send(newToken);
+        } else {
+          throw err;
+        }
+      }
+
+      const tweetId = res.data?.data?.id;
+      this.logger.log(`✅ Twitter post PUBLISHED — tweet id: ${tweetId}`);
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'PUBLISHED', publishedAt: new Date(), externalId: tweetId },
+      });
+      return { success: true, postId: tweetId };
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.detail ||
+        err?.response?.data?.title ||
+        err?.message ||
+        'Failed to publish to Twitter/X';
+      this.logger.error(
+        `Twitter publish failed — status:${err?.response?.status} body:${JSON.stringify(err?.response?.data ?? detail)}`,
+      );
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage: detail },
+      });
+      throw new Error(detail);
+    }
+  }
+
   // ─── @Mention polling (bearer token — no change from original) ────────────
 
   /**
@@ -281,10 +376,25 @@ export class TwitterPollerService {
    * Uses GET /2/users/:id/mentions — available on FREE tier.
    * (search/recent requires Basic $100/month — avoided intentionally)
    */
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  // COST NOTE: every tick costs X API credits per connected account.
+  // At 10-minute intervals with 3 accounts that was ~432 read calls/day
+  // (~13k/month), which is what drained the Pay-Per-Use credits. Hourly cuts
+  // that by 6x. Set TWITTER_POLLING_ENABLED=false to stop mention polling
+  // entirely (publishing/replies still work — those are separate, cheaper calls).
+  @Cron(CronExpression.EVERY_HOUR)
   async pollMentions() {
+    if (this.config.get('TWITTER_POLLING_ENABLED') === 'false') {
+      return;
+    }
+
     if (!this.bearerToken) {
       this.logger.warn('TWITTER_BEARER_TOKEN not set — skipping poll');
+      return;
+    }
+
+    // Back off after a credit/rate failure so we don't keep burning credits
+    // (or hammering a depleted account) every hour.
+    if (this.pollBackoffUntil && Date.now() < this.pollBackoffUntil) {
       return;
     }
 
@@ -372,6 +482,15 @@ export class TwitterPollerService {
         this.logger.error(`Access denied for @${handle} — check app permissions`);
       } else if (status === 429) {
         this.logger.warn(`Rate limited — will retry next poll cycle`);
+      } else if (status === 402) {
+        // Credits exhausted — stop polling for 6h instead of retrying hourly and
+        // failing (and consuming any newly-added credits on reads).
+        this.pollBackoffUntil = Date.now() + 6 * 60 * 60 * 1000;
+        this.logger.error(
+          `X API credits depleted — pausing mention polling for 6h. ` +
+          `Top up credits, or set TWITTER_POLLING_ENABLED=false to disable mention polling. ` +
+          `Publishing tweets is unaffected by this pause.`,
+        );
       } else {
         this.logger.error(`Twitter API error for @${handle}: ${status} — ${detail}`);
       }

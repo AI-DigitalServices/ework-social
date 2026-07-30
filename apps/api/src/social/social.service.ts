@@ -70,6 +70,13 @@ export class SocialService {
       // instagram_content_publish — which breaks publishing entirely
       // ("Media ID is not available"). See commit 1217034.
       'instagram_manage_messages',
+      // ⚠️ 'pages_messaging' is REQUIRED for Facebook DMs to reach the Engagement
+      // Hub — without it the page 'messages' webhook subscription fails with
+      // "(#200) To subscribe to the messages field, one of these permissions is
+      // needed: pages_messaging". Do NOT add it here until Meta shows Advanced
+      // Access GRANTED for it (App Dashboard → App Review → Permissions).
+      // Requesting an ungranted scope degrades the entire token — see the
+      // instagram_manage_comments incident above.
       'business_management',
     ].join(',');
 
@@ -464,8 +471,20 @@ export class SocialService {
       where: { id: postId },
       include: { socialAccount: true },
     });
-    if (!post || !post.socialAccount?.accessToken) {
-      throw new BadRequestException('Post or account not found');
+    if (!post) throw new BadRequestException('Post not found');
+
+    // A post whose account has no token is orphaned — this happens when the
+    // account was disconnected (disconnect nulls the token) after the post was
+    // scheduled. Say so plainly and stop retrying it every cron tick.
+    if (!post.socialAccount?.accessToken) {
+      const message = post.socialAccount
+        ? `The ${post.socialAccount.platform} account "${post.socialAccount.accountName}" was disconnected. Reconnect it, then edit this post to select the reconnected account.`
+        : 'This post has no social account attached. Edit the post and choose an account.';
+      await this.prisma.post.update({
+        where: { id: postId },
+        data: { status: 'FAILED', errorMessage: message },
+      });
+      throw new BadRequestException(message);
     }
 
     // Instagram requires at least one image or video
@@ -519,6 +538,7 @@ export class SocialService {
         { params: { creation_id: creationId, access_token: accessToken } },
       );
 
+      this.logger.log(`✅ Instagram post PUBLISHED — media id: ${publishRes.data.id}`);
       await this.prisma.post.update({
         where: { id: postId },
         data: { status: 'PUBLISHED', externalId: publishRes.data.id },
@@ -752,6 +772,7 @@ export class SocialService {
         },
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Restli-Protocol-Version': '2.0.0' } }
       );
+      this.logger.log(`✅ LinkedIn post PUBLISHED — ugcPost id: ${res.data.id}`);
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: res.data.id } });
       return { success: true, postId: res.data.id };
     } catch (err: any) {

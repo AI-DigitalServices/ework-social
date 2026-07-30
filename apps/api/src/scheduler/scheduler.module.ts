@@ -6,9 +6,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { SocialModule } from '../social/social.module';
 import { AuthModule } from '../auth/auth.module';
 import { PostHogModule } from '../analytics/posthog.module';
+import { TwitterModule } from '../twitter/twitter.module';
 
 @Module({
-  imports: [CommonModule, AuthModule, NotificationsModule, SocialModule, PostHogModule],
+  imports: [CommonModule, AuthModule, NotificationsModule, SocialModule, PostHogModule, TwitterModule],
   controllers: [SchedulerController],
   providers: [SchedulerService],
 })
