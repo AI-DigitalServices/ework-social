@@ -188,7 +188,10 @@ export class SchedulerService {
         // Mark as failed
         await this.prisma.post.update({
           where: { id: post.id },
-          data: { status: 'FAILED' },
+          data: {
+            status: 'FAILED',
+            errorMessage: (err as any)?.response?.data?.message ?? (err as Error)?.message ?? 'Unknown publish error',
+          },
         });
         // Notify owner of failure
         const ownerId = post.workspace?.ownerId;

@@ -452,9 +452,11 @@ export class SocialService {
     return /\.(mp4|mov|avi|webm)$/i.test(url);
   }
 
-  // Poll Instagram container status until FINISHED or ERROR (max ~90s)
+  // Poll Instagram container status until FINISHED or ERROR (max ~3 min —
+  // Reels/video containers routinely take longer than 90s to process, which
+  // previously surfaced as "Media ID is not available" on publish)
   private async waitForInstagramContainer(containerId: string, accessToken: string): Promise<void> {
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 36; i++) {
       await new Promise(r => setTimeout(r, 5000)); // wait 5s per attempt
       const statusRes = await axios.get(
         `https://graph.facebook.com/v19.0/${containerId}`,
@@ -467,7 +469,7 @@ export class SocialService {
         throw new Error(`Instagram media processing failed with status: ${code}`);
       }
     }
-    throw new Error('Instagram media processing timed out after 90 seconds');
+    throw new Error('Instagram media processing timed out after 3 minutes — retry the post shortly');
   }
 
   async publishToInstagram(postId: string) {
@@ -728,6 +730,90 @@ export class SocialService {
     return asset;
   }
 
+  /** Upload a video via the /rest/videos flow (initialize → PUT parts →
+   *  finalize → poll until AVAILABLE); returns the video URN. */
+  private async uploadVideoToLinkedInRest(
+    videoUrl: string,
+    token: string,
+    ownerUrn: string,
+    apiVersion: string,
+  ): Promise<string> {
+    const restHeaders = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': apiVersion,
+    };
+
+    // Step 0: fetch the video from storage (Supabase public URL)
+    const vidRes = await axios.get(videoUrl, {
+      responseType: 'arraybuffer',
+      maxContentLength: 500 * 1024 * 1024,
+      maxBodyLength: 500 * 1024 * 1024,
+    });
+    const buffer: Buffer = Buffer.from(vidRes.data);
+
+    // Step 1: initialize upload
+    const initRes = await axios.post(
+      'https://api.linkedin.com/rest/videos?action=initializeUpload',
+      {
+        initializeUploadRequest: {
+          owner: ownerUrn,
+          fileSizeBytes: buffer.length,
+          uploadCaptions: false,
+          uploadThumbnail: false,
+        },
+      },
+      { headers: restHeaders },
+    );
+    const videoUrn: string | undefined = initRes.data?.value?.video;
+    const uploadToken: string = initRes.data?.value?.uploadToken ?? '';
+    const instructions: Array<{ uploadUrl: string; firstByte: number; lastByte: number }> =
+      initRes.data?.value?.uploadInstructions ?? [];
+    if (!videoUrn || instructions.length === 0) {
+      throw new Error('LinkedIn video initializeUpload returned no upload instructions');
+    }
+
+    // Step 2: upload each part; collect ETags in order
+    const uploadedPartIds: string[] = [];
+    for (const inst of instructions) {
+      const chunk = buffer.subarray(inst.firstByte, inst.lastByte + 1);
+      const partRes = await axios.put(inst.uploadUrl, chunk, {
+        headers: { 'Content-Type': 'application/octet-stream' },
+        maxContentLength: 500 * 1024 * 1024,
+        maxBodyLength: 500 * 1024 * 1024,
+      });
+      const etag = partRes.headers?.etag || partRes.headers?.ETag;
+      if (!etag) throw new Error('LinkedIn video part upload returned no ETag');
+      uploadedPartIds.push(String(etag));
+    }
+
+    // Step 3: finalize
+    await axios.post(
+      'https://api.linkedin.com/rest/videos?action=finalizeUpload',
+      { finalizeUploadRequest: { video: videoUrn, uploadToken, uploadedPartIds } },
+      { headers: restHeaders },
+    );
+
+    // Step 4: poll until processed (LinkedIn must transcode before the URN is
+    // usable in a post). Typical processing is well under a minute.
+    const deadline = Date.now() + 120_000;
+    while (Date.now() < deadline) {
+      const statusRes = await axios.get(
+        `https://api.linkedin.com/rest/videos/${encodeURIComponent(videoUrn)}`,
+        { headers: restHeaders },
+      );
+      const status = statusRes.data?.status;
+      if (status === 'AVAILABLE') {
+        this.logger.log(`LinkedIn video ready: ${videoUrn}`);
+        return videoUrn;
+      }
+      if (status === 'PROCESSING_FAILED') throw new Error('LinkedIn video processing failed');
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+    throw new Error('LinkedIn video processing timed out after 120 seconds — retry the post shortly');
+  }
+
   /** Escape LinkedIn "commentary" reserved characters (little-text format).
    *  Unescaped ( ) [ ] { } < > @ # * _ ~ | \ cause the Posts API to reject the
    *  text; LinkedIn strips the backslashes on display. */
@@ -795,10 +881,9 @@ export class SocialService {
     // (multi-part upload) — attempting it through the image endpoint corrupts the
     // post. For posts with video we publish the text and skip the media.
     const imageUrls = (post.mediaUrls || []).filter((u) => !this.isVideoUrl(u));
-    const hasVideo = (post.mediaUrls || []).some((u) => this.isVideoUrl(u));
-    if (hasVideo) {
-      this.logger.warn('LinkedIn: video attachment skipped (video publishing not yet supported) — posting text only.');
-    }
+    // LinkedIn posts carry EITHER one video OR image(s). If a video is attached
+    // we upload it via /rest/videos and prefer it over images.
+    const videoUrl = (post.mediaUrls || []).find((u) => this.isVideoUrl(u));
 
     let lastError: any;
     for (const version of this.linkedInVersionCandidates()) {
@@ -809,6 +894,19 @@ export class SocialService {
           'X-Restli-Protocol-Version': '2.0.0',
           'LinkedIn-Version': version,
         };
+
+        // Upload video (best-effort — a failed video falls back to text/images).
+        // A NONEXISTENT_VERSION error propagates so the outer loop tries the
+        // next LinkedIn-Version candidate.
+        let videoUrn: string | null = null;
+        if (videoUrl) {
+          try {
+            videoUrn = await this.uploadVideoToLinkedInRest(videoUrl, token, authorUrn, version);
+          } catch (vidErr: any) {
+            if (vidErr?.response?.data?.code === 'NONEXISTENT_VERSION' || vidErr?.response?.status === 426) throw vidErr;
+            this.logger.error(`LinkedIn video upload skipped: ${JSON.stringify(vidErr?.response?.data ?? vidErr?.message)}`);
+          }
+        }
 
         // Upload images (best-effort — a failed image never blocks the text post)
         const imageUrns: string[] = [];
@@ -831,7 +929,8 @@ export class SocialService {
           lifecycleState: 'PUBLISHED',
           isReshareDisabledByAuthor: false,
         };
-        if (imageUrns.length === 1) body.content = { media: { id: imageUrns[0] } };
+        if (videoUrn) body.content = { media: { id: videoUrn } };
+        else if (imageUrns.length === 1) body.content = { media: { id: imageUrns[0] } };
         else if (imageUrns.length > 1) body.content = { multiImage: { images: imageUrns.map((id) => ({ id })) } };
 
         const res = await axios.post('https://api.linkedin.com/rest/posts', body, { headers: restHeaders });
