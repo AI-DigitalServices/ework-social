@@ -12,5 +12,6 @@ import { TwitterModule } from '../twitter/twitter.module';
   imports: [CommonModule, AuthModule, NotificationsModule, SocialModule, PostHogModule, TwitterModule],
   controllers: [SchedulerController],
   providers: [SchedulerService],
+  exports: [SchedulerService],
 })
 export class SchedulerModule {}

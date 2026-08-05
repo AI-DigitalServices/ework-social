@@ -55,6 +55,16 @@ model Workspace {
   postApprovals   PostApproval[]
   inboxMessages   InboxMessage[]
   aiUsage         AiUsage[]
+
+  // AI Operating System (Phase 1) - off by default; shadow-mode only until a
+  // human explicitly enables it. agentPaused is the per-workspace kill switch,
+  // checked at the top of every orchestrator run regardless of agentEnabled.
+  agentEnabled    Boolean   @default(false)
+  agentPaused     Boolean   @default(false)
+  campaigns       Campaign[]
+  agentRuns       AgentRun[]
+  memories        WorkspaceMemory[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -119,6 +129,7 @@ model Post {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   approval        PostApproval?
+  campaignTask    CampaignTask?
 }
 
 model Client {
@@ -144,6 +155,7 @@ model Client {
   tasks             Task[]
   activities        Activity[]
   inboxMessages     InboxMessage[]
+  campaigns         Campaign[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 }
@@ -408,4 +420,125 @@ enum AiUsageType {
   REWRITE
   CRM_INSIGHT
   REPLY_SUGGEST
+  AGENT_ACTION
+}
+
+
+//  AI Operating System (Phase 1 - additive, shadow-mode) 
+// Campaign is the brief the agent works from; CampaignTask is each proposed
+// action awaiting human approval; AgentRun is an immutable audit record of
+// every reasoning cycle (see AI_OS_Blueprint section 10 - audit is non-
+// negotiable); WorkspaceMemory is the "Brand Brain" the agent reads before
+// acting. Nothing here auto-publishes: Phase 1 ships in shadow mode only.
+
+enum CampaignStatus {
+  DRAFT
+  PLANNING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum CampaignTaskType {
+  STRATEGY
+  CONTENT_DRAFT
+  OPTIMIZATION
+  REPORT
+}
+
+enum CampaignTaskStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  EXECUTED
+  FAILED
+}
+
+enum AgentRunOutcome {
+  SUCCESS
+  FAILED
+  NEEDS_APPROVAL
+}
+
+enum MemoryKind {
+  BRAND
+  AUDIENCE
+  WINNING_CONTENT
+  REJECTED
+  CAMPAIGN_LEARNING
+  COMPETITOR
+  DOCUMENT
+}
+
+model Campaign {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  clientId      String?
+  client        Client?        @relation(fields: [clientId], references: [id])
+  goal          String
+  brief         String
+  platforms     String[]
+  status        CampaignStatus @default(DRAFT)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  budgetActions Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tasks         CampaignTask[]
+  runs          AgentRun[]
+
+  @@index([workspaceId, status])
+}
+
+model CampaignTask {
+  id         String             @id @default(cuid())
+  campaignId String
+  campaign   Campaign           @relation(fields: [campaignId], references: [id])
+  type       CampaignTaskType
+  payload    Json
+  status     CampaignTaskStatus @default(PROPOSED)
+  postId     String?            @unique
+  post       Post?              @relation(fields: [postId], references: [id])
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([campaignId, status])
+}
+
+model AgentRun {
+  id          String          @id @default(cuid())
+  workspaceId String
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id])
+  campaignId  String?
+  campaign    Campaign?       @relation(fields: [campaignId], references: [id])
+  trigger     String          // e.g. "campaign_wizard", "shadow_test"
+  model       String          // e.g. "claude-sonnet-4-5"
+  toolCalls   Json?
+  tokensIn    Int?
+  tokensOut   Int?
+  costUsd     Float?
+  outcome     AgentRunOutcome
+  summary     String?
+  createdAt   DateTime        @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+// Plain-text memory for Phase 1 - semantic (pgvector) retrieval lands in
+// Phase 2 once the extension is enabled on Neon; reads are keyword/kind-
+// filtered until then, which is enough for a single active campaign.
+model WorkspaceMemory {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  kind        MemoryKind
+  content     String
+  sourceRef   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([workspaceId, kind])
 }

@@ -24,6 +24,7 @@ import { RiscModule } from './risc/risc.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { TwitterModule } from './twitter/twitter.module';
 import { LinkedInEngagementModule } from './linkedin/linkedin-engagement.module';
+import { AgentModule } from './agent/agent.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { LinkedInEngagementModule } from './linkedin/linkedin-engagement.module'
     WaitlistModule,
     TwitterModule,
     LinkedInEngagementModule,
+    AgentModule,
   ],
   providers: [
     {

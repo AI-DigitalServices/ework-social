@@ -36,6 +36,7 @@ export const PLAN_LIMITS = {
     aiReplyEnabled:         false,
     aiReplyPerMonth:        0,
     aiCrmInsightsEnabled:   false,
+    agentActionsPerMonth:   0,          // AI OS Phase 1 — no agent access on Free
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,
@@ -84,6 +85,7 @@ export const PLAN_LIMITS = {
     aiReplyEnabled:         true,
     aiReplyPerMonth:        25,         // Increased from 10 — ~1 AI reply per day
     aiCrmInsightsEnabled:   false,
+    agentActionsPerMonth:   0,          // AI OS Phase 1 — agent access starts at Growth (Copilot tier)
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,      // Collaboration feature — unlocks at Growth
@@ -132,6 +134,7 @@ export const PLAN_LIMITS = {
     aiReplyEnabled:         true,
     aiReplyPerMonth:        150,        // Increased from 50 — teams handle multiple client inboxes
     aiCrmInsightsEnabled:   true,       // Moved from AGENCY_PRO — makes Growth feel complete ✅
+    agentActionsPerMonth:   300,        // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
@@ -180,6 +183,7 @@ export const PLAN_LIMITS = {
     aiReplyEnabled:         true,
     aiReplyPerMonth:        999999,
     aiCrmInsightsEnabled:   true,
+    agentActionsPerMonth:   999999,     // AI OS Phase 1 — unlimited agent actions (Autopilot tier)
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,
@@ -234,4 +238,6 @@ export const FEATURE_MIN_PLAN: Record<string, string> = {
   // Agency
   whiteLabel:           'AGENCY_PRO',
   apiAccess:            'AGENCY_PRO',
+  // AI OS Phase 1
+  agentAccess:          'GROWTH',
 };
