@@ -74,13 +74,16 @@ export class SocialService {
       // instagram_content_publish — which breaks publishing entirely
       // ("Media ID is not available"). See commit 1217034.
       'instagram_manage_messages',
-      // ⚠️ 'pages_messaging' is REQUIRED for Facebook DMs to reach the Engagement
-      // Hub — without it the page 'messages' webhook subscription fails with
-      // "(#200) To subscribe to the messages field, one of these permissions is
-      // needed: pages_messaging". Do NOT add it here until Meta shows Advanced
-      // Access GRANTED for it (App Dashboard → App Review → Permissions).
-      // Requesting an ungranted scope degrades the entire token — see the
-      // instagram_manage_comments incident above.
+      // STAGING-ONLY (Meta Test App review flow, Aug 2026): pages_manage_engagement
+      // and pages_messaging are added here so the reply-from-hub and DM flows can be
+      // demoed/screencast against a Meta Test App. Test Apps do not carry the token-
+      // degradation risk that requesting an unapproved scope causes on the real app.
+      // DO NOT merge this branch's change to main until Meta shows Advanced Access
+      // GRANTED for both scopes (App Dashboard -> App Review -> Permissions) — see
+      // the instagram_manage_comments incident above for what happens if an
+      // ungranted scope ships to production.
+      'pages_manage_engagement',
+      'pages_messaging',
       'business_management',
     ].join(',');
 
