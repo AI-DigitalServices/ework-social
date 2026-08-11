@@ -69,7 +69,10 @@ export class WebhookService {
         where: { accountId: pageId, platform: 'FACEBOOK', isActive: true },
         include: { workspace: true },
       });
-      if (!account) return;
+      if (!account) {
+        this.logger.warn(`Facebook comment webhook: no active SocialAccount found for pageId ${pageId} — event dropped`);
+        return;
+      }
 
       // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
       const { isNew } = await this.saveInboxMessage({
@@ -160,7 +163,10 @@ export class WebhookService {
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: pageId, platform: 'FACEBOOK', isActive: true },
       });
-      if (!account) return;
+      if (!account) {
+        this.logger.warn(`Facebook DM webhook: no active SocialAccount found for pageId ${pageId} — event dropped`);
+        return;
+      }
 
       // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
       const { isNew } = await this.saveInboxMessage({
@@ -244,7 +250,10 @@ export class WebhookService {
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
-      if (!account) return;
+      if (!account) {
+        this.logger.warn(`Instagram comment webhook: no active SocialAccount found for igAccountId ${igAccountId} — event dropped`);
+        return;
+      }
 
       // Resolve the commenter's handle + photo so the inbox/CRM show a real
       // identity rather than a numeric ID.
@@ -337,7 +346,10 @@ export class WebhookService {
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: igAccountId, platform: 'INSTAGRAM', isActive: true },
       });
-      if (!account) return;
+      if (!account) {
+        this.logger.warn(`Instagram DM webhook: no active SocialAccount found for igAccountId ${igAccountId} — event dropped`);
+        return;
+      }
 
       const externalId = messageData.message?.mid || senderId;
 
