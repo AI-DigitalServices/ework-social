@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { createDecipheriv } from 'crypto';
 import axios from 'axios';
@@ -10,6 +10,7 @@ const INBOX_TAGS = ['Lead', 'VIP Client', 'Support', 'Opportunity', 'Spam', 'Fol
 
 @Injectable()
 export class InboxService {
+  private readonly logger = new Logger(InboxService.name);
   private anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   constructor(
@@ -258,33 +259,45 @@ export class InboxService {
     const decipher = createDecipheriv('aes-256-cbc', key, iv);
     const accessToken = decipher.update(encrypted, 'hex', 'utf8') + decipher.final('utf8');
 
-    if (msg.type === 'COMMENT') {
-      if (msg.platform === 'INSTAGRAM') {
-        await axios.post(
-          `https://graph.facebook.com/v19.0/${msg.externalId}/replies`,
-          null,
-          { params: { message: content, access_token: accessToken } }
-        );
+    try {
+      if (msg.type === 'COMMENT') {
+        if (msg.platform === 'INSTAGRAM') {
+          await axios.post(
+            `https://graph.facebook.com/v19.0/${msg.externalId}/replies`,
+            null,
+            { params: { message: content, access_token: accessToken } }
+          );
+        } else {
+          await axios.post(
+            `https://graph.facebook.com/v19.0/${msg.externalId}/comments`,
+            { message: content, access_token: accessToken }
+          );
+        }
       } else {
+        // Send API resolves "me" from the page access token itself. An explicit
+        // page ID here is not the documented pattern and was likely the cause of
+        // silent failures — this also fixes the FB/IG token-vs-pageId mismatch
+        // the previous version had for Instagram DMs.
         await axios.post(
-          `https://graph.facebook.com/v19.0/${msg.externalId}/comments`,
-          { message: content, access_token: accessToken }
+          `https://graph.facebook.com/v19.0/me/messages`,
+          {
+            recipient: { id: msg.senderId },
+            message: { text: content },
+            messaging_type: 'RESPONSE',
+            access_token: accessToken,
+          }
         );
       }
-    } else {
-      const fbAccount = msg.workspace.socialAccounts.find(
-        a => a.platform === 'FACEBOOK' && a.isActive
-      );
-      const pageId = fbAccount?.accountId || account.accountId;
-      await axios.post(
-        `https://graph.facebook.com/v19.0/${pageId}/messages`,
-        {
-          recipient: { id: msg.senderId },
-          message: { text: content },
-          messaging_type: 'RESPONSE',
-          access_token: accessToken,
-        }
-      );
+    } catch (err: any) {
+      // Surface Meta's real error instead of letting the raw (circular) axios
+      // error object propagate unhandled — that raw object is what was showing
+      // up as an unreadable dump instead of a real error message.
+      const metaError = err?.response?.data?.error?.message
+        ?? (err?.response?.data ? JSON.stringify(err.response.data) : null)
+        ?? err?.message
+        ?? 'Unknown error';
+      this.logger.error(`Inbox reply failed (${msg.platform} ${msg.type}): ${metaError}`);
+      throw new BadRequestException(`Failed to send reply: ${metaError}`);
     }
 
     await this.prisma.inboxReply.create({
