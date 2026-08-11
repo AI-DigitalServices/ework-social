@@ -7,7 +7,15 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Force fresh layer - 2026-07-16
+# Real cache-bust: Railway passes RAILWAY_GIT_COMMIT_SHA as a build var when
+# declared as an ARG here. Because it changes on every commit, this RUN layer
+# (and everything after it, including the COPY below) can never be served from
+# a stale cache -- unlike a Dockerfile comment, which does NOT affect the cache
+# key and silently did nothing (see the old "Force fresh layer" comment this
+# replaces, which never actually busted anything).
+ARG RAILWAY_GIT_COMMIT_SHA
+RUN echo "Building commit: ${RAILWAY_GIT_COMMIT_SHA:-unknown}"
+
 COPY apps/api ./apps/api
 COPY prisma ./prisma
 
