@@ -74,13 +74,12 @@ export class SocialService {
       // instagram_content_publish — which breaks publishing entirely
       // ("Media ID is not available"). See commit 1217034.
       'instagram_manage_messages',
-      // ⚠️ 'pages_messaging' is REQUIRED for Facebook DMs to reach the Engagement
-      // Hub — without it the page 'messages' webhook subscription fails with
-      // "(#200) To subscribe to the messages field, one of these permissions is
-      // needed: pages_messaging". Do NOT add it here until Meta shows Advanced
-      // Access GRANTED for it (App Dashboard → App Review → Permissions).
-      // Requesting an ungranted scope degrades the entire token — see the
-      // instagram_manage_comments incident above.
+      // Advanced Access GRANTED by Meta 2026-08-24 for all three below (App
+      // Review submission approved — pages_read_user_content, pages_manage_engagement,
+      // pages_messaging). Safe to request on production now.
+      'pages_manage_engagement',
+      'pages_messaging',
+      'pages_read_user_content',
       'business_management',
     ].join(',');
 

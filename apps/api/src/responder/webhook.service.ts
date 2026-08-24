@@ -74,6 +74,13 @@ export class WebhookService {
         return;
       }
 
+      // Resolve the commenter's profile picture — the webhook payload only
+      // includes id/name, never a photo, so a follow-up Graph call is needed
+      // (mirrors fetchInstagramProfile below, which Facebook never had).
+      const commentProfile = commentData.from?.id && account.accessToken
+        ? await this.fetchFacebookProfile(commentData.from.id, account.accessToken)
+        : {};
+
       // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
       const { isNew } = await this.saveInboxMessage({
         workspaceId: account.workspaceId,
@@ -82,6 +89,7 @@ export class WebhookService {
         externalId: commentId,
         senderId: commentData.from?.id,
         senderName: fromName,
+        senderAvatar: commentProfile.avatar,
         content: commentText,
         postId: commentData.post_id,
         socialAccountId: account.id,
@@ -158,7 +166,6 @@ export class WebhookService {
     try {
       const senderId = messagingEvent.sender?.id;
       const messageText = messagingEvent.message?.text || '';
-      const fromName = 'there';
 
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: pageId, platform: 'FACEBOOK', isActive: true },
@@ -166,6 +173,19 @@ export class WebhookService {
       if (!account) {
         this.logger.warn(`Facebook DM webhook: no active SocialAccount found for pageId ${pageId} — event dropped`);
         return;
+      }
+
+      // Resolve the sender's real name + photo BEFORE saving — previously this
+      // was hardcoded to "there" and only resolved *after* the inbox row was
+      // already written, and even then only used for the CRM contact, never
+      // fed back into the inbox message itself. That's why DMs showed "there"
+      // with no photo while Instagram (which resolves profile first) didn't.
+      let fromName = 'there';
+      let senderAvatar: string | undefined;
+      if (senderId && account.accessToken) {
+        const profile = await this.fetchFacebookProfile(senderId, account.accessToken);
+        if (profile.name) fromName = profile.name;
+        senderAvatar = profile.avatar;
       }
 
       // Save to inbox. If this is a duplicate delivery, stop here — don't re-reply.
@@ -176,6 +196,7 @@ export class WebhookService {
         externalId: messagingEvent.message?.mid || senderId,
         senderId,
         senderName: fromName,
+        senderAvatar,
         content: messageText,
         socialAccountId: account.id,
       });
@@ -215,24 +236,13 @@ export class WebhookService {
       // Record auto-reply in inbox so team sees it was handled and doesn't double-reply
       await this.recordAutoReply(Platform.FACEBOOK, messagingEvent.message?.mid || senderId, message);
 
-      // Try to get sender's name from Facebook Graph API for better CRM contact naming
-      let senderName = `Facebook User ${senderId}`;
-      try {
-        const profileRes = await axios.get(
-          `https://graph.facebook.com/v19.0/${senderId}`,
-          { params: { fields: 'name', access_token: accessToken } }
-        );
-        if (profileRes.data?.name) senderName = profileRes.data.name;
-      } catch {
-        // enrichment failed — use fallback name, don't block CRM write
-      }
-
-      // Update CRM lead stage if the rule has that configured
+      // Update CRM lead stage if the rule has that configured — reuse the name
+      // already resolved above instead of making a second Graph API call.
       if (matchingRule.updateLeadStage && senderId) {
         await this.updateLeadStage(
           account.workspaceId,
           senderId,
-          senderName,
+          fromName,
           matchingRule.updateLeadStage,
           'FACEBOOK_DM',
         );
@@ -481,6 +491,34 @@ export class WebhookService {
       });
     } catch (err: any) {
       this.logger.error(`handleInstagramDMByMid error: ${err?.message}`);
+    }
+  }
+
+  /**
+   * Fetch a Facebook user's public name + profile picture from their PSID, so
+   * the inbox shows a real name/photo instead of "there"/no image. Mirrors
+   * fetchInstagramProfile below — Facebook never had an equivalent, which is
+   * why DM/comment sender identity wasn't resolving. Logs the exact Graph API
+   * error on failure so we can diagnose why a profile didn't resolve.
+   */
+  private async fetchFacebookProfile(
+    userId: string,
+    encryptedToken: string,
+  ): Promise<{ name?: string; avatar?: string }> {
+    try {
+      const token = this.decryptToken(encryptedToken);
+      const res = await axios.get(`https://graph.facebook.com/v19.0/${userId}`, {
+        params: { fields: 'name,picture.type(large)', access_token: token },
+      });
+      return {
+        name: res.data?.name,
+        avatar: res.data?.picture?.data?.url,
+      };
+    } catch (err: any) {
+      this.logger.warn(
+        `Facebook profile fetch failed for ${userId}: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
+      return {};
     }
   }
 
