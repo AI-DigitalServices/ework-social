@@ -792,9 +792,21 @@ export default function InboxPage() {
 
   const selectMessage = async (msg: any) => {
     setSelected(msg); setReplyText('');
-    if (!msg.isRead) {
-      await api.patch(`/inbox/${msg.id}/read?workspaceId=${workspace?.id}`);
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
+    // A "conversation" can bundle several underlying messages (grouped by
+    // post or sender) — mark every unread one in the group as read, not
+    // just the representative item, so the thread's unread badge clears.
+    const items = msg.items || [msg];
+    const unreadItems = items.filter((m: any) => !m.isRead);
+    if (unreadItems.length > 0) {
+      await Promise.all(unreadItems.map((m: any) =>
+        api.patch(`/inbox/${m.id}/read?workspaceId=${workspace?.id}`)
+      ));
+      setMessages(prev => prev.map(m => m.id === msg.id ? {
+        ...m,
+        isRead: true,
+        unreadCount: 0,
+        items: (m.items || []).map((it: any) => ({ ...it, isRead: true })),
+      } : m));
     }
   };
 
@@ -1415,48 +1427,55 @@ export default function InboxPage() {
                   )}
                 </div>
 
-                {/* Message thread */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, background: '#FAFBFF' }}>
-                  {/* Original message */}
-                  <div style={{ display: 'flex', gap: 12, animation: 'fadeIn 0.2s ease' }}>
-                    <Avatar name={selected.senderName} platform={selected.platform} size={36} avatarUrl={selected.senderAvatar} />
-                    <div style={{ maxWidth: '70%' }}>
-                      <div style={{
-                        background: '#fff', border: '1px solid #EEF2FF',
-                        borderRadius: '18px 18px 18px 4px',
-                        padding: '12px 16px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      }}>
-                        <p style={{ fontSize: 14, color: '#1E293B', lineHeight: 1.6 }}>{selected.content}</p>
+                {/* Message thread — one bubble group per item in the
+                    conversation (multiple comments on the same post, or
+                    multiple DMs from the same sender), each with its own
+                    replies inline, in chronological order. */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, background: '#FAFBFF' }}>
+                  {(selected.items || [selected]).map((item: any) => (
+                    <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      {/* Incoming message */}
+                      <div style={{ display: 'flex', gap: 12, animation: 'fadeIn 0.2s ease' }}>
+                        <Avatar name={item.senderName} platform={item.platform} size={36} avatarUrl={item.senderAvatar} />
+                        <div style={{ maxWidth: '70%' }}>
+                          <div style={{
+                            background: '#fff', border: '1px solid #EEF2FF',
+                            borderRadius: '18px 18px 18px 4px',
+                            padding: '12px 16px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                          }}>
+                            <p style={{ fontSize: 14, color: '#1E293B', lineHeight: 1.6 }}>{item.content}</p>
+                          </div>
+                          <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 4, marginLeft: 4 }}>{formatTime(item.createdAt)}</p>
+                        </div>
                       </div>
-                      <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 4, marginLeft: 4 }}>{formatTime(selected.createdAt)}</p>
-                    </div>
-                  </div>
 
-                  {/* Replies */}
-                  {selected.replies?.map((reply: any, i: number) => (
-                    <div key={reply.id} style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease', animationDelay: `${i * 0.05}s` }}>
-                      <div style={{ maxWidth: '70%', textAlign: 'right' }}>
-                        <div style={{
-                          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                          borderRadius: '18px 18px 4px 18px',
-                          padding: '12px 16px',
-                          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-                        }}>
-                          <p style={{ fontSize: 14, color: '#fff', lineHeight: 1.6 }}>{reply.content}</p>
+                      {/* Replies to this specific item */}
+                      {item.replies?.map((reply: any, i: number) => (
+                        <div key={reply.id} style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease', animationDelay: `${i * 0.05}s` }}>
+                          <div style={{ maxWidth: '70%', textAlign: 'right' }}>
+                            <div style={{
+                              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                              borderRadius: '18px 18px 4px 18px',
+                              padding: '12px 16px',
+                              boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
+                            }}>
+                              <p style={{ fontSize: 14, color: '#fff', lineHeight: 1.6 }}>{reply.content}</p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4, marginRight: 4 }}>
+                              <p style={{ fontSize: 11, color: '#94A3B8' }}>{formatTime(reply.sentAt)}</p>
+                              {reply.isAuto && <span style={{ fontSize: 10, background: 'rgba(139,92,246,0.1)', color: '#8B5CF6', padding: '2px 7px', borderRadius: 999, fontWeight: 700 }}>Auto</span>}
+                            </div>
+                          </div>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: '50%',
+                            background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: 14, fontWeight: 800, flexShrink: 0,
+                            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                          }}>A</div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4, marginRight: 4 }}>
-                          <p style={{ fontSize: 11, color: '#94A3B8' }}>{formatTime(reply.sentAt)}</p>
-                          {reply.isAuto && <span style={{ fontSize: 10, background: 'rgba(139,92,246,0.1)', color: '#8B5CF6', padding: '2px 7px', borderRadius: 999, fontWeight: 700 }}>Auto</span>}
-                        </div>
-                      </div>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: '50%',
-                        background: 'linear-gradient(135deg,#6366F1,#8B5CF6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontSize: 14, fontWeight: 800, flexShrink: 0,
-                        boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                      }}>A</div>
+                      ))}
                     </div>
                   ))}
                 </div>
