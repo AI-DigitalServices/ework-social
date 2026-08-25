@@ -74,6 +74,17 @@ export class WebhookService {
         return;
       }
 
+      // Skip comments authored by the connected Page itself. Facebook
+      // re-delivers the auto-responder's own posted replies through this
+      // same webhook as if it were a brand-new comment — without this
+      // guard, the bot's own reply gets saved as a fresh inbox item and
+      // re-evaluated against auto-responder rules, causing a self-reply
+      // loop and inbox spam. (DMs already avoid this via the is_echo flag;
+      // comment webhooks have no equivalent, so this has to be explicit.)
+      if (commentData.from?.id === pageId) {
+        return;
+      }
+
       // Resolve the commenter's profile picture — the webhook payload only
       // includes id/name, never a photo, so a follow-up Graph call is needed
       // (mirrors fetchInstagramProfile below, which Facebook never had).
@@ -262,6 +273,12 @@ export class WebhookService {
       });
       if (!account) {
         this.logger.warn(`Instagram comment webhook: no active SocialAccount found for igAccountId ${igAccountId} — event dropped`);
+        return;
+      }
+
+      // Skip comments authored by the connected Instagram account itself —
+      // same self-reply-loop guard as handleFacebookComment above.
+      if (commentData.from?.id === igAccountId) {
         return;
       }
 
