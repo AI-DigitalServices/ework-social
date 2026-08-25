@@ -169,7 +169,9 @@ export class WebhookService {
         );
       }
     } catch (err: any) {
-      this.logger.error('Error handling Facebook comment:', err?.message);
+      this.logger.error(
+        `Error handling Facebook comment: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
     }
   }
 
@@ -259,7 +261,9 @@ export class WebhookService {
         );
       }
     } catch (err: any) {
-      this.logger.error('Error handling Facebook DM:', err?.message);
+      this.logger.error(
+        `Error handling Facebook DM: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
     }
   }
 
