@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
   MessageSquareReply, Settings, LogOut, X, Menu,
-  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock, Inbox,
+  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock, Inbox, Sparkles,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
@@ -35,6 +35,12 @@ const navItems = [
   {
     label: 'Engagement Hub',  clientLabel: null,
     href: '/dashboard/inbox', icon: Inbox,
+    proOnly: false,
+    roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'AI Agent',        clientLabel: null,
+    href: '/dashboard/agent', icon: Sparkles,
     proOnly: false,
     roles: ['OWNER','ADMIN'] as const,
   },
