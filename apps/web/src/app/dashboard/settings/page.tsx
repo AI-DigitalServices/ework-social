@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 export const dynamic = 'force-dynamic';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -94,7 +96,7 @@ function SettingsContent() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+        <h2 className={`text-2xl font-bold text-slate-800 ${libreBaskerville.className}`}>Settings</h2>
         <p className="text-slate-500 mt-1">
           {isAgencyUser ? 'Manage your account and workspace settings.' : 'Manage your account preferences.'}
         </p>

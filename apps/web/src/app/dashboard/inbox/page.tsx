@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
@@ -1106,7 +1108,7 @@ export default function InboxPage() {
               }}>
                 <Inbox size={18} color="#fff" />
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, color: '#1E293B', letterSpacing: '-0.5px' }}>Engagement Hub</h2>
+              <h2 className={libreBaskerville.className} style={{ fontSize: 22, fontWeight: 900, color: '#1E293B', letterSpacing: '-0.5px' }}>Engagement Hub</h2>
               {/* Live dot */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 999, padding: '3px 10px' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', animation: 'liveBlip 1.5s infinite' }} />

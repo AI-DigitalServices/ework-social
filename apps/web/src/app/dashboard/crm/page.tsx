@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -80,7 +82,7 @@ export default function CrmPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">CRM & Clients</h2>
+          <h2 className={`text-2xl font-bold text-slate-800 ${libreBaskerville.className}`}>CRM & Clients</h2>
           <p className="text-slate-500 mt-1">Manage your pipeline, contacts, and lead automations.</p>
         </div>
         <div className="flex items-center gap-2">

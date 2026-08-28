@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { getDashboardStatsAction, getRecentPostsAction } from '@/actions/analytics.actions';
@@ -55,7 +57,7 @@ function WelcomeModal({ open, name, onClose }: { open: boolean; name: string; on
           <X size={16} />
         </button>
         <div style={{ fontSize: 52, marginBottom: 12 }}>👋</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1e2d42', marginBottom: 8 }}>Welcome, {name}!</h2>
+        <h2 className={libreBaskerville.className} style={{ fontSize: 24, fontWeight: 800, color: '#1e2d42', marginBottom: 8 }}>Welcome, {name}!</h2>
         <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
           You&apos;re now on eWork Social. Here&apos;s how to get the most out of your workspace in the next 3 minutes.
         </p>
