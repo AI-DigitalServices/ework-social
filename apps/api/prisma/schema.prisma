@@ -9,49 +9,49 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?
-  name          String
-  avatar        String?
-  googleId      String?   @unique
-  isVerified         Boolean   @default(false)
-  verificationToken  String?   @unique
+  id                 String            @id @default(cuid())
+  email              String            @unique
+  password           String?
+  name               String
+  avatar             String?
+  googleId           String?           @unique
+  isVerified         Boolean           @default(false)
+  verificationToken  String?           @unique
   verificationExpiry DateTime?
-  resetToken         String?   @unique
+  resetToken         String?           @unique
   resetTokenExpiry   DateTime?
-  tokenVersion       Int       @default(0)
-  isAdmin            Boolean   @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  workspaces    WorkspaceMember[]
-  ownedWorkspaces  Workspace[]
-  sentInvites      WorkspaceInvite[]
-  referralCode        String?   @unique
-  referredById        String?
-  referredBy          User?     @relation(name: "UserReferrals", fields: [referredById], references: [id])
-  isFoundingPartner   Boolean   @default(false)
-  referrals        User[]    @relation(name: "UserReferrals")
-  notifications    Notification[]
-  assignedClients  Client[]  @relation("AssignedClients")
-  assignedMessages InboxMessage[]
-  activityLogs     Activity[]
+  tokenVersion       Int               @default(0)
+  isAdmin            Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  workspaces         WorkspaceMember[]
+  ownedWorkspaces    Workspace[]
+  sentInvites        WorkspaceInvite[]
+  referralCode       String?           @unique
+  referredById       String?
+  referredBy         User?             @relation(name: "UserReferrals", fields: [referredById], references: [id])
+  isFoundingPartner  Boolean           @default(false)
+  referrals          User[]            @relation(name: "UserReferrals")
+  notifications      Notification[]
+  assignedClients    Client[]          @relation("AssignedClients")
+  assignedMessages   InboxMessage[]
+  activityLogs       Activity[]
 }
 
 model Workspace {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  logo        String?
-  ownerId     String
-  owner       User      @relation(fields: [ownerId], references: [id])
-  members     WorkspaceMember[]
-  clients     Client[]
-  posts       Post[]
-  socialAccounts SocialAccount[]
+  id              String            @id @default(cuid())
+  name            String
+  slug            String            @unique
+  logo            String?
+  ownerId         String
+  owner           User              @relation(fields: [ownerId], references: [id])
+  members         WorkspaceMember[]
+  clients         Client[]
+  posts           Post[]
+  socialAccounts  SocialAccount[]
   automationRules AutomationRule[]
   invites         WorkspaceInvite[]
-  subscription Subscription?
+  subscription    Subscription?
   postApprovals   PostApproval[]
   inboxMessages   InboxMessage[]
   aiUsage         AiUsage[]
@@ -59,14 +59,15 @@ model Workspace {
   // AI Operating System (Phase 1) - off by default; shadow-mode only until a
   // human explicitly enables it. agentPaused is the per-workspace kill switch,
   // checked at the top of every orchestrator run regardless of agentEnabled.
-  agentEnabled    Boolean   @default(false)
-  agentPaused     Boolean   @default(false)
-  campaigns       Campaign[]
-  agentRuns       AgentRun[]
-  memories        WorkspaceMemory[]
+  agentEnabled Boolean           @default(false)
+  agentPaused  Boolean           @default(false)
+  campaigns    Campaign[]
+  agentRuns    AgentRun[]
+  memories     WorkspaceMemory[]
+  assets       Asset[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model WorkspaceMember {
@@ -124,40 +125,41 @@ model Post {
   errorMessage    String?
   externalId      String?
 
-  clientId        String?
-  client          Client?       @relation(fields: [clientId], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  approval        PostApproval?
-  campaignTask    CampaignTask?
+  clientId     String?
+  client       Client?       @relation(fields: [clientId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  approval     PostApproval?
+  campaignTask CampaignTask?
 }
 
 model Client {
-  id                String      @id @default(cuid())
-  workspaceId       String
-  workspace         Workspace   @relation(fields: [workspaceId], references: [id])
-  name              String
-  email             String?
-  phone             String?
-  company           String?
-  tags              String[]
-  stage             LeadStage   @default(LEAD)
-  source            LeadSource  @default(MANUAL)
-  dealValue         Float?
-  lastContactedAt   DateTime?
-  nextFollowUpAt    DateTime?
-  postApprovals     PostApproval[]
-  assignedToId      String?
-  assignedTo        User?       @relation("AssignedClients", fields: [assignedToId], references: [id])
-  socialProfiles    Json?
-  notes             Note[]
-  posts             Post[]
-  tasks             Task[]
-  activities        Activity[]
-  inboxMessages     InboxMessage[]
-  campaigns         Campaign[]
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id              String         @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id])
+  name            String
+  email           String?
+  phone           String?
+  company         String?
+  tags            String[]
+  stage           LeadStage      @default(LEAD)
+  source          LeadSource     @default(MANUAL)
+  dealValue       Float?
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
+  postApprovals   PostApproval[]
+  assignedToId    String?
+  assignedTo      User?          @relation("AssignedClients", fields: [assignedToId], references: [id])
+  socialProfiles  Json?
+  notes           Note[]
+  posts           Post[]
+  tasks           Task[]
+  activities      Activity[]
+  inboxMessages   InboxMessage[]
+  campaigns       Campaign[]
+  assets          Asset[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Note {
@@ -169,14 +171,14 @@ model Note {
 }
 
 model Task {
-  id          String     @id @default(cuid())
-  clientId    String
-  client      Client     @relation(fields: [clientId], references: [id])
-  title       String
-  dueDate     DateTime?
-  isDone      Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id        String    @id @default(cuid())
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id])
+  title     String
+  dueDate   DateTime?
+  isDone    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 enum Role {
@@ -294,17 +296,17 @@ model Notification {
 }
 
 model AutomationRule {
-  id          String     @id @default(cuid())
-  workspaceId String
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
-  name        String
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  name         String
   triggerStage LeadStage
-  subject     String
-  body        String
-  replyTo     String?
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  subject      String
+  body         String
+  replyTo      String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model WorkspaceInvite {
@@ -330,23 +332,23 @@ model Waitlist {
 }
 
 model PostApproval {
-  id              String            @id @default(cuid())
-  postId          String            @unique
-  post            Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
-  workspaceId     String
-  workspace       Workspace         @relation(fields: [workspaceId], references: [id])
-  clientId        String?
-  client          Client?           @relation(fields: [clientId], references: [id])
-  clientEmail     String
-  clientName      String
-  token           String            @unique @default(cuid())
-  status          ApprovalStatus    @default(PENDING)
-  revisionNote    String?
-  approvedAt      DateTime?
-  respondedAt     DateTime?
-  emailSentAt     DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id           String         @id @default(cuid())
+  postId       String         @unique
+  post         Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  workspaceId  String
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id])
+  clientId     String?
+  client       Client?        @relation(fields: [clientId], references: [id])
+  clientEmail  String
+  clientName   String
+  token        String         @unique @default(cuid())
+  status       ApprovalStatus @default(PENDING)
+  revisionNote String?
+  approvedAt   DateTime?
+  respondedAt  DateTime?
+  emailSentAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 enum ApprovalStatus {
@@ -356,43 +358,43 @@ enum ApprovalStatus {
 }
 
 model InboxMessage {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   workspaceId     String
-  workspace       Workspace       @relation(fields: [workspaceId], references: [id])
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id])
   platform        Platform
   type            InboxMessageType
-  externalId      String          // comment_id or message_id from Meta
-  senderId        String?         // sender's platform ID
-  senderName      String?         // sender's name or username
-  senderAvatar    String?         // profile picture URL
-  content         String          // message/comment text
-  postId          String?         // parent post ID (for comments)
-  postContent     String?         // snippet of the post being commented on
-  isRead          Boolean         @default(false)
-  isResolved      Boolean         @default(false)
-  tags            String[]        @default([])   // e.g. ["Lead", "VIP", "Support"]
+  externalId      String // comment_id or message_id from Meta
+  senderId        String? // sender's platform ID
+  senderName      String? // sender's name or username
+  senderAvatar    String? // profile picture URL
+  content         String // message/comment text
+  postId          String? // parent post ID (for comments)
+  postContent     String? // snippet of the post being commented on
+  isRead          Boolean          @default(false)
+  isResolved      Boolean          @default(false)
+  tags            String[]         @default([]) // e.g. ["Lead", "VIP", "Support"]
   assignedToId    String?
-  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
-  crmClientId     String?         // linked CRM client record
-  crmClient       Client?         @relation(fields: [crmClientId], references: [id])
-  aiSuggestion    String?         // AI-suggested reply
+  assignedTo      User?            @relation(fields: [assignedToId], references: [id])
+  crmClientId     String? // linked CRM client record
+  crmClient       Client?          @relation(fields: [crmClientId], references: [id])
+  aiSuggestion    String? // AI-suggested reply
   replies         InboxReply[]
   socialAccountId String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@unique([platform, externalId])
   @@index([workspaceId, isResolved, createdAt])
 }
 
 model InboxReply {
-  id          String       @id @default(cuid())
-  messageId   String
-  message     InboxMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  content     String
-  sentAt      DateTime     @default(now())
-  sentBy      String?      // userId who sent it
-  isAuto      Boolean      @default(false)
+  id        String       @id @default(cuid())
+  messageId String
+  message   InboxMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  content   String
+  sentAt    DateTime     @default(now())
+  sentBy    String? // userId who sent it
+  isAuto    Boolean      @default(false)
 }
 
 enum InboxMessageType {
@@ -401,14 +403,14 @@ enum InboxMessageType {
 }
 
 model AiUsage {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
   type        AiUsageType
-  month       String   // e.g. "2026-07"
-  count       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  month       String // e.g. "2026-07"
+  count       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@unique([workspaceId, type, month])
   @@index([workspaceId, month])
@@ -422,7 +424,6 @@ enum AiUsageType {
   REPLY_SUGGEST
   AGENT_ACTION
 }
-
 
 //  AI Operating System (Phase 1 - additive, shadow-mode) 
 // Campaign is the brief the agent works from; CampaignTask is each proposed
@@ -487,8 +488,9 @@ model Campaign {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  tasks         CampaignTask[]
-  runs          AgentRun[]
+  tasks  CampaignTask[]
+  runs   AgentRun[]
+  assets Asset[]
 
   @@index([workspaceId, status])
 }
@@ -514,8 +516,8 @@ model AgentRun {
   workspace   Workspace       @relation(fields: [workspaceId], references: [id])
   campaignId  String?
   campaign    Campaign?       @relation(fields: [campaignId], references: [id])
-  trigger     String          // e.g. "campaign_wizard", "shadow_test"
-  model       String          // e.g. "claude-sonnet-4-5"
+  trigger     String // e.g. "campaign_wizard", "shadow_test"
+  model       String // e.g. "claude-sonnet-4-5"
   toolCalls   Json?
   tokensIn    Int?
   tokensOut   Int?
@@ -539,6 +541,52 @@ model WorkspaceMemory {
   sourceRef   String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  @@index([workspaceId, kind])
+}
+
+enum AssetKind {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum AssetSource {
+  UPLOADED
+  GENERATED
+}
+
+// Creative Hub (AI OS v2, section 13.1): single source of truth for every
+// marketing asset — uploads and AI-generated output alike. Storage itself is
+// the existing Supabase "media" bucket (apps/web/src/lib/supabase.ts
+// uploadMedia()); this table is the searchable index on top of it.
+// embedding is Voyage voyage-3-lite (512-dim) — Unsupported() because Prisma
+// has no native vector type; read/write happens via $queryRaw/$executeRaw
+// in AssetsService, everything else uses the normal Prisma Client.
+model Asset {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id])
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+
+  kind      AssetKind
+  source    AssetSource @default(UPLOADED)
+  url       String
+  fileName  String?
+  mimeType  String?
+  sizeBytes Int?
+
+  tags      String[]
+  embedding Unsupported("vector(512)")?
+
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workspaceId, kind])
 }

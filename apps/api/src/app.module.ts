@@ -25,6 +25,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { TwitterModule } from './twitter/twitter.module';
 import { LinkedInEngagementModule } from './linkedin/linkedin-engagement.module';
 import { AgentModule } from './agent/agent.module';
+import { AssetsModule } from './assets/assets.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AgentModule } from './agent/agent.module';
     TwitterModule,
     LinkedInEngagementModule,
     AgentModule,
+    AssetsModule,
   ],
   providers: [
     {
