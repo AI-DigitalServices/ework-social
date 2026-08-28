@@ -5,6 +5,7 @@ import { ToolRegistryService } from './tools/tool-registry.service';
 import { DraftPostTool } from './tools/draft-post.tool';
 import { GetAnalyticsTool } from './tools/get-analytics.tool';
 import { SearchInboxTool } from './tools/search-inbox.tool';
+import { ListSocialAccountsTool } from './tools/list-social-accounts.tool';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
@@ -19,7 +20,7 @@ import { InboxModule } from '../inbox/inbox.module';
 @Module({
   imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule],
   controllers: [AgentController],
-  providers: [AgentService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool],
+  providers: [AgentService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
   exports: [AgentService],
 })
 export class AgentModule {}
