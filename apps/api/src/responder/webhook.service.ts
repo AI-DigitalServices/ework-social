@@ -198,6 +198,22 @@ export class WebhookService {
       const senderId = messagingEvent.sender?.id;
       const messageText = messagingEvent.message?.text || '';
 
+      // Guard against messages the Page itself sent showing up as a brand-new
+      // inbound conversation. Meta's is_echo flag (checked before this method
+      // is even called) is only reliable for messages sent via our own Send
+      // API — replies sent from the native Facebook/Messenger app don't
+      // consistently carry is_echo:true, so without this check they slip
+      // through with senderId === pageId and get grouped into a new
+      // "conversation" instead of being ignored (mirrors the existing guard
+      // already in place for comments).
+      if (senderId === pageId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Facebook DM (senderId ${senderId} matches pageId ${pageId}, ` +
+          `likely sent from native app — is_echo:${!!messagingEvent.message?.is_echo})`,
+        );
+        return;
+      }
+
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: pageId, platform: 'FACEBOOK', isActive: true },
       });
