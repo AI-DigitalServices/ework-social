@@ -16,6 +16,19 @@ import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 export class AgentController {
   constructor(private agentService: AgentService) {}
 
+  @Post(':workspaceId/campaigns')
+  createCampaign(
+    @Param('workspaceId') workspaceId: string,
+    @Body() body: { goal: string; brief: string; platforms: string[]; clientId?: string },
+  ) {
+    return this.agentService.createCampaign(workspaceId, body);
+  }
+
+  @Get(':workspaceId/campaigns')
+  listCampaigns(@Param('workspaceId') workspaceId: string) {
+    return this.agentService.listCampaigns(workspaceId);
+  }
+
   @Post(':workspaceId/enable')
   enable(@Param('workspaceId') workspaceId: string) {
     return this.agentService.enable(workspaceId);

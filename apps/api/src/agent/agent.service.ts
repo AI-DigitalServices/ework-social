@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
@@ -73,6 +73,44 @@ export class AgentService {
       where: { workspaceId },
       orderBy: { createdAt: 'desc' },
       take,
+    });
+  }
+
+  // ── Campaigns ────────────────────────────────────────────────────────
+
+  /**
+   * Creates a Campaign row for a human to later trigger runs against. This
+   * doesn't touch the agent or any tool — it's just the brief record. No
+   * frontend exists yet for this (Phase 1 backend only); this endpoint also
+   * lets us test the orchestrator end-to-end before building the real
+   * Campaign Wizard UI.
+   */
+  async createCampaign(
+    workspaceId: string,
+    dto: { goal: string; brief: string; platforms: string[]; clientId?: string },
+  ) {
+    await this.assertWorkspace(workspaceId);
+    if (!dto.goal?.trim() || !dto.brief?.trim() || !dto.platforms?.length) {
+      throw new BadRequestException('goal, brief, and at least one platform are required.');
+    }
+    return this.prisma.campaign.create({
+      data: {
+        workspaceId,
+        clientId: dto.clientId || null,
+        goal: dto.goal.trim(),
+        brief: dto.brief.trim(),
+        platforms: dto.platforms,
+        status: 'DRAFT',
+      },
+    });
+  }
+
+  async listCampaigns(workspaceId: string) {
+    await this.assertWorkspace(workspaceId);
+    return this.prisma.campaign.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: 'desc' },
+      include: { tasks: true },
     });
   }
 
