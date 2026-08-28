@@ -558,10 +558,10 @@ enum AssetSource {
 }
 
 // Creative Hub (AI OS v2, section 13.1): single source of truth for every
-// marketing asset — uploads and AI-generated output alike. Storage itself is
+// marketing asset - uploads and AI-generated output alike. Storage itself is
 // the existing Supabase "media" bucket (apps/web/src/lib/supabase.ts
 // uploadMedia()); this table is the searchable index on top of it.
-// embedding is Voyage voyage-3-lite (512-dim) — Unsupported() because Prisma
+// embedding is Voyage voyage-3-lite (512-dim) - Unsupported() because Prisma
 // has no native vector type; read/write happens via $queryRaw/$executeRaw
 // in AssetsService, everything else uses the normal Prisma Client.
 model Asset {
