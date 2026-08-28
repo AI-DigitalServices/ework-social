@@ -18,12 +18,26 @@ export class WebhookService {
         if (pageEntry.changes) {
           for (const change of pageEntry.changes) {
             if (change.field === 'feed' && change.value?.item === 'comment') {
+              // Diagnostic only — structural fields, never message content.
+              this.logger.log(
+                `[diag] FB comment change — pageId:${pageId} fromId:${change.value?.from?.id} ` +
+                `commentId:${change.value?.comment_id} parentId:${change.value?.parent_id ?? 'none'} ` +
+                `verb:${change.value?.verb ?? 'unknown'}`,
+              );
               await this.handleFacebookComment(pageId, change.value);
             }
           }
         }
         if (pageEntry.messaging) {
           for (const messagingEvent of pageEntry.messaging) {
+            if (messagingEvent.message) {
+              // Diagnostic only — structural fields, never message content.
+              this.logger.log(
+                `[diag] FB messaging event — pageId:${pageId} senderId:${messagingEvent.sender?.id} ` +
+                `recipientId:${messagingEvent.recipient?.id} isEcho:${!!messagingEvent.message?.is_echo} ` +
+                `mid:${messagingEvent.message?.mid}`,
+              );
+            }
             if (messagingEvent.message && !messagingEvent.message.is_echo) {
               await this.handleFacebookDM(pageId, messagingEvent);
             }
@@ -82,6 +96,10 @@ export class WebhookService {
       // loop and inbox spam. (DMs already avoid this via the is_echo flag;
       // comment webhooks have no equivalent, so this has to be explicit.)
       if (commentData.from?.id === pageId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Facebook comment ${commentData.comment_id} ` +
+          `(from.id ${commentData.from?.id} matches pageId ${pageId})`,
+        );
         return;
       }
 
@@ -283,6 +301,10 @@ export class WebhookService {
       // Skip comments authored by the connected Instagram account itself —
       // same self-reply-loop guard as handleFacebookComment above.
       if (commentData.from?.id === igAccountId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Instagram comment ${commentData.id} ` +
+          `(from.id ${commentData.from?.id} matches igAccountId ${igAccountId})`,
+        );
         return;
       }
 
