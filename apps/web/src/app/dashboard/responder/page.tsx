@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { getRulesAction, getResponderStatsAction } from '@/actions/responder.actions';
@@ -80,7 +82,7 @@ export default function ResponderPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Auto-Responder</h2>
+          <h2 className={`text-2xl font-bold text-slate-800 ${libreBaskerville.className}`}>Auto-Responder</h2>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-slate-500">Automate replies to comments and DMs across all platforms.</p>
             {lastUpdated && (
