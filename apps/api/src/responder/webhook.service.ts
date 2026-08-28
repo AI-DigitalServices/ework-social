@@ -193,10 +193,10 @@ export class WebhookService {
       // already written, and even then only used for the CRM contact, never
       // fed back into the inbox message itself. That's why DMs showed "there"
       // with no photo while Instagram (which resolves profile first) didn't.
-      let fromName = 'there';
+      let fromName = senderId ? `Facebook User ${senderId}` : 'there';
       let senderAvatar: string | undefined;
       if (senderId && account.accessToken) {
-        const profile = await this.fetchFacebookProfile(senderId, account.accessToken);
+        const profile = await this.fetchFacebookMessengerProfile(senderId, account.accessToken);
         if (profile.name) fromName = profile.name;
         senderAvatar = profile.avatar;
       }
@@ -538,6 +538,41 @@ export class WebhookService {
     } catch (err: any) {
       this.logger.warn(
         `Facebook profile fetch failed for ${userId}: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
+      return {};
+    }
+  }
+
+  /**
+   * Fetch a Messenger sender's name + photo via Meta's User Profile API. A
+   * Messenger PSID is NOT a regular Graph API user/page node — the 'name'
+   * and 'picture.type(large)' fields used by fetchFacebookProfile above (for
+   * comment authors, which ARE regular nodes) throw a hard
+   * GraphMethodException (code 100, subcode 33) against a PSID instead of
+   * degrading gracefully. The documented fields for this endpoint are
+   * first_name/last_name/profile_pic — see
+   * developers.facebook.com/docs/messenger-platform/identity/user-profile.
+   * Per that doc, an empty object (not an error) is returned if the person
+   * never opted in (no Get Started tap / button / direct message) — that's
+   * expected and falls back to the caller's default name, not a bug.
+   */
+  private async fetchFacebookMessengerProfile(
+    userId: string,
+    encryptedToken: string,
+  ): Promise<{ name?: string; avatar?: string }> {
+    try {
+      const token = this.decryptToken(encryptedToken);
+      const res = await axios.get(`https://graph.facebook.com/v19.0/${userId}`, {
+        params: { fields: 'first_name,last_name,profile_pic', access_token: token },
+      });
+      const name = [res.data?.first_name, res.data?.last_name].filter(Boolean).join(' ') || undefined;
+      return {
+        name,
+        avatar: res.data?.profile_pic,
+      };
+    } catch (err: any) {
+      this.logger.warn(
+        `Facebook Messenger profile fetch failed for ${userId}: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
       );
       return {};
     }
