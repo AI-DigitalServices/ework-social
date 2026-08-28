@@ -7,6 +7,7 @@ import {
   Sparkles, Play, Power, Plus, Loader2, CheckCircle2, XCircle,
   Clock, Wrench, ChevronDown, ChevronUp, AlertTriangle,
 } from 'lucide-react';
+import { libreBaskerville } from '@/lib/fonts';
 
 const PLATFORM_OPTIONS = [
   'FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE', 'BLUESKY', 'THREADS',
@@ -145,7 +146,7 @@ export default function AgentPage() {
         <div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-slate-900">AI Agent</h1>
+            <h1 className={`text-3xl font-bold text-slate-900 ${libreBaskerville.className}`}>AI Agent</h1>
             <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Beta — Shadow Mode</span>
           </div>
           <p className="text-slate-500 text-sm mt-1 max-w-xl">
