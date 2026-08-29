@@ -97,7 +97,12 @@ export class AssetsService {
       });
 
       const textBlock = msg.content.find((b: any) => b.type === 'text') as any;
-      const parsed = JSON.parse(textBlock.text.trim());
+      // Claude sometimes wraps the array in a markdown code fence despite
+      // being told not to — extract the first [...] substring instead of
+      // trusting the whole response to be bare JSON.
+      const raw = textBlock.text.trim();
+      const match = raw.match(/\[[\s\S]*\]/);
+      const parsed = JSON.parse(match ? match[0] : raw);
       return Array.isArray(parsed) ? parsed.filter((t: any) => typeof t === 'string').slice(0, 8) : [];
     } catch (err: any) {
       this.logger.warn(`Auto-tagging failed: ${err?.message}`);
