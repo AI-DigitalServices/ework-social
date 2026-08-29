@@ -240,9 +240,12 @@ export default function CreativeHubPage() {
                         </span>
                       ))}
                     </div>
-                  ) : (
+                  ) : asset.kind === 'IMAGE' ? (
+                    // Auto-tagging only runs for images (one Claude vision call
+                    // on upload) — video/audio genuinely never get tagged, so
+                    // only show "Tagging..." where it will actually resolve.
                     <p className="text-[10px] text-slate-400 mt-1.5">Tagging...</p>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );
