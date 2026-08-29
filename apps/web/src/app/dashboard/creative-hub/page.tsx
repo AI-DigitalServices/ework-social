@@ -211,11 +211,22 @@ export default function CreativeHubPage() {
             const Icon = KIND_ICON[asset.kind];
             return (
               <div key={asset.id} className="group relative bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                <div className="aspect-square bg-slate-50 flex items-center justify-center">
+                <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden">
                   {asset.kind === 'IMAGE' ? (
                     <img src={asset.url} alt={asset.fileName || ''} className="w-full h-full object-cover" />
+                  ) : asset.kind === 'VIDEO' ? (
+                    // Shows the browser's native first-frame preview — no
+                    // thumbnail generation needed, and much less "blank"
+                    // than a bare icon for something that has real visuals.
+                    <video src={asset.url} className="w-full h-full object-cover" muted preload="metadata" />
+                  ) : asset.kind === 'AUDIO' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-purple-50">
+                      <Icon className="w-10 h-10 text-purple-400" />
+                    </div>
                   ) : (
-                    <Icon className="w-10 h-10 text-slate-300" />
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                      <Icon className="w-10 h-10 text-slate-400" />
+                    </div>
                   )}
                 </div>
                 <button
