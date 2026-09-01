@@ -309,6 +309,42 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
   nav .nav-link{display:none}
   #sticky-cta{bottom:16px;right:16px}
 }
+
+/* -- WHICH PATH -- FOUNDING MEMBER VS GROWTH PARTNER -- */
+#which-path{background:var(--bg2)}
+.path-intro{max-width:640px;margin:0 auto 48px;text-align:center}
+.path-intro p{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:10px}
+.path-cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:56px}
+.path-card{border-radius:20px;padding:36px 32px;position:relative;overflow:hidden;background:rgba(255,255,255,0.03);border:1px solid var(--border)}
+.path-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.path-card.founding::before{background:linear-gradient(90deg,var(--green),var(--blue-light))}
+.path-card.growth::before{background:linear-gradient(90deg,var(--purple),var(--blue))}
+.path-emoji{font-size:30px;margin-bottom:14px}
+.path-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.path-tag{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:16px}
+.path-desc{font-size:13.5px;color:var(--text3);line-height:1.7;margin-bottom:20px;font-style:italic}
+.path-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:22px}
+.path-list li{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;color:var(--text2);line-height:1.5}
+.path-list li::before{content:'\2713';color:var(--green-light);font-weight:700;flex-shrink:0}
+.path-getlabel{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text3);margin-bottom:10px;text-transform:uppercase}
+.path-get{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:26px}
+.path-chip{font-size:11.5px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:999px;padding:5px 12px;color:var(--text2)}
+.path-btn{display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;font-size:14px;font-weight:700;padding:14px 20px;border-radius:12px;text-decoration:none;transition:all 0.25s}
+.path-btn-green{background:linear-gradient(135deg,var(--green),#059669);color:#fff;box-shadow:0 0 24px rgba(16,185,129,0.3)}
+.path-btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(16,185,129,0.45)}
+.path-btn-blue{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;box-shadow:0 0 24px rgba(37,99,235,0.3)}
+.path-btn-blue:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,99,235,0.45)}
+.path-table-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--border)}
+.path-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.path-table th{background:rgba(255,255,255,0.04);color:var(--text3);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;padding:14px 18px}
+.path-table th:not(:first-child),.path-table td:not(:first-child){text-align:center}
+.path-table td{padding:14px 18px;color:var(--text2);border-top:1px solid var(--border)}
+.path-table tr td:first-child{color:var(--text);font-weight:600}
+.path-note{margin-top:28px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25);border-radius:14px;padding:18px 22px;font-size:13.5px;color:var(--text2);line-height:1.7}
+.path-note strong{color:var(--text)}
+@media(max-width:900px){
+  .path-cards{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -389,6 +425,94 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 40p
 </div>
 
 <!-- WHY EWORK SOCIAL — PRODUCT DIFFERENTIATOR -->
+<!-- WHICH PATH -- DECISION SECTION -->
+<section id="which-path">
+  <div class="section-inner">
+    <div class="path-intro">
+      <div class="eyebrow eyebrow-green" style="text-align:center">TWO WAYS IN</div>
+      <h2 class="section-title">Two Ways to Be Part<br/>of <span class="g-green">eWork Social</span></h2>
+      <p>Not everyone joins for the same reason. Some want to use the platform early and shape what we're building. Others want to actively bring eWork Social to their audience, clients, or network and grow with us as a partner.</p>
+      <p><strong style="color:var(--text)">Choose the path that best describes you.</strong></p>
+    </div>
+
+    <div class="path-cards">
+      <div class="path-card founding">
+        <div class="path-emoji">🏆</div>
+        <div class="path-title">Founding Member</div>
+        <div class="path-tag">Use it. Shape it. Grow with it.</div>
+        <p class="path-desc">You're primarily interested in using eWork Social to manage your own social media, your clients, or your business.</p>
+        <ul class="path-list">
+          <li>Want to use eWork Social for your own work</li>
+          <li>Want early access and founding-member pricing</li>
+          <li>Want to help shape the product through real usage and feedback</li>
+          <li>Don't necessarily have an audience to promote eWork Social to</li>
+        </ul>
+        <div class="path-getlabel">What you get</div>
+        <div class="path-get">
+          <span class="path-chip">50% founding discount</span>
+          <span class="path-chip">AI Content Studio</span>
+          <span class="path-chip">Creative Hub</span>
+          <span class="path-chip">Scheduling</span>
+          <span class="path-chip">Client CRM</span>
+          <span class="path-chip">Approvals</span>
+          <span class="path-chip">Engagement Hub</span>
+          <span class="path-chip">Analytics</span>
+        </div>
+        <a href="https://www.eworksocial.com/#waitlist" class="path-btn path-btn-green">Join the Founding Member Waitlist →</a>
+      </div>
+
+      <div class="path-card growth">
+        <div class="path-emoji">🚀</div>
+        <div class="path-title">Growth Partner</div>
+        <div class="path-tag">Use it. Share it. Grow with it.</div>
+        <p class="path-desc">You have an audience, community, client base, or professional network where you can introduce eWork Social to people who'd benefit from it.</p>
+        <ul class="path-list">
+          <li>Have an active audience, community, or client network</li>
+          <li>Work with businesses, creators, marketers, or agencies</li>
+          <li>Enjoy recommending useful tools and earning from referrals</li>
+          <li>Want to contribute directly to the platform's growth</li>
+        </ul>
+        <div class="path-getlabel">What you get</div>
+        <div class="path-get">
+          <span class="path-chip">Free Agency Pro</span>
+          <span class="path-chip">30% recurring commission</span>
+          <span class="path-chip">Partner dashboard</span>
+          <span class="path-chip">Co-marketing</span>
+          <span class="path-chip">Early feature access</span>
+          <span class="path-chip">Direct founder access</span>
+        </div>
+        <a href="#apply" class="path-btn path-btn-blue">Apply to Become a Growth Partner →</a>
+      </div>
+    </div>
+
+    <div class="eyebrow eyebrow-blue" style="text-align:center;margin-bottom:8px">NOT SURE WHICH ONE?</div>
+    <h3 style="text-align:center;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:28px">A quick comparison</h3>
+
+    <div class="path-table-wrap">
+      <table class="path-table">
+        <thead>
+          <tr><th>Comparison</th><th>🏆 Founding Member</th><th>🚀 Growth Partner</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Primary goal</td><td>Use eWork Social</td><td>Help grow eWork Social</td></tr>
+          <tr><td>Best for</td><td>Users &amp; early adopters</td><td>Connectors &amp; advocates</td></tr>
+          <tr><td>Audience required</td><td>No</td><td>Yes, relevant network</td></tr>
+          <tr><td>Founding pricing</td><td>50% off</td><td>—</td></tr>
+          <tr><td>Agency Pro access</td><td>Discounted</td><td>Complimentary while active</td></tr>
+          <tr><td>Referral commission</td><td>—</td><td>30% recurring</td></tr>
+          <tr><td>Product feedback</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Early feature access</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Application review</td><td>Basic</td><td>Selective</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="path-note">
+      <strong>Growth Partner applications are reviewed individually.</strong> Complimentary Agency Pro access is reserved for partners who can actively contribute to eWork Social's growth through a relevant audience, community, client network, referrals, content, or other meaningful channels. If that's not you right now, Founding Member is the better fit -- same platform, 50% off, no referral requirement.
+    </div>
+  </div>
+</section>
+
 <section id="why-ework">
   <div class="section-inner">
     <div class="ework-grid">
