@@ -14,64 +14,11 @@ export class AiService {
     private config: ConfigService,
     private prisma: PrismaService,
     private planGuard: PlanGuardService,
+    private aiUsage: AiUsageService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
     });
-  }
-
-  // Check and count AI usage this month
-  private async checkAiLimit(workspaceId: string): Promise<void> {
-    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
-    const limits = getPlanLimits(plan);
-
-    if (limits.aiCaptionsPerMonth < 5) {
-      // FREE plan gets 3 taste captions but no full AI feature access
-      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
-      throw new ForbiddenException(
-        `AI captions require the Starter plan or above. Upgrade at /dashboard/settings?tab=plan`
-      );
-    }
-
-    if (limits.aiCaptionsPerMonth >= 999999) return; // Unlimited — Agency Pro
-
-    // Count AI uses this month via notifications as a proxy
-    // In production you'd add an AiUsage table — for now we use a simple approach
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const usageCount = await this.prisma.notification.count({
-      where: {
-        user: { ownedWorkspaces: { some: { id: workspaceId } } },
-        type: 'ai_caption_used',
-        createdAt: { gte: startOfMonth },
-      },
-    });
-
-    if (usageCount >= limits.aiCaptionsPerMonth) {
-      throw new ForbiddenException(
-        `You've used all ${limits.aiCaptionsPerMonth} AI captions for this month. Upgrade for more.`
-      );
-    }
-  }
-
-  private async trackAiUsage(workspaceId: string): Promise<void> {
-    const workspace = await this.prisma.workspace.findUnique({
-      where: { id: workspaceId },
-      select: { ownerId: true },
-    });
-    if (workspace) {
-      await this.prisma.notification.create({
-        data: {
-          userId: workspace.ownerId,
-          type: 'ai_caption_used',
-          title: '✨ AI caption generated',
-          message: 'An AI caption was generated for your post.',
-          read: true, // Silent tracking — don't show as unread
-        },
-      });
-    }
   }
 
   async generateCaptions(
@@ -81,7 +28,7 @@ export class AiService {
     tone: string,
     clientName?: string,
   ): Promise<{ captions: string[] }> {
-    await this.checkAiLimit(workspaceId);
+    await this.aiUsage.checkAndIncrement(workspaceId, 'CAPTION');
 
     const platformLimits: Record<string, number> = {
       TWITTER: 280, INSTAGRAM: 2200, FACEBOOK: 63206,
@@ -126,8 +73,6 @@ Return ONLY the 3 captions, nothing else.`;
         .filter(c => c.length > 0)
         .slice(0, 3);
 
-      await this.trackAiUsage(workspaceId);
-
       return { captions };
     } catch (err: any) {
       throw new BadRequestException('AI caption generation failed: ' + err.message);
@@ -145,6 +90,8 @@ Return ONLY the 3 captions, nothing else.`;
     if (!limits.aiHashtagsEnabled) {
       throw new ForbiddenException('Hashtag AI is available on Growth plan and above.');
     }
+
+    await this.aiUsage.checkAndIncrement(workspaceId, 'HASHTAG');
 
     const prompt = `Generate 10-15 highly relevant hashtags for this ${platform} post targeted at African audiences.
 
@@ -189,6 +136,8 @@ Requirements:
       throw new ForbiddenException('Post rewriting is available on Growth plan and above.');
     }
 
+    await this.aiUsage.checkAndIncrement(workspaceId, 'REWRITE');
+
     const prompt = `Rewrite this ${platform} post with the following instruction: "${instruction}"
 
 Original post:
@@ -218,8 +167,10 @@ Requirements:
     const limits = getPlanLimits(plan);
 
     if (!limits.aiCrmInsightsEnabled) {
-      throw new ForbiddenException('AI CRM Insights are available on Agency Pro plan only.');
+      throw new ForbiddenException('AI CRM Insights are available on Growth plan and above.');
     }
+
+    await this.aiUsage.checkAndIncrement(workspaceId, 'CRM_INSIGHT');
 
     const [clients, posts] = await Promise.all([
       this.prisma.client.findMany({
