@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecordAssetDto } from './dto/record-asset.dto';
+import { AiUsageService } from '../ai/ai-usage.service';
 
 // Cheap, fast model for tagging — this is a one-shot "describe this image"
 // call, not reasoning, so Haiku is the right cost/quality tradeoff (matches
@@ -28,6 +29,7 @@ export class AssetsService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    private aiUsage: AiUsageService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
@@ -35,6 +37,8 @@ export class AssetsService {
   }
 
   async recordUpload(workspaceId: string, dto: RecordAssetDto) {
+    await this.aiUsage.checkAndIncrement(workspaceId, 'ASSET_UPLOAD');
+
     const asset = await this.prisma.asset.create({
       data: {
         workspaceId,

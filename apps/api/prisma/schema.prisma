@@ -423,6 +423,7 @@ enum AiUsageType {
   CRM_INSIGHT
   REPLY_SUGGEST
   AGENT_ACTION
+  ASSET_UPLOAD
 }
 
 //  AI Operating System (Phase 1 - additive, shadow-mode) 

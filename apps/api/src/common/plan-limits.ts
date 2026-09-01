@@ -37,6 +37,7 @@ export const PLAN_LIMITS = {
     aiReplyPerMonth:        0,
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — no agent access on Free
+    assetUploadsPerMonth:   5,          // Creative Hub — vision tagging + embedding cap
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,
@@ -86,6 +87,7 @@ export const PLAN_LIMITS = {
     aiReplyPerMonth:        25,         // Increased from 10 — ~1 AI reply per day
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — agent access starts at Growth (Copilot tier)
+    assetUploadsPerMonth:   25,         // Creative Hub — vision tagging + embedding cap
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,      // Collaboration feature — unlocks at Growth
@@ -135,6 +137,7 @@ export const PLAN_LIMITS = {
     aiReplyPerMonth:        150,        // Increased from 50 — teams handle multiple client inboxes
     aiCrmInsightsEnabled:   true,       // Moved from AGENCY_PRO — makes Growth feel complete ✅
     agentActionsPerMonth:   300,        // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
+    assetUploadsPerMonth:   100,        // Creative Hub — vision tagging + embedding cap
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
@@ -184,6 +187,7 @@ export const PLAN_LIMITS = {
     aiReplyPerMonth:        999999,
     aiCrmInsightsEnabled:   true,
     agentActionsPerMonth:   999999,     // AI OS Phase 1 — unlimited agent actions (Autopilot tier)
+    assetUploadsPerMonth:   1000,       // Creative Hub — high cap, not truly unlimited (protects against bulk-upload abuse)
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,

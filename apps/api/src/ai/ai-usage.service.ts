@@ -14,7 +14,7 @@ export class AiUsageService {
 
   async checkAndIncrement(
     workspaceId: string,
-    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION',
+    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD',
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
@@ -53,6 +53,11 @@ export class AiUsageService {
         // AI OS Phase 1 — shadow-mode agent runs, gated by agentActionsPerMonth (0 below Growth)
         limit = limits.agentActionsPerMonth;
         limitLabel = 'AI agent action';
+        break;
+      case 'ASSET_UPLOAD':
+        // Creative Hub — covers the vision tagging + embedding cost of one asset upload
+        limit = limits.assetUploadsPerMonth;
+        limitLabel = 'Creative Hub asset upload';
         break;
     }
 
@@ -107,6 +112,7 @@ export class AiUsageService {
         CRM_INSIGHT:  { used: usage.find(u => u.type === 'CRM_INSIGHT')?.count  || 0, limit: limits.aiCrmInsightsEnabled ? 'unlimited' : 0 },
         REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count || 0, limit: limits.aiReplyEnabled ? limits.aiReplyPerMonth : 0 },
         AGENT_ACTION: { used: usage.find(u => u.type === 'AGENT_ACTION')?.count || 0, limit: limits.agentActionsPerMonth },
+        ASSET_UPLOAD: { used: usage.find(u => u.type === 'ASSET_UPLOAD')?.count || 0, limit: limits.assetUploadsPerMonth },
       },
     };
   }
