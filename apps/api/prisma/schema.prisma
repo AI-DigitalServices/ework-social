@@ -65,9 +65,29 @@ model Workspace {
   agentRuns    AgentRun[]
   memories     WorkspaceMemory[]
   assets       Asset[]
+  webhooks     WorkspaceWebhook[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Outbound webhooks — lets a workspace push events (post.published, lead.created,
+// inbox.message, …) to Zapier/Make/n8n or any HTTPS endpoint. Deliveries are
+// HMAC-signed with `secret`. Added via raw SQL migration (see deploy notes).
+model WorkspaceWebhook {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  url         String
+  events      String[]
+  secret      String
+  enabled     Boolean   @default(true)
+  lastStatus  Int?
+  lastFiredAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId])
 }
 
 model WorkspaceMember {

@@ -45,6 +45,7 @@ export default function CreativeHubPage() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [genPrompt, setGenPrompt] = useState('');
   const [genSize, setGenSize] = useState('1024x1024');
+  const [genProvider, setGenProvider] = useState('');
   const [generating, setGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,7 +113,11 @@ export default function CreativeHubPage() {
     setGenerating(true);
     try {
       // 1. Ask the backend to generate the image (returns base64)
-      const gen = await api.post(`/assets/${workspaceId}/generate`, { prompt: genPrompt.trim(), size: genSize });
+      const gen = await api.post(`/assets/${workspaceId}/generate`, {
+        prompt: genPrompt.trim(),
+        size: genSize,
+        ...(genProvider ? { provider: genProvider } : {}),
+      });
       const { b64, mimeType } = gen.data as { b64: string; mimeType: string };
 
       // 2. base64 → File, then upload to the Supabase bucket (same path as uploads)
@@ -223,6 +228,16 @@ export default function CreativeHubPage() {
               <option value="1024x1024">Square (1024×1024)</option>
               <option value="1024x1536">Portrait (1024×1536)</option>
               <option value="1536x1024">Landscape (1536×1024)</option>
+            </select>
+            <label className="text-xs font-semibold text-slate-500">Model</label>
+            <select
+              value={genProvider}
+              onChange={(e) => setGenProvider(e.target.value)}
+              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500"
+            >
+              <option value="">Auto</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Google Gemini</option>
             </select>
             <button
               onClick={handleGenerate}

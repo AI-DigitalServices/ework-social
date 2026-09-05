@@ -26,6 +26,7 @@ import { TwitterModule } from './twitter/twitter.module';
 import { LinkedInEngagementModule } from './linkedin/linkedin-engagement.module';
 import { AgentModule } from './agent/agent.module';
 import { AssetsModule } from './assets/assets.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { AssetsModule } from './assets/assets.module';
     LinkedInEngagementModule,
     AgentModule,
     AssetsModule,
+    WebhooksModule,
   ],
   providers: [
     {

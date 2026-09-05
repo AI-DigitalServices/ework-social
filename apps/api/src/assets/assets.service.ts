@@ -80,14 +80,15 @@ export class AssetsService {
     workspaceId: string,
     prompt: string,
     size = '1024x1024',
-  ): Promise<{ b64: string; mimeType: string; size: string }> {
+    requestedProvider?: string,
+  ): Promise<{ b64: string; mimeType: string; size: string; provider: string }> {
     if (!prompt?.trim()) throw new BadRequestException('A prompt is required.');
     const useSize = IMAGE_SIZES.includes(size) ? size : '1024x1024';
 
-    const key = await this.resolveOpenAiKey(workspaceId);
-    if (!key) {
+    const resolved = await this.resolveImageProvider(workspaceId, requestedProvider);
+    if (!resolved) {
       throw new BadRequestException(
-        'Image generation is not configured. Connect an OpenAI key in Settings → Integrations, or ask an admin to set the platform OPENAI_API_KEY.',
+        'Image generation is not configured. Connect an OpenAI or Google Gemini key in Settings → Integrations, or ask an admin to set OPENAI_API_KEY / GEMINI_API_KEY.',
       );
     }
 
@@ -95,37 +96,66 @@ export class AssetsService {
     await this.aiUsage.checkAndIncrement(workspaceId, 'IMAGE_GEN');
 
     try {
+      if (resolved.provider === 'gemini') {
+        const model = this.config.get<string>('GEMINI_IMAGE_MODEL') || 'gemini-2.5-flash-image';
+        const res = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(resolved.key)}`,
+          { contents: [{ parts: [{ text: prompt.trim() }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } },
+          { headers: { 'Content-Type': 'application/json' }, timeout: 120000 },
+        );
+        const parts = res.data?.candidates?.[0]?.content?.parts || [];
+        const imgPart = parts.find((p: any) => p?.inlineData?.data || p?.inline_data?.data);
+        const b64 = imgPart?.inlineData?.data || imgPart?.inline_data?.data;
+        if (!b64) throw new Error('Gemini returned no image');
+        const mimeType = imgPart?.inlineData?.mimeType || imgPart?.inline_data?.mime_type || 'image/png';
+        return { b64, mimeType, size: useSize, provider: 'gemini' };
+      }
+
+      // openai (gpt-image-1)
       const res = await axios.post(
         'https://api.openai.com/v1/images/generations',
         { model: 'gpt-image-1', prompt: prompt.trim(), size: useSize, n: 1 },
-        { headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, timeout: 120000 },
+        { headers: { Authorization: `Bearer ${resolved.key}`, 'Content-Type': 'application/json' }, timeout: 120000 },
       );
       const b64 = res.data?.data?.[0]?.b64_json;
       if (!b64) throw new Error('provider returned no image');
-      return { b64, mimeType: 'image/png', size: useSize };
+      return { b64, mimeType: 'image/png', size: useSize, provider: 'openai' };
     } catch (err: any) {
       const detail = err?.response?.data?.error?.message || err?.message || 'unknown error';
-      this.logger.error(`Image generation failed: ${detail}`);
+      this.logger.error(`Image generation failed (${resolved.provider}): ${detail}`);
       throw new BadRequestException(`Image generation failed: ${detail}`);
     }
   }
 
-  /** OpenAI key: workspace BYOK (if provider is openai) → platform env key. */
-  private async resolveOpenAiKey(workspaceId: string): Promise<string | null> {
+  /**
+   * Pick an image provider + key. Workspace BYOK first (if it's an image-capable
+   * provider), else platform keys, honoring a requested provider when possible.
+   */
+  private async resolveImageProvider(
+    workspaceId: string,
+    requested?: string,
+  ): Promise<{ provider: 'openai' | 'gemini'; key: string } | null> {
     try {
       const rows = await this.prisma.$queryRawUnsafe<Array<{ p: string | null; k: string | null }>>(
         `SELECT "embeddingProvider" AS p, "embeddingApiKeyEnc" AS k FROM "Workspace" WHERE id = $1`,
         workspaceId,
       );
       const row = rows?.[0];
-      if (row?.p === 'openai' && row?.k) {
+      if (row?.k && (row.p === 'openai' || row.p === 'gemini') && (!requested || requested === row.p)) {
         const key = this.decryptKey(row.k);
-        if (key) return key;
+        if (key) return { provider: row.p, key };
       }
     } catch {
-      // column may not exist — fall through to platform key
+      // column may not exist — fall through to platform keys
     }
-    return this.config.get<string>('OPENAI_API_KEY') || null;
+
+    const openaiKey = this.config.get<string>('OPENAI_API_KEY');
+    const geminiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (requested === 'openai' && openaiKey) return { provider: 'openai', key: openaiKey };
+    if (requested === 'gemini' && geminiKey) return { provider: 'gemini', key: geminiKey };
+    if (openaiKey) return { provider: 'openai', key: openaiKey };
+    if (geminiKey) return { provider: 'gemini', key: geminiKey };
+    return null;
   }
 
   private decryptKey(enc: string): string | null {

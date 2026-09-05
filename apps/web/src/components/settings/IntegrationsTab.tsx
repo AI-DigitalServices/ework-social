@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { Plug, Loader2, CheckCircle2, AlertTriangle, Trash2, KeyRound } from 'lucide-react';
+import WebhooksPanel from '@/components/settings/WebhooksPanel';
 
 type Status = {
   connected: boolean;
@@ -13,8 +14,9 @@ type Status = {
 };
 
 const PROVIDERS = [
-  { id: 'voyage', label: 'Voyage AI', hint: 'Anthropic-recommended. Get a key at voyageai.com.' },
-  { id: 'openai', label: 'OpenAI', hint: 'Uses text-embedding-3-small. Get a key at platform.openai.com.' },
+  { id: 'voyage', label: 'Voyage AI', hint: 'Anthropic-recommended embeddings. Get a key at voyageai.com.' },
+  { id: 'openai', label: 'OpenAI', hint: 'Embeddings + image generation (gpt-image-1). Get a key at platform.openai.com.' },
+  { id: 'gemini', label: 'Google Gemini', hint: 'Embeddings + image generation. Get a key at aistudio.google.com.' },
 ];
 
 export default function IntegrationsTab() {
@@ -152,6 +154,9 @@ export default function IntegrationsTab() {
           {busy ? 'Validating…' : 'Connect & validate'}
         </button>
       </div>
+
+      {/* Outbound webhooks (Zapier / Make / n8n) */}
+      <WebhooksPanel />
     </div>
   );
 }

@@ -24,9 +24,9 @@ export class AssetsController {
   @Post(':workspaceId/generate')
   generate(
     @Param('workspaceId') workspaceId: string,
-    @Body() body: { prompt: string; size?: string },
+    @Body() body: { prompt: string; size?: string; provider?: string },
   ) {
-    return this.assetsService.generateImage(workspaceId, body?.prompt, body?.size);
+    return this.assetsService.generateImage(workspaceId, body?.prompt, body?.size, body?.provider);
   }
 
   @Get(':workspaceId')

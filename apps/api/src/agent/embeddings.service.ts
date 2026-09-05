@@ -4,7 +4,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type EmbeddingProvider = 'voyage' | 'openai';
+export type EmbeddingProvider = 'voyage' | 'openai' | 'gemini';
 
 /**
  * Embeddings provider abstraction for semantic Brand Brain memory.
@@ -36,7 +36,9 @@ export class EmbeddingsService {
   }
 
   defaultModel(provider: EmbeddingProvider): string {
-    return provider === 'openai' ? 'text-embedding-3-small' : 'voyage-3.5-lite';
+    if (provider === 'openai') return 'text-embedding-3-small';
+    if (provider === 'gemini') return 'gemini-embedding-001';
+    return 'voyage-3.5-lite';
   }
 
   // ── Key encryption (same AES-256-CBC scheme as social/twitter tokens) ────
@@ -73,7 +75,7 @@ export class EmbeddingsService {
         workspaceId,
       );
       const row = rows?.[0];
-      if (row?.p && row?.k && (row.p === 'voyage' || row.p === 'openai')) {
+      if (row?.p && row?.k && (row.p === 'voyage' || row.p === 'openai' || row.p === 'gemini')) {
         const key = this.decrypt(row.k);
         if (key) {
           return { provider: row.p as EmbeddingProvider, key, model: this.defaultModel(row.p as EmbeddingProvider), source: 'workspace' };
@@ -108,6 +110,19 @@ export class EmbeddingsService {
         { headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, timeout: 20000 },
       );
       return res.data?.data?.[0]?.embedding;
+    }
+
+    if (provider === 'gemini') {
+      const res = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${encodeURIComponent(key)}`,
+        {
+          content: { parts: [{ text: clean }] },
+          taskType: inputType === 'query' ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT',
+          outputDimensionality: this.DIM,
+        },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 20000 },
+      );
+      return res.data?.embedding?.values;
     }
 
     // openai

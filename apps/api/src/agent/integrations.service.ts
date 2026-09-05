@@ -48,8 +48,8 @@ export class IntegrationsService {
   }
 
   async connect(workspaceId: string, provider: string, apiKey: string) {
-    if (provider !== 'voyage' && provider !== 'openai') {
-      throw new BadRequestException('provider must be "voyage" or "openai".');
+    if (provider !== 'voyage' && provider !== 'openai' && provider !== 'gemini') {
+      throw new BadRequestException('provider must be "voyage", "openai", or "gemini".');
     }
     if (!apiKey?.trim()) throw new BadRequestException('apiKey is required.');
 

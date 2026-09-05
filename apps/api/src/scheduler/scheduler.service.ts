@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { SocialService } from '../social/social.service';
 import { PostHogService } from '../analytics/posthog.service';
 import { TwitterPollerService } from '../twitter/twitter-poller.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class SchedulerService {
@@ -19,6 +20,7 @@ export class SchedulerService {
     private socialService: SocialService,
     private posthog: PostHogService,
     private twitterService: TwitterPollerService,
+    private webhooks: WebhooksService,
   ) {}
 
   async getPosts(workspaceId: string) {
@@ -183,16 +185,30 @@ export class SchedulerService {
           );
         }
         this.logger.log(`Post ${post.id} published successfully`);
+        // Outbound webhook — "post.published"
+        this.webhooks.dispatch(post.workspaceId, 'post.published', {
+          postId: post.id,
+          platform: post.socialAccount?.platform,
+          content: post.content,
+          publishedAt: new Date().toISOString(),
+        }).catch(() => {});
       } catch (err) {
         this.logger.error(`Failed to publish post ${post.id}`, err);
+        const failMessage = (err as any)?.response?.data?.message ?? (err as Error)?.message ?? 'Unknown publish error';
         // Mark as failed
         await this.prisma.post.update({
           where: { id: post.id },
           data: {
             status: 'FAILED',
-            errorMessage: (err as any)?.response?.data?.message ?? (err as Error)?.message ?? 'Unknown publish error',
+            errorMessage: failMessage,
           },
         });
+        // Outbound webhook — "post.failed"
+        this.webhooks.dispatch(post.workspaceId, 'post.failed', {
+          postId: post.id,
+          platform: post.socialAccount?.platform,
+          error: failMessage,
+        }).catch(() => {});
         // Notify owner of failure
         const ownerId = post.workspace?.ownerId;
         if (ownerId) {
