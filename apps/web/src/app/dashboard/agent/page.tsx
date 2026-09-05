@@ -95,6 +95,9 @@ export default function AgentPage() {
   // Per-task media attached from the Creative Hub before approving
   const [taskMedia, setTaskMedia] = useState<Record<string, string[]>>({});
   const [pickerForTask, setPickerForTask] = useState<string | null>(null);
+  // Which campaigns have their draft-review list expanded (collapsed by default
+  // so the campaign list stays scannable even with many drafts)
+  const [openDrafts, setOpenDrafts] = useState<Record<string, boolean>>({});
 
   // Brand Brain (workspace memory)
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -531,16 +534,49 @@ export default function AgentPage() {
                     </div>
                   )}
 
-                  {/* Proposed drafts — the approval loop */}
+                  {/* Proposed drafts — collapsed summary + on-demand review */}
                   {(() => {
                     const drafts = (c.tasks || []).filter(t => t.type === 'CONTENT_DRAFT');
                     if (drafts.length === 0) return null;
+                    const proposed = drafts.filter(t => t.status === 'PROPOSED');
+                    const approved = drafts.filter(t => t.status === 'APPROVED');
+                    const rejected = drafts.filter(t => t.status === 'REJECTED');
+                    const open = !!openDrafts[c.id];
                     return (
                       <div className="border-t border-slate-200 p-4 space-y-3">
-                        <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> Proposed drafts — your review
-                        </p>
-                        {drafts.map(t => {
+                        {/* Summary bar — keeps campaigns compact */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-3 text-xs flex-wrap">
+                            {proposed.length > 0 && (
+                              <span className="flex items-center gap-1 font-semibold text-amber-600">
+                                <Clock className="w-3.5 h-3.5" /> {proposed.length} awaiting review
+                              </span>
+                            )}
+                            {approved.length > 0 && (
+                              <span className="flex items-center gap-1 text-emerald-600">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> {approved.length} scheduled
+                              </span>
+                            )}
+                            {rejected.length > 0 && (
+                              <span className="flex items-center gap-1 text-slate-400">
+                                <XCircle className="w-3.5 h-3.5" /> {rejected.length} rejected
+                              </span>
+                            )}
+                            {proposed.length === 0 && approved.length === 0 && rejected.length === 0 && (
+                              <span className="text-slate-400">No drafts yet</span>
+                            )}
+                          </div>
+                          {proposed.length > 0 && (
+                            <button
+                              onClick={() => setOpenDrafts(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg transition-colors"
+                            >
+                              {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              {open ? 'Hide' : `Review ${proposed.length} draft${proposed.length > 1 ? 's' : ''}`}
+                            </button>
+                          )}
+                        </div>
+                        {open && proposed.map(t => {
                           const busy = taskBusy[t.id];
                           const edit = taskEdits[t.id];
                           const contentVal = edit?.content ?? t.payload?.content ?? '';
