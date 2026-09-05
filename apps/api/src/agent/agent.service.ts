@@ -110,8 +110,99 @@ export class AgentService {
     return this.prisma.campaign.findMany({
       where: { workspaceId },
       orderBy: { createdAt: 'desc' },
-      include: { tasks: true },
+      include: {
+        tasks: {
+          orderBy: { createdAt: 'desc' },
+          include: { post: { select: { id: true, status: true, scheduledAt: true } } },
+        },
+      },
     });
+  }
+
+  // ── Approval loop: turn an agent proposal into a real scheduled post ─────
+
+  /**
+   * Approves a PROPOSED content-draft task. The linked DRAFT post is moved to
+   * SCHEDULED (optionally at a chosen time, else immediately), so the normal —
+   * and now reliable — scheduler cron picks it up and publishes it. The human
+   * may also tweak the copy/media inline before approving. This is the single
+   * bridge between "agent proposed" and "content goes out"; it is the only path
+   * that promotes an agent draft, and it still requires an explicit human click.
+   */
+  async approveTask(
+    workspaceId: string,
+    taskId: string,
+    dto: { scheduledAt?: string; content?: string; mediaUrls?: string[] },
+  ) {
+    await this.assertWorkspace(workspaceId);
+
+    const task = await this.prisma.campaignTask.findUnique({
+      where: { id: taskId },
+      include: { campaign: true },
+    });
+    if (!task || task.campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Task not found for this workspace.');
+    }
+    if (task.status !== 'PROPOSED') {
+      throw new BadRequestException(`Task is already ${task.status} — only PROPOSED tasks can be approved.`);
+    }
+    if (task.type !== 'CONTENT_DRAFT' || !task.postId) {
+      throw new BadRequestException('Only content-draft tasks with a linked post can be scheduled.');
+    }
+
+    const scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : new Date();
+    if (isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('Invalid scheduled time.');
+    }
+
+    const post = await this.prisma.post.update({
+      where: { id: task.postId },
+      data: {
+        status: 'SCHEDULED',
+        scheduledAt,
+        ...(dto.content?.trim() ? { content: dto.content.trim() } : {}),
+        ...(Array.isArray(dto.mediaUrls) ? { mediaUrls: dto.mediaUrls } : {}),
+      },
+      include: { socialAccount: true },
+    });
+
+    await this.prisma.campaignTask.update({
+      where: { id: taskId },
+      data: { status: 'APPROVED' },
+    });
+
+    this.logger.log(`Agent task ${taskId} approved → post ${post.id} scheduled for ${scheduledAt.toISOString()}`);
+    return {
+      taskId,
+      postId: post.id,
+      status: 'SCHEDULED',
+      scheduledAt: scheduledAt.toISOString(),
+      platform: post.socialAccount?.platform ?? null,
+    };
+  }
+
+  /** Rejects a PROPOSED task. Non-destructive: the linked draft stays in the
+   *  dashboard's Drafts view so the human can still salvage or edit it. */
+  async rejectTask(workspaceId: string, taskId: string) {
+    await this.assertWorkspace(workspaceId);
+
+    const task = await this.prisma.campaignTask.findUnique({
+      where: { id: taskId },
+      include: { campaign: true },
+    });
+    if (!task || task.campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Task not found for this workspace.');
+    }
+    if (task.status !== 'PROPOSED') {
+      throw new BadRequestException(`Task is already ${task.status} — only PROPOSED tasks can be rejected.`);
+    }
+
+    await this.prisma.campaignTask.update({
+      where: { id: taskId },
+      data: { status: 'REJECTED' },
+    });
+    this.logger.log(`Agent task ${taskId} rejected — linked draft left intact.`);
+    return { taskId, status: 'REJECTED' };
   }
 
   // ── The orchestrator loop ────────────────────────────────────────────

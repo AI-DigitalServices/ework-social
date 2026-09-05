@@ -63,4 +63,22 @@ export class AgentController {
   ) {
     return this.agentService.runCampaignCycle(workspaceId, campaignId, body?.trigger || 'manual');
   }
+
+  // Approval loop — human promotes (or rejects) an agent-proposed draft.
+  @Post(':workspaceId/tasks/:taskId/approve')
+  approveTask(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+    @Body() body: { scheduledAt?: string; content?: string; mediaUrls?: string[] },
+  ) {
+    return this.agentService.approveTask(workspaceId, taskId, body || {});
+  }
+
+  @Post(':workspaceId/tasks/:taskId/reject')
+  rejectTask(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+  ) {
+    return this.agentService.rejectTask(workspaceId, taskId);
+  }
 }
