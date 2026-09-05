@@ -106,6 +106,7 @@ export default function AgentPage() {
   const [showAddMemory, setShowAddMemory] = useState(false);
   const [newMemoryKind, setNewMemoryKind] = useState('BRAND');
   const [newMemoryContent, setNewMemoryContent] = useState('');
+  const [memoryOpen, setMemoryOpen] = useState(false);
 
   const loadStatus = useCallback(() => {
     if (!workspaceId) return;
@@ -325,24 +326,33 @@ export default function AgentPage() {
       {/* Brand Brain */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
         <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-              <Brain className="w-4 h-4 text-blue-600" /> Brand Brain
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 max-w-xl">
-              What the agent knows about your brand before it drafts. Build it from your own published
-              posts and clients, then edit anything by hand.
-            </p>
-          </div>
+          <button
+            onClick={() => setMemoryOpen(v => !v)}
+            className="flex items-start gap-2 text-left flex-1 min-w-0"
+          >
+            {memoryOpen ? <ChevronUp className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />}
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <Brain className="w-4 h-4 text-blue-600" /> Brand Brain
+                <span className="text-[10px] font-bold normal-case bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                  {memories.length} {memories.length === 1 ? 'memory' : 'memories'}
+                </span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                What the agent knows about your brand before it drafts. Build it from your own published
+                posts and clients, then edit anything by hand.
+              </p>
+            </div>
+          </button>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setShowAddMemory(v => !v)}
+              onClick={() => { setMemoryOpen(true); setShowAddMemory(v => !v); }}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 px-2.5 py-1.5"
             >
               <Plus className="w-3.5 h-3.5" /> Add
             </button>
             <button
-              onClick={handleSeedMemory}
+              onClick={() => { setMemoryOpen(true); handleSeedMemory(); }}
               disabled={seeding}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
             >
@@ -356,7 +366,7 @@ export default function AgentPage() {
           <p className="text-xs text-red-600 flex items-center gap-1 mb-3"><AlertTriangle className="w-3.5 h-3.5" /> {memoryError}</p>
         )}
 
-        {showAddMemory && (
+        {memoryOpen && showAddMemory && (
           <div className="mb-4 p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
             <div className="flex gap-2 flex-wrap">
               {MEMORY_KINDS.map(k => (
@@ -386,28 +396,35 @@ export default function AgentPage() {
           </div>
         )}
 
-        {memories.length === 0 ? (
-          <p className="text-sm text-slate-500 py-6 text-center">
-            No brand memory yet — click <span className="font-semibold">Build from my data</span> to learn your voice from your published posts and clients.
+        {memoryOpen && (
+          memories.length === 0 ? (
+            <p className="text-sm text-slate-500 py-6 text-center">
+              No brand memory yet — click <span className="font-semibold">Build from my data</span> to learn your voice from your published posts and clients.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {memories.map(m => (
+                <div key={m.id} className="group flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2">
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 shrink-0 mt-0.5">
+                    {MEMORY_KIND_LABEL[m.kind] || m.kind}
+                  </span>
+                  <p className="text-xs text-slate-600 leading-relaxed flex-1">{m.content}</p>
+                  <button
+                    onClick={() => handleDeleteMemory(m.id)}
+                    className="text-slate-300 hover:text-red-500 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete this memory"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+        {!memoryOpen && memories.length > 0 && (
+          <p className="text-xs text-slate-400">
+            {memories.length} {memories.length === 1 ? 'memory' : 'memories'} saved — click to review or edit.
           </p>
-        ) : (
-          <div className="space-y-2">
-            {memories.map(m => (
-              <div key={m.id} className="group flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2">
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 shrink-0 mt-0.5">
-                  {MEMORY_KIND_LABEL[m.kind] || m.kind}
-                </span>
-                <p className="text-xs text-slate-600 leading-relaxed flex-1">{m.content}</p>
-                <button
-                  onClick={() => handleDeleteMemory(m.id)}
-                  className="text-slate-300 hover:text-red-500 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete this memory"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
         )}
       </div>
 
