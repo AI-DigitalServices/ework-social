@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import {
   Sparkles, Play, Power, Plus, Loader2, CheckCircle2, XCircle,
   Clock, Wrench, ChevronDown, ChevronUp, AlertTriangle,
-  Brain, Trash2, RefreshCw,
+  Brain, Trash2, RefreshCw, Maximize2, Minimize2,
 } from 'lucide-react';
 import { libreBaskerville } from '@/lib/fonts';
 
@@ -90,6 +90,7 @@ export default function AgentPage() {
   const [taskEdits, setTaskEdits] = useState<Record<string, { content: string; scheduledAt: string }>>({});
   const [taskBusy, setTaskBusy] = useState<Record<string, 'approve' | 'reject' | ''>>({});
   const [taskError, setTaskError] = useState<Record<string, string>>({});
+  const [expandedDrafts, setExpandedDrafts] = useState<Record<string, boolean>>({});
 
   // Brand Brain (workspace memory)
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -565,17 +566,33 @@ export default function AgentPage() {
                             );
                           }
                           // PROPOSED (or other) → editable + actions
+                          const isDraftExpanded = !!expandedDrafts[t.id];
                           return (
                             <div key={t.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                              {t.payload?.rationale && (
-                                <p className="text-[11px] text-slate-500 italic">Why: {t.payload.rationale}</p>
-                              )}
+                              <div className="flex items-start justify-between gap-2">
+                                {t.payload?.rationale ? (
+                                  <p className="text-[11px] text-slate-500 italic flex-1">Why: {t.payload.rationale}</p>
+                                ) : <span className="flex-1" />}
+                                <button
+                                  onClick={() => setExpandedDrafts(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
+                                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 shrink-0"
+                                  title={isDraftExpanded ? 'Collapse' : 'Expand to full composer'}
+                                >
+                                  {isDraftExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                  {isDraftExpanded ? 'Collapse' : 'Expand'}
+                                </button>
+                              </div>
                               <textarea
                                 value={contentVal}
                                 onChange={e => setEdit({ content: e.target.value })}
-                                rows={4}
-                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 resize-none"
+                                rows={isDraftExpanded ? 16 : 4}
+                                className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none focus:border-blue-500 resize-y transition-all ${
+                                  isDraftExpanded ? 'text-sm leading-relaxed whitespace-pre-wrap' : 'text-xs'
+                                }`}
                               />
+                              {isDraftExpanded && (
+                                <p className="text-[10px] text-slate-400 text-right">{contentVal.length} characters</p>
+                              )}
                               <div className="flex items-end gap-2 flex-wrap">
                                 <div>
                                   <label className="block text-[10px] font-semibold text-slate-500 mb-1">Schedule (leave blank = post now)</label>
