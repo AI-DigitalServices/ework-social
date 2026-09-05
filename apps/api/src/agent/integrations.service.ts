@@ -1,7 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmbeddingsService, EmbeddingProvider } from './embeddings.service';
 import { BrandBrainService } from './brand-brain.service';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { getPlanLimits, getPlanDisplayName } from '../common/plan-limits';
 
 /**
  * BYOK (bring-your-own-key) integrations for AI providers. A subscriber can
@@ -18,6 +20,7 @@ export class IntegrationsService {
     private prisma: PrismaService,
     private embeddings: EmbeddingsService,
     private brandBrain: BrandBrainService,
+    private planGuard: PlanGuardService,
   ) {}
 
   async getStatus(workspaceId: string) {
@@ -49,6 +52,14 @@ export class IntegrationsService {
       throw new BadRequestException('provider must be "voyage" or "openai".');
     }
     if (!apiKey?.trim()) throw new BadRequestException('apiKey is required.');
+
+    // Premium gate — BYOK unlocks at Growth+.
+    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    if (!getPlanLimits(plan).byokEnabled) {
+      throw new ForbiddenException(
+        `Bring-your-own AI key is available on the Growth plan and above. Your ${getPlanDisplayName(plan)} plan doesn't include it yet — upgrade to connect your own provider.`,
+      );
+    }
 
     // Validate before storing — a bad key should never be saved.
     try {

@@ -14,7 +14,7 @@ export class AiUsageService {
 
   async checkAndIncrement(
     workspaceId: string,
-    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD',
+    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN',
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
@@ -58,6 +58,11 @@ export class AiUsageService {
         // Creative Hub — covers the vision tagging + embedding cost of one asset upload
         limit = limits.assetUploadsPerMonth;
         limitLabel = 'Creative Hub asset upload';
+        break;
+      case 'IMAGE_GEN':
+        // AI OS Phase 2 — generative creative, premium only (0 below Growth)
+        limit = limits.aiImageGenPerMonth;
+        limitLabel = 'AI image generation';
         break;
     }
 
@@ -113,6 +118,7 @@ export class AiUsageService {
         REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count || 0, limit: limits.aiReplyEnabled ? limits.aiReplyPerMonth : 0 },
         AGENT_ACTION: { used: usage.find(u => u.type === 'AGENT_ACTION')?.count || 0, limit: limits.agentActionsPerMonth },
         ASSET_UPLOAD: { used: usage.find(u => u.type === 'ASSET_UPLOAD')?.count || 0, limit: limits.assetUploadsPerMonth },
+        IMAGE_GEN:    { used: usage.find(u => u.type === 'IMAGE_GEN')?.count    || 0, limit: limits.aiImageGenPerMonth },
       },
     };
   }

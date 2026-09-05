@@ -91,7 +91,8 @@ export class AssetsService {
       );
     }
 
-    await this.aiUsage.checkAndIncrement(workspaceId, 'ASSET_UPLOAD');
+    // Premium-gated meter (aiImageGenPerMonth: 0 on Free/Starter → throws upgrade prompt).
+    await this.aiUsage.checkAndIncrement(workspaceId, 'IMAGE_GEN');
 
     try {
       const res = await axios.post(

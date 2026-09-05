@@ -424,6 +424,7 @@ enum AiUsageType {
   REPLY_SUGGEST
   AGENT_ACTION
   ASSET_UPLOAD
+  IMAGE_GEN
 }
 
 //  AI Operating System (Phase 1 - additive, shadow-mode) 

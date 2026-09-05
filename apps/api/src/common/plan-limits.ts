@@ -38,6 +38,8 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — no agent access on Free
     assetUploadsPerMonth:   5,          // Creative Hub — vision tagging + embedding cap
+    aiImageGenPerMonth:     0,          // AI image generation — premium only
+    byokEnabled:            false,      // Bring-your-own AI key — premium only
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,
@@ -88,6 +90,8 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — agent access starts at Growth (Copilot tier)
     assetUploadsPerMonth:   25,         // Creative Hub — vision tagging + embedding cap
+    aiImageGenPerMonth:     0,          // AI image generation — premium only (Growth+)
+    byokEnabled:            false,      // Bring-your-own AI key — premium only (Growth+)
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,      // Collaboration feature — unlocks at Growth
@@ -138,6 +142,8 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   true,       // Moved from AGENCY_PRO — makes Growth feel complete ✅
     agentActionsPerMonth:   300,        // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
     assetUploadsPerMonth:   100,        // Creative Hub — vision tagging + embedding cap
+    aiImageGenPerMonth:     50,         // AI image generation — unlocks at Growth
+    byokEnabled:            true,       // Bring-your-own AI key — unlocks at Growth
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
@@ -188,6 +194,8 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   true,
     agentActionsPerMonth:   999999,     // AI OS Phase 1 — unlimited agent actions (Autopilot tier)
     assetUploadsPerMonth:   1000,       // Creative Hub — high cap, not truly unlimited (protects against bulk-upload abuse)
+    aiImageGenPerMonth:     500,        // AI image generation — high cap (Autopilot tier)
+    byokEnabled:            true,       // Bring-your-own AI key — enabled
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,
@@ -244,4 +252,7 @@ export const FEATURE_MIN_PLAN: Record<string, string> = {
   apiAccess:            'AGENCY_PRO',
   // AI OS Phase 1
   agentAccess:          'GROWTH',
+  // AI OS Phase 2 — generative creative + BYOK
+  aiImageGen:           'GROWTH',
+  byok:                 'GROWTH',
 };
