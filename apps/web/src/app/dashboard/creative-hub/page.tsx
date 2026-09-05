@@ -42,6 +42,10 @@ export default function CreativeHubPage() {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [genPrompt, setGenPrompt] = useState('');
+  const [genSize, setGenSize] = useState('1024x1024');
+  const [generating, setGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -103,6 +107,42 @@ export default function CreativeHubPage() {
     }
   };
 
+  const handleGenerate = async () => {
+    if (!workspaceId || !genPrompt.trim()) return;
+    setGenerating(true);
+    try {
+      // 1. Ask the backend to generate the image (returns base64)
+      const gen = await api.post(`/assets/${workspaceId}/generate`, { prompt: genPrompt.trim(), size: genSize });
+      const { b64, mimeType } = gen.data as { b64: string; mimeType: string };
+
+      // 2. base64 → File, then upload to the Supabase bucket (same path as uploads)
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const file = new File([bytes], `ai-${Date.now()}.png`, { type: mimeType || 'image/png' });
+      const url = await uploadMedia(file, workspaceId);
+
+      // 3. Record as a GENERATED asset (auto-tag + embed run server-side)
+      const res = await api.post(`/assets/${workspaceId}`, {
+        url,
+        fileName: `AI: ${genPrompt.trim().slice(0, 60)}`,
+        mimeType: mimeType || 'image/png',
+        sizeBytes: file.size,
+        kind: 'IMAGE',
+        source: 'GENERATED',
+      });
+      setAssets(prev => [res.data, ...prev]);
+      setGenPrompt('');
+      setShowGenerate(false);
+      showToast('Generated ✓ — tags are landing shortly');
+      setTimeout(loadAssets, 5000);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || err?.message || 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleDelete = async (asset: Asset) => {
     if (!workspaceId) return;
     if (!confirm(`Delete "${asset.fileName || 'this asset'}"? This can't be undone.`)) return;
@@ -133,7 +173,7 @@ export default function CreativeHubPage() {
             Every marketing asset in one searchable library — uploads and AI-generated output alike, auto-tagged on the way in.
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -141,6 +181,13 @@ export default function CreativeHubPage() {
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
           />
+          <button
+            onClick={() => setShowGenerate(v => !v)}
+            disabled={!workspaceId}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 hover:bg-blue-50 disabled:opacity-50 text-blue-700 text-sm font-semibold rounded-lg transition-colors"
+          >
+            <Sparkles className="w-4 h-4" /> Generate with AI
+          </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || !workspaceId}
@@ -151,6 +198,44 @@ export default function CreativeHubPage() {
           </button>
         </div>
       </div>
+
+      {/* AI image generation panel */}
+      {showGenerate && (
+        <div className="mt-4 p-4 rounded-2xl border border-blue-200 bg-blue-50/50 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <p className="text-sm font-bold text-slate-800">Generate an image with AI</p>
+          </div>
+          <textarea
+            value={genPrompt}
+            onChange={(e) => setGenPrompt(e.target.value)}
+            rows={3}
+            placeholder="Describe the image — e.g. 'A vibrant flat-lay of African fabrics with bold geometric patterns, bright studio lighting, space for text on the left'"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500 resize-none"
+          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-xs font-semibold text-slate-500">Size</label>
+            <select
+              value={genSize}
+              onChange={(e) => setGenSize(e.target.value)}
+              className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500"
+            >
+              <option value="1024x1024">Square (1024×1024)</option>
+              <option value="1024x1536">Portrait (1024×1536)</option>
+              <option value="1536x1024">Landscape (1536×1024)</option>
+            </select>
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !genPrompt.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {generating ? 'Generating…' : 'Generate'}
+            </button>
+            <span className="text-[11px] text-slate-400">Saved to your library as a reusable asset.</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 mt-6 mb-4">
         <div className="flex-1 relative">

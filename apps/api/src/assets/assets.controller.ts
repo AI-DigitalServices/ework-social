@@ -20,6 +20,15 @@ export class AssetsController {
     return this.assetsService.recordUpload(workspaceId, dto);
   }
 
+  // AI image generation → returns base64 for the frontend to store in the bucket.
+  @Post(':workspaceId/generate')
+  generate(
+    @Param('workspaceId') workspaceId: string,
+    @Body() body: { prompt: string; size?: string },
+  ) {
+    return this.assetsService.generateImage(workspaceId, body?.prompt, body?.size);
+  }
+
   @Get(':workspaceId')
   list(
     @Param('workspaceId') workspaceId: string,

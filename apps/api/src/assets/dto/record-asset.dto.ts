@@ -19,6 +19,10 @@ export class RecordAssetDto {
   @IsIn(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT'])
   kind: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
 
+  @IsIn(['UPLOADED', 'GENERATED'])
+  @IsOptional()
+  source?: 'UPLOADED' | 'GENERATED';
+
   @IsString()
   @IsOptional()
   clientId?: string;

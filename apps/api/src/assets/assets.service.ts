@@ -1,10 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
+import { createDecipheriv } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecordAssetDto } from './dto/record-asset.dto';
 import { AiUsageService } from '../ai/ai-usage.service';
+
+const IMAGE_SIZES = ['1024x1024', '1024x1536', '1536x1024', 'auto'];
 
 // Cheap, fast model for tagging — this is a one-shot "describe this image"
 // call, not reasoning, so Haiku is the right cost/quality tradeoff (matches
@@ -37,7 +40,10 @@ export class AssetsService {
   }
 
   async recordUpload(workspaceId: string, dto: RecordAssetDto) {
-    await this.aiUsage.checkAndIncrement(workspaceId, 'ASSET_UPLOAD');
+    // GENERATED assets are already metered at generation time — don't double-count.
+    if (dto.source !== 'GENERATED') {
+      await this.aiUsage.checkAndIncrement(workspaceId, 'ASSET_UPLOAD');
+    }
 
     const asset = await this.prisma.asset.create({
       data: {
@@ -45,6 +51,7 @@ export class AssetsService {
         clientId: dto.clientId || null,
         campaignId: dto.campaignId || null,
         kind: dto.kind as any,
+        source: (dto.source as any) || 'UPLOADED',
         url: dto.url,
         fileName: dto.fileName,
         mimeType: dto.mimeType,
@@ -60,6 +67,76 @@ export class AssetsService {
     });
 
     return asset;
+  }
+
+  /**
+   * Generate an image from a text prompt with OpenAI gpt-image-1. Returns the
+   * image as base64 for the frontend to upload to the Supabase bucket (bytes
+   * never touch this service on the storage path, matching the upload flow).
+   * Key resolution: the workspace's connected OpenAI BYOK key first, else the
+   * platform OPENAI_API_KEY. Metered once here (record step skips GENERATED).
+   */
+  async generateImage(
+    workspaceId: string,
+    prompt: string,
+    size = '1024x1024',
+  ): Promise<{ b64: string; mimeType: string; size: string }> {
+    if (!prompt?.trim()) throw new BadRequestException('A prompt is required.');
+    const useSize = IMAGE_SIZES.includes(size) ? size : '1024x1024';
+
+    const key = await this.resolveOpenAiKey(workspaceId);
+    if (!key) {
+      throw new BadRequestException(
+        'Image generation is not configured. Connect an OpenAI key in Settings → Integrations, or ask an admin to set the platform OPENAI_API_KEY.',
+      );
+    }
+
+    await this.aiUsage.checkAndIncrement(workspaceId, 'ASSET_UPLOAD');
+
+    try {
+      const res = await axios.post(
+        'https://api.openai.com/v1/images/generations',
+        { model: 'gpt-image-1', prompt: prompt.trim(), size: useSize, n: 1 },
+        { headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, timeout: 120000 },
+      );
+      const b64 = res.data?.data?.[0]?.b64_json;
+      if (!b64) throw new Error('provider returned no image');
+      return { b64, mimeType: 'image/png', size: useSize };
+    } catch (err: any) {
+      const detail = err?.response?.data?.error?.message || err?.message || 'unknown error';
+      this.logger.error(`Image generation failed: ${detail}`);
+      throw new BadRequestException(`Image generation failed: ${detail}`);
+    }
+  }
+
+  /** OpenAI key: workspace BYOK (if provider is openai) → platform env key. */
+  private async resolveOpenAiKey(workspaceId: string): Promise<string | null> {
+    try {
+      const rows = await this.prisma.$queryRawUnsafe<Array<{ p: string | null; k: string | null }>>(
+        `SELECT "embeddingProvider" AS p, "embeddingApiKeyEnc" AS k FROM "Workspace" WHERE id = $1`,
+        workspaceId,
+      );
+      const row = rows?.[0];
+      if (row?.p === 'openai' && row?.k) {
+        const key = this.decryptKey(row.k);
+        if (key) return key;
+      }
+    } catch {
+      // column may not exist — fall through to platform key
+    }
+    return this.config.get<string>('OPENAI_API_KEY') || null;
+  }
+
+  private decryptKey(enc: string): string | null {
+    try {
+      const [ivHex, data] = enc.split(':');
+      if (!ivHex || !data) return null;
+      const key = Buffer.from(this.config.get<string>('ENCRYPTION_KEY')!, 'hex');
+      const decipher = createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'));
+      return decipher.update(data, 'hex', 'utf8') + decipher.final('utf8');
+    } catch {
+      return null;
+    }
   }
 
   private async tagAndEmbed(assetId: string, dto: RecordAssetDto) {
