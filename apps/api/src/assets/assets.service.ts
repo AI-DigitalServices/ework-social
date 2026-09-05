@@ -97,18 +97,36 @@ export class AssetsService {
 
     try {
       if (resolved.provider === 'gemini') {
-        const model = this.config.get<string>('GEMINI_IMAGE_MODEL') || 'gemini-2.5-flash-image';
-        const res = await axios.post(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(resolved.key)}`,
-          { contents: [{ parts: [{ text: prompt.trim() }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } },
-          { headers: { 'Content-Type': 'application/json' }, timeout: 120000 },
-        );
-        const parts = res.data?.candidates?.[0]?.content?.parts || [];
-        const imgPart = parts.find((p: any) => p?.inlineData?.data || p?.inline_data?.data);
-        const b64 = imgPart?.inlineData?.data || imgPart?.inline_data?.data;
-        if (!b64) throw new Error('Gemini returned no image');
-        const mimeType = imgPart?.inlineData?.mimeType || imgPart?.inline_data?.mime_type || 'image/png';
-        return { b64, mimeType, size: useSize, provider: 'gemini' };
+        // Model config layer: try the primary model, then a fallback, so a
+        // retired/renamed model never hard-breaks generation. Only advance to
+        // the next model when THIS one is unavailable (404/not-found) — quota or
+        // auth errors won't improve by switching model, so those rethrow.
+        let lastGemErr: any;
+        for (const model of this.geminiImageModels()) {
+          try {
+            const res = await axios.post(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(resolved.key)}`,
+              { contents: [{ parts: [{ text: prompt.trim() }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } },
+              { headers: { 'Content-Type': 'application/json' }, timeout: 120000 },
+            );
+            const parts = res.data?.candidates?.[0]?.content?.parts || [];
+            const imgPart = parts.find((p: any) => p?.inlineData?.data || p?.inline_data?.data);
+            const b64 = imgPart?.inlineData?.data || imgPart?.inline_data?.data;
+            if (!b64) throw new Error('Gemini returned no image');
+            const mimeType = imgPart?.inlineData?.mimeType || imgPart?.inline_data?.mime_type || 'image/png';
+            return { b64, mimeType, size: useSize, provider: 'gemini' };
+          } catch (gErr: any) {
+            lastGemErr = gErr;
+            const s = gErr?.response?.status;
+            const d = gErr?.response?.data?.error?.message || gErr?.message || '';
+            if (s === 404 || /not found|not supported|unsupported|deprecated|does not exist/i.test(d)) {
+              this.logger.warn(`Gemini model ${model} unavailable — trying next. (${d})`);
+              continue;
+            }
+            throw gErr; // quota/auth/other → surface via the friendly mapper below
+          }
+        }
+        throw lastGemErr;
       }
 
       // openai (gpt-image-1)
@@ -121,10 +139,41 @@ export class AssetsService {
       if (!b64) throw new Error('provider returned no image');
       return { b64, mimeType: 'image/png', size: useSize, provider: 'openai' };
     } catch (err: any) {
-      const detail = err?.response?.data?.error?.message || err?.message || 'unknown error';
-      this.logger.error(`Image generation failed (${resolved.provider}): ${detail}`);
-      throw new BadRequestException(`Image generation failed: ${detail}`);
+      const status = err?.response?.status;
+      const detail =
+        err?.response?.data?.error?.message || err?.response?.data?.detail || err?.message || 'unknown error';
+      // Keep the raw provider error in logs; show the user something actionable.
+      this.logger.error(`Image generation failed (${resolved.provider}) status:${status}: ${detail}`);
+
+      const providerName = resolved.provider === 'gemini' ? 'Google Gemini' : 'OpenAI';
+      const otherName = resolved.provider === 'gemini' ? 'OpenAI' : 'Google Gemini';
+      const isQuota =
+        status === 429 || /quota|exceeded|billing|resource_exhausted|insufficient_quota/i.test(detail);
+      const isAuth =
+        status === 401 || status === 403 || /api key|invalid|unauthor|permission|not enabled/i.test(detail);
+
+      let friendly: string;
+      if (isQuota) {
+        friendly = `${providerName} couldn't generate the image — its quota is used up or billing isn't enabled on that account. Switch the Model dropdown to ${otherName}, or enable billing on your ${providerName} account, then try again.`;
+      } else if (isAuth) {
+        friendly = `Your ${providerName} key was rejected or doesn't have image permissions. Check it in Settings → Integrations, or switch the Model dropdown to ${otherName}.`;
+      } else {
+        friendly = `Image generation failed on ${providerName}. Try the ${otherName} model, or try again in a moment.`;
+      }
+      throw new BadRequestException(friendly);
     }
+  }
+
+  /**
+   * Gemini image models to try, in order. Primary is the current stable model;
+   * a fallback can be set via env so a retired model never breaks generation.
+   *   GEMINI_IMAGE_MODEL          (default: gemini-2.5-flash-image — stable)
+   *   GEMINI_IMAGE_MODEL_FALLBACK (optional)
+   */
+  private geminiImageModels(): string[] {
+    const primary = this.config.get<string>('GEMINI_IMAGE_MODEL') || 'gemini-2.5-flash-image';
+    const fallback = this.config.get<string>('GEMINI_IMAGE_MODEL_FALLBACK') || '';
+    return [primary, fallback].filter((m, i, a) => !!m && a.indexOf(m) === i);
   }
 
   /**
