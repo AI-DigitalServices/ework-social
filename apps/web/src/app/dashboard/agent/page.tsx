@@ -6,9 +6,10 @@ import api from '@/lib/api';
 import {
   Sparkles, Play, Power, Plus, Loader2, CheckCircle2, XCircle,
   Clock, Wrench, ChevronDown, ChevronUp, AlertTriangle,
-  Brain, Trash2, RefreshCw, Maximize2, Minimize2,
+  Brain, Trash2, RefreshCw, Maximize2, Minimize2, ImagePlus, Film,
 } from 'lucide-react';
 import { libreBaskerville } from '@/lib/fonts';
+import AssetPickerModal from '@/components/creative-hub/AssetPickerModal';
 
 const PLATFORM_OPTIONS = [
   'FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE', 'BLUESKY', 'THREADS',
@@ -91,6 +92,9 @@ export default function AgentPage() {
   const [taskBusy, setTaskBusy] = useState<Record<string, 'approve' | 'reject' | ''>>({});
   const [taskError, setTaskError] = useState<Record<string, string>>({});
   const [expandedDrafts, setExpandedDrafts] = useState<Record<string, boolean>>({});
+  // Per-task media attached from the Creative Hub before approving
+  const [taskMedia, setTaskMedia] = useState<Record<string, string[]>>({});
+  const [pickerForTask, setPickerForTask] = useState<string | null>(null);
 
   // Brand Brain (workspace memory)
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -187,6 +191,7 @@ export default function AgentPage() {
   const handleApprove = async (task: CampaignTask) => {
     if (!workspaceId) return;
     const edit = taskEdits[task.id];
+    const media = taskMedia[task.id];
     setTaskBusy(prev => ({ ...prev, [task.id]: 'approve' }));
     setTaskError(prev => ({ ...prev, [task.id]: '' }));
     try {
@@ -194,6 +199,7 @@ export default function AgentPage() {
         // Only send fields the reviewer actually changed; empty scheduledAt = now
         ...(edit?.scheduledAt ? { scheduledAt: new Date(edit.scheduledAt).toISOString() } : {}),
         ...(edit?.content != null && edit.content !== task.payload?.content ? { content: edit.content } : {}),
+        ...(media !== undefined ? { mediaUrls: media } : {}),
       });
       loadCampaigns();
     } catch (err: any) {
@@ -202,6 +208,8 @@ export default function AgentPage() {
       setTaskBusy(prev => ({ ...prev, [task.id]: '' }));
     }
   };
+
+  const isVideo = (url: string) => /\.(mp4|mov|webm|avi|m4v)(\?|$)/i.test(url);
 
   const handleReject = async (taskId: string) => {
     if (!workspaceId) return;
@@ -593,6 +601,45 @@ export default function AgentPage() {
                               {isDraftExpanded && (
                                 <p className="text-[10px] text-slate-400 text-right">{contentVal.length} characters</p>
                               )}
+
+                              {/* Media from Creative Hub */}
+                              {(() => {
+                                const media = taskMedia[t.id] ?? t.payload?.mediaUrls ?? [];
+                                return (
+                                  <div className="space-y-1.5">
+                                    {media.length > 0 && (
+                                      <div className="flex flex-wrap gap-2">
+                                        {media.map((url) => (
+                                          <div key={url} className="relative group/media">
+                                            {isVideo(url) ? (
+                                              <div className="w-14 h-14 rounded-lg bg-slate-200 flex items-center justify-center">
+                                                <Film className="w-5 h-5 text-slate-500" />
+                                              </div>
+                                            ) : (
+                                              // eslint-disable-next-line @next/next/no-img-element
+                                              <img src={url} alt="" className="w-14 h-14 rounded-lg object-cover border border-slate-200" />
+                                            )}
+                                            <button
+                                              onClick={() => setTaskMedia(prev => ({ ...prev, [t.id]: media.filter(u => u !== url) }))}
+                                              className="absolute -top-1.5 -right-1.5 bg-white border border-slate-300 rounded-full p-0.5 text-slate-400 hover:text-red-500 shadow-sm"
+                                              title="Remove"
+                                            >
+                                              <XCircle className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <button
+                                      onClick={() => setPickerForTask(t.id)}
+                                      className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+                                    >
+                                      <ImagePlus className="w-3.5 h-3.5" /> Add media from Creative Hub
+                                    </button>
+                                  </div>
+                                );
+                              })()}
+
                               <div className="flex items-end gap-2 flex-wrap">
                                 <div>
                                   <label className="block text-[10px] font-semibold text-slate-500 mb-1">Schedule (leave blank = post now)</label>
@@ -675,6 +722,24 @@ export default function AgentPage() {
           </div>
         )}
       </div>
+
+      {/* Creative Hub asset picker for a proposed draft */}
+      {pickerForTask && (
+        <AssetPickerModal
+          workspaceId={workspaceId}
+          onSelect={(urls) => {
+            setTaskMedia(prev => {
+              const current = prev[pickerForTask] ?? (campaigns
+                .flatMap(c => c.tasks || [])
+                .find(t => t.id === pickerForTask)?.payload?.mediaUrls ?? []);
+              const merged = Array.from(new Set([...current, ...urls]));
+              return { ...prev, [pickerForTask]: merged };
+            });
+            setPickerForTask(null);
+          }}
+          onClose={() => setPickerForTask(null)}
+        />
+      )}
 
       {/* Audit log */}
       {recentRuns.length > 0 && (

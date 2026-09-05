@@ -159,7 +159,8 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     const [hours, minutes] = time.split(':');
     now.setHours(parseInt(hours), parseInt(minutes), 0);
     if (now < new Date()) now.setDate(now.getDate() + 1);
-    setScheduledAt(now.toISOString().slice(0, 16));
+    // Local time for the datetime-local input (avoids UTC drift).
+    setScheduledAt(new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
     setShowBestTimes(false);
   };
 
@@ -208,7 +209,10 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               socialAccountId: accountId,
               content: contentMap[accountId] || '',
               mediaUrls,
-              scheduledAt: scheduledAt || undefined,
+              // Convert the local datetime-local value to a UTC ISO string so the
+              // server schedules the exact moment the user picked (a raw local
+              // string was parsed as UTC and could publish immediately).
+              scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
               status,
             })
           )

@@ -10,6 +10,12 @@ import { uploadMedia } from '@/lib/supabase';
 import AssetPickerModal from '@/components/creative-hub/AssetPickerModal';
 import { Dialog } from '@/components/ui';
 
+// Format a Date as a <input type="datetime-local"> value in the USER's local
+// time (the input is local; a plain toISOString() would show UTC and drift).
+function toDatetimeLocal(d: Date): string {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 const platformLimits: Record<string, { limit: number }> = {
   TWITTER:   { limit: 280 },
   INSTAGRAM: { limit: 2200 },
@@ -63,7 +69,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
   const [content, setContent] = useState<string>(post.content || '');
   const [mediaUrls, setMediaUrls] = useState<string[]>(post.mediaUrls || []);
   const [scheduledAt, setScheduledAt] = useState<string>(
-    post.scheduledAt ? new Date(post.scheduledAt).toISOString().slice(0, 16) : ''
+    post.scheduledAt ? toDatetimeLocal(new Date(post.scheduledAt)) : ''
   );
   const [uploading, setUploading] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
@@ -146,7 +152,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
     const [h, m] = time.split(':');
     now.setHours(parseInt(h), parseInt(m), 0);
     if (now < new Date()) now.setDate(now.getDate() + 1);
-    setScheduledAt(now.toISOString().slice(0, 16));
+    setScheduledAt(toDatetimeLocal(now));
     setShowBestTimes(false);
   };
 
@@ -154,11 +160,14 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
     if (isEmpty || isOver || instagramNeedsImage) return;
     setSaving(true);
     try {
+      // Convert the local datetime-local value to a UTC ISO string so the server
+      // schedules the exact moment picked (raw local strings were read as UTC).
+      const scheduledIso = scheduledAt ? new Date(scheduledAt).toISOString() : null;
       if (mode === 'edit') {
         await updatePostAction(post.id, {
           content,
           mediaUrls,
-          scheduledAt: scheduledAt || null,
+          scheduledAt: scheduledIso,
           socialAccountId: selectedAccountId,
           status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         });
@@ -169,7 +178,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           socialAccountId: selectedAccountId,
           content,
           mediaUrls,
-          scheduledAt: scheduledAt || undefined,
+          scheduledAt: scheduledIso || undefined,
           status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         });
       }
