@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
+import { BrandBrainService } from './brand-brain.service';
 
 // Bounds a single run to a handful of think→act turns so a confused model
 // can't loop forever burning tokens. 6 is generous for "check analytics,
@@ -21,6 +22,7 @@ export class AgentService {
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
     private toolRegistry: ToolRegistryService,
+    private brandBrain: BrandBrainService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
@@ -235,11 +237,12 @@ export class AgentService {
     // feature in this codebase.
     await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
 
-    const memories = await this.prisma.workspaceMemory.findMany({
-      where: { workspaceId },
-      orderBy: { updatedAt: 'desc' },
-      take: 20,
-    });
+    // Semantic retrieval: pull the memories most relevant to THIS campaign
+    // (falls back to recent memory when embeddings aren't configured).
+    const memories = await this.brandBrain.getRelevantMemories(
+      workspaceId,
+      `${campaign.goal}\n${campaign.brief}`,
+    );
 
     const system = this.buildSystemPrompt(campaign, memories);
     const toolDefs = this.toolRegistry.getAnthropicToolDefs();

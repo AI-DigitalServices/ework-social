@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { BrandBrainService } from './brand-brain.service';
+import { EmbeddingsService } from './embeddings.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { DraftPostTool } from './tools/draft-post.tool';
 import { GetAnalyticsTool } from './tools/get-analytics.tool';
@@ -21,7 +22,7 @@ import { InboxModule } from '../inbox/inbox.module';
 @Module({
   imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule],
   controllers: [AgentController],
-  providers: [AgentService, BrandBrainService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
+  providers: [AgentService, BrandBrainService, EmbeddingsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
   exports: [AgentService],
 })
 export class AgentModule {}

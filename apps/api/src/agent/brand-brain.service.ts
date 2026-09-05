@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
+import { EmbeddingsService } from './embeddings.service';
 
 // Marks memories written by the auto-seeder so a re-seed can replace only its
 // own output and never clobber memories a human added by hand.
@@ -26,6 +27,7 @@ export class BrandBrainService {
     private config: ConfigService,
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
+    private embeddings: EmbeddingsService,
   ) {
     this.anthropic = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY') });
   }
@@ -42,9 +44,11 @@ export class BrandBrainService {
       throw new BadRequestException(`kind must be one of: ${VALID_KINDS.join(', ')}`);
     }
     if (!content?.trim()) throw new BadRequestException('content is required.');
-    return this.prisma.workspaceMemory.create({
+    const mem = await this.prisma.workspaceMemory.create({
       data: { workspaceId, kind: kind as any, content: content.trim(), sourceRef: 'manual' },
     });
+    await this.embeddings.storeEmbedding(mem.id, workspaceId, mem.content);
+    return mem;
   }
 
   async deleteMemory(workspaceId: string, memoryId: string) {
@@ -148,24 +152,64 @@ export class BrandBrainService {
     }
 
     // Replace only the previous AUTO-seeded entries; keep human-added ones.
-    await this.prisma.$transaction([
-      this.prisma.workspaceMemory.deleteMany({ where: { workspaceId, sourceRef: AUTO_SOURCE } }),
-      this.prisma.workspaceMemory.createMany({
-        data: entries.map((e) => ({
-          workspaceId,
-          kind: e.kind as any,
-          content: e.content,
-          sourceRef: AUTO_SOURCE,
-        })),
-      }),
-    ]);
+    // Create individually (not createMany) so we get each id back to attach an
+    // embedding. Embedding is best-effort and never blocks the seed.
+    await this.prisma.workspaceMemory.deleteMany({ where: { workspaceId, sourceRef: AUTO_SOURCE } });
+    for (const e of entries) {
+      const mem = await this.prisma.workspaceMemory.create({
+        data: { workspaceId, kind: e.kind as any, content: e.content, sourceRef: AUTO_SOURCE },
+      });
+      await this.embeddings.storeEmbedding(mem.id, workspaceId, mem.content);
+    }
 
     this.logger.log(`Brand Brain seeded for ${workspaceId}: ${entries.length} entries from ${publishedPosts.length} posts / ${clients.length} clients.`);
     return {
       seeded: entries.length,
       fromPosts: publishedPosts.length,
       fromClients: clients.length,
+      semantic: this.embeddings.isConfigured(),
       entries,
     };
+  }
+
+  /**
+   * Returns the memories most RELEVANT to a query (the campaign brief), using
+   * pgvector cosine similarity when embeddings are available. Falls back to the
+   * newest entries on any error or when embeddings aren't configured — so the
+   * agent always gets memory, semantic or not.
+   */
+  async getRelevantMemories(
+    workspaceId: string,
+    queryText: string,
+    k = 12,
+  ): Promise<Array<{ kind: string; content: string }>> {
+    const emb = await this.embeddings.embed(workspaceId, queryText, 'query');
+    if (emb) {
+      try {
+        const rows = await this.prisma.$queryRawUnsafe<Array<{ kind: string; content: string }>>(
+          `SELECT kind, content
+             FROM "WorkspaceMemory"
+            WHERE "workspaceId" = $1
+              AND embedding IS NOT NULL
+              AND "embeddingModel" = $2
+            ORDER BY embedding <=> $3::vector ASC
+            LIMIT $4`,
+          workspaceId,
+          emb.model,
+          this.embeddings.toVectorLiteral(emb.vector),
+          k,
+        );
+        if (rows && rows.length > 0) return rows;
+      } catch (err: any) {
+        this.logger.warn(`Semantic retrieval failed — falling back to recent memory: ${err.message}`);
+      }
+    }
+    // Fallback: most recently updated memories.
+    return this.prisma.workspaceMemory.findMany({
+      where: { workspaceId },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+      select: { kind: true, content: true },
+    });
   }
 }
