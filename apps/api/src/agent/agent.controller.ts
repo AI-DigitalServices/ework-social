@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AgentService } from './agent.service';
+import { BrandBrainService } from './brand-brain.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
@@ -14,7 +15,10 @@ import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 @Controller('agent')
 @UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class AgentController {
-  constructor(private agentService: AgentService) {}
+  constructor(
+    private agentService: AgentService,
+    private brandBrain: BrandBrainService,
+  ) {}
 
   @Post(':workspaceId/campaigns')
   createCampaign(
@@ -80,5 +84,34 @@ export class AgentController {
     @Param('taskId') taskId: string,
   ) {
     return this.agentService.rejectTask(workspaceId, taskId);
+  }
+
+  // ── Brand Brain (workspace memory the agent reads before drafting) ───────
+
+  @Get(':workspaceId/memory')
+  listMemory(@Param('workspaceId') workspaceId: string) {
+    return this.brandBrain.listMemories(workspaceId);
+  }
+
+  @Post(':workspaceId/memory/seed')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  seedMemory(@Param('workspaceId') workspaceId: string) {
+    return this.brandBrain.seedBrandBrain(workspaceId);
+  }
+
+  @Post(':workspaceId/memory')
+  addMemory(
+    @Param('workspaceId') workspaceId: string,
+    @Body() body: { kind: string; content: string },
+  ) {
+    return this.brandBrain.addMemory(workspaceId, body?.kind, body?.content);
+  }
+
+  @Delete(':workspaceId/memory/:memoryId')
+  deleteMemory(
+    @Param('workspaceId') workspaceId: string,
+    @Param('memoryId') memoryId: string,
+  ) {
+    return this.brandBrain.deleteMemory(workspaceId, memoryId);
   }
 }
