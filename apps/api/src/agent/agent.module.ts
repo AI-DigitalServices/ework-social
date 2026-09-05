@@ -3,6 +3,8 @@ import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { BrandBrainService } from './brand-brain.service';
 import { EmbeddingsService } from './embeddings.service';
+import { IntegrationsService } from './integrations.service';
+import { IntegrationsController } from './integrations.controller';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { DraftPostTool } from './tools/draft-post.tool';
 import { GetAnalyticsTool } from './tools/get-analytics.tool';
@@ -21,8 +23,8 @@ import { InboxModule } from '../inbox/inbox.module';
 // mode only, no auto-publish anywhere in this module.
 @Module({
   imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule],
-  controllers: [AgentController],
-  providers: [AgentService, BrandBrainService, EmbeddingsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
+  controllers: [AgentController, IntegrationsController],
+  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
   exports: [AgentService],
 })
 export class AgentModule {}

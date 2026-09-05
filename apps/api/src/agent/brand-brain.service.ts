@@ -39,6 +39,26 @@ export class BrandBrainService {
     });
   }
 
+  /**
+   * Re-embed every memory in a workspace with its currently-resolved provider.
+   * Called after a workspace connects/changes its BYOK key, because embeddings
+   * from different providers live in different vector spaces and can't be
+   * compared. Best-effort per row.
+   */
+  async reembedAll(workspaceId: string): Promise<{ reembedded: number }> {
+    const memories = await this.prisma.workspaceMemory.findMany({
+      where: { workspaceId },
+      select: { id: true, content: true },
+    });
+    let count = 0;
+    for (const m of memories) {
+      await this.embeddings.storeEmbedding(m.id, workspaceId, m.content);
+      count++;
+    }
+    this.logger.log(`Re-embedded ${count} memories for ${workspaceId} after provider change.`);
+    return { reembedded: count };
+  }
+
   async addMemory(workspaceId: string, kind: string, content: string) {
     if (!VALID_KINDS.includes(kind as any)) {
       throw new BadRequestException(`kind must be one of: ${VALID_KINDS.join(', ')}`);
