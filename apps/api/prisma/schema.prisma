@@ -507,6 +507,11 @@ model Campaign {
   startsAt      DateTime?
   endsAt        DateTime?
   budgetActions Int?
+  // Autopilot: when enabled, a cron auto-runs this campaign on the cadence,
+  // respecting the workspace agent enable/pause kill switch and plan limits.
+  autoRunEnabled Boolean   @default(false)
+  autoRunCadence String?
+  lastAutoRunAt  DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

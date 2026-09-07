@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
@@ -205,6 +206,70 @@ export class AgentService {
     });
     this.logger.log(`Agent task ${taskId} rejected — linked draft left intact.`);
     return { taskId, status: 'REJECTED' };
+  }
+
+  // ── Autopilot: scheduled auto-runs ───────────────────────────────────
+
+  /** Turn a campaign's scheduled auto-run on/off and set its cadence. */
+  async setCampaignSchedule(
+    workspaceId: string,
+    campaignId: string,
+    dto: { autoRunEnabled: boolean; autoRunCadence?: string },
+  ) {
+    await this.assertWorkspace(workspaceId);
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Campaign not found for this workspace.');
+    }
+    const cadence = dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily';
+    return this.prisma.campaign.update({
+      where: { id: campaignId },
+      data: {
+        autoRunEnabled: !!dto.autoRunEnabled,
+        autoRunCadence: dto.autoRunEnabled ? cadence : null,
+      },
+    });
+  }
+
+  /**
+   * Autopilot cron — hourly, runs every campaign whose auto-run is due. Honors
+   * the workspace kill switch (agentEnabled/agentPaused) and plan limits (the
+   * AGENT_ACTION meter inside runCampaignCycle throws when a workspace is over
+   * its cap; we catch it so one workspace never blocks the rest). Cadence is
+   * enforced by lastAutoRunAt so a campaign runs at most once per window.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async processScheduledCampaigns() {
+    let campaigns: any[];
+    try {
+      campaigns = await this.prisma.campaign.findMany({
+        where: { autoRunEnabled: true, workspace: { agentEnabled: true, agentPaused: false } },
+        include: { workspace: { select: { id: true } } },
+      });
+    } catch {
+      return; // columns not migrated yet — skip silently
+    }
+    if (campaigns.length === 0) return;
+
+    const now = Date.now();
+    for (const c of campaigns) {
+      const windowMs = c.autoRunCadence === 'weekly' ? 6.5 * 24 * 3600 * 1000 : 20 * 3600 * 1000;
+      const last = c.lastAutoRunAt ? new Date(c.lastAutoRunAt).getTime() : 0;
+      if (now - last < windowMs) continue; // not due yet
+
+      try {
+        await this.runCampaignCycle(c.workspaceId, c.id, 'scheduled');
+        await this.prisma.campaign.update({ where: { id: c.id }, data: { lastAutoRunAt: new Date() } });
+        this.logger.log(`Autopilot ran campaign ${c.id} (${c.autoRunCadence}).`);
+      } catch (err: any) {
+        // Over plan cap, paused mid-loop, or a model error — log and move on.
+        // Still stamp lastAutoRunAt so we don't retry a capped workspace hourly.
+        await this.prisma.campaign
+          .update({ where: { id: c.id }, data: { lastAutoRunAt: new Date() } })
+          .catch(() => {});
+        this.logger.warn(`Autopilot skipped campaign ${c.id}: ${err.message}`);
+      }
+    }
   }
 
   // ── The orchestrator loop ────────────────────────────────────────────

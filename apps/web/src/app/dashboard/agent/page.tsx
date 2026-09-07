@@ -46,6 +46,9 @@ type Campaign = {
   status: string;
   createdAt: string;
   tasks?: CampaignTask[];
+  autoRunEnabled?: boolean;
+  autoRunCadence?: string | null;
+  lastAutoRunAt?: string | null;
 };
 
 type Memory = {
@@ -217,6 +220,16 @@ export default function AgentPage() {
   };
 
   const isVideo = (url: string) => /\.(mp4|mov|webm|avi|m4v)(\?|$)/i.test(url);
+
+  const handleSchedule = async (campaignId: string, autoRunEnabled: boolean, autoRunCadence: string) => {
+    if (!workspaceId) return;
+    try {
+      await api.patch(`/agent/${workspaceId}/campaigns/${campaignId}/schedule`, { autoRunEnabled, autoRunCadence });
+      loadCampaigns();
+    } catch {
+      /* non-critical */
+    }
+  };
 
   const handleReject = async (taskId: string) => {
     if (!workspaceId) return;
@@ -553,6 +566,34 @@ export default function AgentPage() {
                       <p className="text-xs text-red-600 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> {runError[c.id]}</p>
                     </div>
                   )}
+
+                  {/* Autopilot — scheduled auto-run */}
+                  <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3" /> Autopilot:
+                    </span>
+                    <select
+                      value={c.autoRunEnabled ? (c.autoRunCadence || 'daily') : 'off'}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        handleSchedule(c.id, v !== 'off', v === 'off' ? 'daily' : v);
+                      }}
+                      className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-[11px] outline-none focus:border-blue-500"
+                    >
+                      <option value="off">Off</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                    {c.autoRunEnabled && (
+                      <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> auto-runs {c.autoRunCadence}
+                        {c.lastAutoRunAt && ` · last ${new Date(c.lastAutoRunAt).toLocaleDateString()}`}
+                      </span>
+                    )}
+                    {c.autoRunEnabled && (!agentEnabled || agentPaused) && (
+                      <span className="text-[10px] text-amber-600">paused — enable the agent to resume</span>
+                    )}
+                  </div>
 
                   {/* Proposed drafts — collapsed summary + on-demand review */}
                   {(() => {

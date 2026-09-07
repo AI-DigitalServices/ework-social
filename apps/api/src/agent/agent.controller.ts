@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AgentService } from './agent.service';
 import { BrandBrainService } from './brand-brain.service';
@@ -31,6 +31,16 @@ export class AgentController {
   @Get(':workspaceId/campaigns')
   listCampaigns(@Param('workspaceId') workspaceId: string) {
     return this.agentService.listCampaigns(workspaceId);
+  }
+
+  // Autopilot — turn a campaign's scheduled auto-run on/off + set cadence.
+  @Patch(':workspaceId/campaigns/:campaignId/schedule')
+  setSchedule(
+    @Param('workspaceId') workspaceId: string,
+    @Param('campaignId') campaignId: string,
+    @Body() body: { autoRunEnabled: boolean; autoRunCadence?: string },
+  ) {
+    return this.agentService.setCampaignSchedule(workspaceId, campaignId, body);
   }
 
   @Post(':workspaceId/enable')
