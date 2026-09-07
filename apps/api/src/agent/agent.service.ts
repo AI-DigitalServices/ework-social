@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { BrandBrainService } from './brand-brain.service';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { getPlanLimits, getPlanDisplayName } from '../common/plan-limits';
 
 // Bounds a single run to a handful of think→act turns so a confused model
 // can't loop forever burning tokens. 6 is generous for "check analytics,
@@ -24,6 +26,7 @@ export class AgentService {
     private aiUsage: AiUsageService,
     private toolRegistry: ToolRegistryService,
     private brandBrain: BrandBrainService,
+    private planGuard: PlanGuardService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
@@ -103,7 +106,13 @@ export class AgentService {
     if (!dto.goal?.trim() || !dto.brief?.trim() || !dto.platforms?.length) {
       throw new BadRequestException('goal, brief, and at least one platform are required.');
     }
-    const autoRun = !!dto.autoRunEnabled;
+    let autoRun = !!dto.autoRunEnabled;
+    if (autoRun) {
+      // Silently ignore Autopilot opt-in on plans without it (rather than block
+      // campaign creation) — the campaign is still created, just not on Autopilot.
+      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+      if (!getPlanLimits(plan).autopilotEnabled) autoRun = false;
+    }
     return this.prisma.campaign.create({
       data: {
         workspaceId,
@@ -232,6 +241,14 @@ export class AgentService {
     if (!campaign || campaign.workspaceId !== workspaceId) {
       throw new NotFoundException('Campaign not found for this workspace.');
     }
+    if (dto.autoRunEnabled) {
+      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+      if (!getPlanLimits(plan).autopilotEnabled) {
+        throw new ForbiddenException(
+          `Autopilot (scheduled auto-runs) is available on Agency Pro and Enterprise. Your ${getPlanDisplayName(plan)} plan includes manual agent runs — upgrade to let campaigns run themselves.`,
+        );
+      }
+    }
     const cadence = dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily';
     return this.prisma.campaign.update({
       where: { id: campaignId },
@@ -267,6 +284,15 @@ export class AgentService {
       const windowMs = c.autoRunCadence === 'weekly' ? 6.5 * 24 * 3600 * 1000 : 20 * 3600 * 1000;
       const last = c.lastAutoRunAt ? new Date(c.lastAutoRunAt).getTime() : 0;
       if (now - last < windowMs) continue; // not due yet
+
+      // Defense in depth: skip if the workspace's plan no longer includes
+      // Autopilot (e.g. downgraded after enabling it).
+      try {
+        const plan = await this.planGuard.getWorkspacePlan(c.workspaceId);
+        if (!getPlanLimits(plan).autopilotEnabled) continue;
+      } catch {
+        continue;
+      }
 
       try {
         await this.runCampaignCycle(c.workspaceId, c.id, 'scheduled');

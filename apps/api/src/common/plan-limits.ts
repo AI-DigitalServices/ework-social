@@ -40,6 +40,7 @@ export const PLAN_LIMITS = {
     assetUploadsPerMonth:   5,          // Creative Hub — vision tagging + embedding cap
     aiImageGenPerMonth:     0,          // AI image generation — premium only
     byokEnabled:            false,      // Bring-your-own AI key — premium only
+    autopilotEnabled:       false,      // Scheduled auto-runs — Agency Pro & Enterprise only
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,
@@ -92,6 +93,7 @@ export const PLAN_LIMITS = {
     assetUploadsPerMonth:   25,         // Creative Hub — vision tagging + embedding cap
     aiImageGenPerMonth:     0,          // AI image generation — premium only (Growth+)
     byokEnabled:            false,      // Bring-your-own AI key — premium only (Growth+)
+    autopilotEnabled:       false,      // Scheduled auto-runs — Agency Pro & Enterprise only
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  false,      // Collaboration feature — unlocks at Growth
@@ -144,6 +146,7 @@ export const PLAN_LIMITS = {
     assetUploadsPerMonth:   100,        // Creative Hub — vision tagging + embedding cap
     aiImageGenPerMonth:     50,         // AI image generation — unlocks at Growth
     byokEnabled:            true,       // Bring-your-own AI key — unlocks at Growth
+    autopilotEnabled:       false,      // Growth = manual agent only; Autopilot is Agency Pro+
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
@@ -196,11 +199,61 @@ export const PLAN_LIMITS = {
     assetUploadsPerMonth:   1000,       // Creative Hub — high cap, not truly unlimited (protects against bulk-upload abuse)
     aiImageGenPerMonth:     500,        // AI image generation — high cap (Autopilot tier)
     byokEnabled:            true,       // Bring-your-own AI key — enabled
+    autopilotEnabled:       true,       // Scheduled auto-runs — enabled
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,
 
     // ── CRM feature flags ─────────────────────────────────
+    crmPipelineEnabled:     true,
+    crmActivityLogEnabled:  true,
+    crmExportEnabled:       true,
+    crmAssignEnabled:       true,
+  },
+
+  // Enterprise - contact-sales tier. Everything unlocked at custom scale; the
+  // actual limits/SLA/white-label/SSO are negotiated, so caps here are "very
+  // high" sentinels rather than hard product ceilings. Also the home of the
+  // managed-service (done-for-you) option handled off-platform by the agency.
+  ENTERPRISE: {
+    maxSocialAccounts:      999999,
+    maxPostsPerMonth:       999999,
+    maxTeamMembers:         999999,
+    maxClients:             999999,
+    analyticsHistoryDays:   999999,
+
+    allowedPlatforms:       ['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE', 'THREADS', 'BLUESKY'],
+    twitterEnabled:         true,
+
+    watermarkEnabled:           false,
+    whiteLabelEnabled:          true,
+    apiAccessEnabled:           true,
+    bulkSchedulingEnabled:      true,
+    perPlatformEditorEnabled:   true,
+    automationEnabled:          true,
+
+    autoResponder:              'full' as const,
+    maxAutoResponderRules:      999999,
+
+    inboxEnabled:               true,
+    inboxTagsEnabled:           true,
+    inboxCrmLinkEnabled:        true,
+    inboxAssignEnabled:         true,
+
+    aiCaptionsPerMonth:     999999,
+    aiHashtagsEnabled:      true,
+    aiRewriteEnabled:       true,
+    aiReplyEnabled:         true,
+    aiReplyPerMonth:        999999,
+    aiCrmInsightsEnabled:   true,
+    agentActionsPerMonth:   999999,
+    assetUploadsPerMonth:   999999,
+    aiImageGenPerMonth:     999999,
+    byokEnabled:            true,
+    autopilotEnabled:       true,
+
+    clientApprovalEnabled:  true,
+
     crmPipelineEnabled:     true,
     crmActivityLogEnabled:  true,
     crmExportEnabled:       true,
@@ -222,6 +275,7 @@ export function getPlanDisplayName(plan: string): string {
     STARTER: 'Starter',
     GROWTH: 'Growth',
     AGENCY_PRO: 'Agency Pro',
+    ENTERPRISE: 'Enterprise',
   };
   return names[plan] || plan;
 }
@@ -255,4 +309,6 @@ export const FEATURE_MIN_PLAN: Record<string, string> = {
   // AI OS Phase 2 — generative creative + BYOK
   aiImageGen:           'GROWTH',
   byok:                 'GROWTH',
+  // Autopilot (scheduled auto-runs) — Agency Pro and above
+  autopilot:            'AGENCY_PRO',
 };

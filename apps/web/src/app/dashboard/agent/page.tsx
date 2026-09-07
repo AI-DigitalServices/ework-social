@@ -233,8 +233,10 @@ export default function AgentPage() {
     try {
       await api.patch(`/agent/${workspaceId}/campaigns/${campaignId}/schedule`, { autoRunEnabled, autoRunCadence });
       loadCampaigns();
-    } catch {
-      /* non-critical */
+    } catch (err: any) {
+      // Surface the plan-gate message (Autopilot is Agency Pro+) instead of failing silently.
+      alert(err?.response?.data?.message || 'Could not update Autopilot.');
+      loadCampaigns();
     }
   };
 
