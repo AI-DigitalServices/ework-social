@@ -10,21 +10,24 @@ import { DraftPostTool } from './tools/draft-post.tool';
 import { GetAnalyticsTool } from './tools/get-analytics.tool';
 import { SearchInboxTool } from './tools/search-inbox.tool';
 import { ListSocialAccountsTool } from './tools/list-social-accounts.tool';
+import { SearchAssetsTool } from './tools/search-assets.tool';
+import { GetClientContextTool } from './tools/get-client-context.tool';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
 import { SchedulerModule } from '../scheduler/scheduler.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { InboxModule } from '../inbox/inbox.module';
+import { AssetsModule } from '../assets/assets.module';
 
-// AI Operating System (Phase 1) — additive module, off by default per
-// workspace (Workspace.agentEnabled). See AI_OS_Blueprint for the full
-// design; this is the orchestrator + Tool Registry v1 (3 tools), shadow
-// mode only, no auto-publish anywhere in this module.
+// AI Operating System (Phase 1) - additive module, off by default per
+// workspace (Workspace.agentEnabled). Orchestrator + Tool Registry: read-only
+// context tools (analytics, inbox, accounts, assets, client CRM) + the single
+// mutating draft_post tool. Shadow mode only, no auto-publish in this module.
 @Module({
-  imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule],
+  imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule, AssetsModule],
   controllers: [AgentController, IntegrationsController],
-  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool],
+  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool, SearchAssetsTool, GetClientContextTool],
   exports: [AgentService],
 })
 export class AgentModule {}

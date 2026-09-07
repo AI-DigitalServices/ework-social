@@ -3,6 +3,8 @@ import { DraftPostTool } from './draft-post.tool';
 import { GetAnalyticsTool } from './get-analytics.tool';
 import { SearchInboxTool } from './search-inbox.tool';
 import { ListSocialAccountsTool } from './list-social-accounts.tool';
+import { SearchAssetsTool } from './search-assets.tool';
+import { GetClientContextTool } from './get-client-context.tool';
 import { AgentTool, AgentToolContext } from './tool.interface';
 
 /**
@@ -20,8 +22,10 @@ export class ToolRegistryService {
     getAnalytics: GetAnalyticsTool,
     searchInbox: SearchInboxTool,
     listSocialAccounts: ListSocialAccountsTool,
+    searchAssets: SearchAssetsTool,
+    getClientContext: GetClientContextTool,
   ) {
-    for (const tool of [draftPost, getAnalytics, searchInbox, listSocialAccounts]) {
+    for (const tool of [draftPost, getAnalytics, searchInbox, listSocialAccounts, searchAssets, getClientContext]) {
       this.tools.set(tool.name, tool);
     }
   }
