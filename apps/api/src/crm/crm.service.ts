@@ -5,6 +5,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { PostHogService } from '../analytics/posthog.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class CrmService {
@@ -12,6 +13,7 @@ export class CrmService {
     private prisma: PrismaService,
     private automation: AutomationService,
     private posthog: PostHogService,
+    private webhooks: WebhooksService,
   ) {}
 
   async getClients(
@@ -146,6 +148,16 @@ export class CrmService {
     });
 
     this.posthog.capture(dto.workspaceId, 'client_created', { source: dto.source || 'MANUAL' });
+
+    // Outbound webhook — "lead.created"
+    this.webhooks.dispatch(dto.workspaceId, 'lead.created', {
+      clientId: client.id,
+      name: client.name,
+      email: client.email,
+      company: client.company,
+      stage: client.stage,
+      source: client.source,
+    }).catch(() => {});
 
     return client;
   }

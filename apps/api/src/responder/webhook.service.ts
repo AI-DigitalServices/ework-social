@@ -3,12 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Platform, InboxMessageType } from '@prisma/client';
 import { createDecipheriv } from 'crypto';
 import axios from 'axios';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private webhooks: WebhooksService,
+  ) {}
 
   async processWebhookEvent(body: any) {
     const { object, entry } = body;
@@ -678,6 +682,15 @@ export class WebhookService {
           socialAccountId: data.socialAccountId,
         },
       });
+      // Outbound webhook — "inbox.message" (only for genuinely new messages,
+      // so duplicate Meta deliveries don't double-fire).
+      this.webhooks.dispatch(data.workspaceId, 'inbox.message', {
+        platform: data.platform,
+        type: data.type,
+        senderName: data.senderName,
+        content: data.content,
+        externalId: data.externalId,
+      }).catch(() => {});
       return { isNew: true };
     } catch (err: any) {
       if (err?.code === 'P2002') {
