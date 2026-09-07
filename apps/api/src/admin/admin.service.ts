@@ -240,6 +240,14 @@ export class AdminService {
     return { total, entries };
   }
 
+  async getEnterpriseLeads() {
+    const [entries, total] = await Promise.all([
+      this.prisma.enterpriseLead.findMany({ orderBy: { createdAt: 'desc' }, take: 200 }),
+      this.prisma.enterpriseLead.count(),
+    ]);
+    return { total, entries };
+  }
+
   async setWorkspacePlan(workspaceId: string, plan: string) {
     const isPaid = plan !== 'FREE';
     const updated = await this.prisma.subscription.update({
