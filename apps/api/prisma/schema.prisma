@@ -572,6 +572,19 @@ model WorkspaceMemory {
   @@index([workspaceId, kind])
 }
 
+// Enterprise / sales leads captured from the public pricing page.
+model EnterpriseLead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  message   String?
+  interest  String?  // 'software' | 'managed' | other
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 enum AssetKind {
   IMAGE
   VIDEO

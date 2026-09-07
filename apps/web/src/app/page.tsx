@@ -1,5 +1,5 @@
 'use client';
-import { Calendar, Users, BarChart3, MessageSquareReply, CreditCard, Globe, Zap, Shield, CheckCircle, ArrowRight, Star } from 'lucide-react';
+import { Calendar, Users, BarChart3, MessageSquareReply, CreditCard, Globe, Zap, Shield, CheckCircle, ArrowRight, Star, Sparkles, Brain, ImagePlus, Workflow } from 'lucide-react';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { useState } from 'react';
 import { joinWaitlistAction, getWaitlistCountAction } from '@/actions/waitlist.actions';
@@ -224,16 +224,22 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', filter: 'blur(130px)', background: 'radial-gradient(circle, #2563EB, #1E3A8A)', opacity: 0.12, top: -150, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }} />
         <div className="hero-inner" style={{ maxWidth: 1200, margin: '0 auto', width: '100%', textAlign: 'center' }}>
 
+          <div className={`fade-in ${isVisible ? 'show' : ''}`} style={{ transitionDelay: '0.05s', marginBottom: 22 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', color: '#7EB3F7', fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 100, letterSpacing: '0.3px' }}>
+              <Sparkles size={14} /> Now an AI Operating System for social media
+            </span>
+          </div>
+
           <div className={`fade-in ${isVisible ? 'show' : ''}`} style={{ transitionDelay: '0.1s', marginBottom: 32 }}>
-            <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(48px, 7vw, 86px)', fontWeight: 700, lineHeight: 1.05, letterSpacing: '-2px', color: '#FFFFFF', marginBottom: 0 }}>
-              One Dashboard.<br />
-              Every Client&apos;s <span style={{ color: '#3B82F6', fontStyle: 'italic' }}>Social Media</span>.
+            <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(46px, 7vw, 84px)', fontWeight: 700, lineHeight: 1.05, letterSpacing: '-2px', color: '#FFFFFF', marginBottom: 0 }}>
+              Your Social Media,<br />
+              on <span style={{ color: '#3B82F6', fontStyle: 'italic' }}>Autopilot</span>.
             </h1>
           </div>
 
           <div className={`fade-in ${isVisible ? 'show' : ''}`} style={{ transitionDelay: '0.25s', marginBottom: 44 }}>
-            <p style={{ fontSize: 19, color: '#8BA0BC', lineHeight: 1.75, fontWeight: 400, maxWidth: 640, margin: '0 auto' }}>
-              The all-in-one platform for agencies, creators, and brands. Schedule posts across every major platform, manage clients, track analytics, and automate engagement — from one dashboard.
+            <p style={{ fontSize: 19, color: '#8BA0BC', lineHeight: 1.75, fontWeight: 400, maxWidth: 660, margin: '0 auto' }}>
+              eWork Social doesn&apos;t just schedule posts. An AI agent plans your campaigns, writes on-brand content, generates the visuals, and publishes across 8 platforms — you approve, it does the work. One dashboard for agencies, creators, and brands.
             </p>
           </div>
 
@@ -255,50 +261,13 @@ export default function LandingPage() {
                 <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840' }} />
                 <span style={{ marginLeft: 14, fontSize: 12, color: '#4A6080', fontWeight: 500 }}>app.eworksocial.com/dashboard</span>
               </div>
-              <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'minmax(120px, 190px) 1fr', gap: 16, textAlign: 'left' as const, flexWrap: 'wrap' }}>
-                <div style={{ borderRight: '1px solid #1A2840', paddingRight: 22 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
-                    <img src="/icon.png" alt="eWork Social" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
-                    <span style={{ fontFamily: 'Libre Baskerville, serif', fontWeight: 700, fontSize: 13 }}>eWork Social</span>
-                  </div>
-                  {[
-                    { Icon: BarChart3, label: 'Dashboard' },
-                    { Icon: Calendar, label: 'Scheduler' },
-                    { Icon: Users, label: 'CRM' },
-                    { Icon: BarChart3, label: 'Analytics' },
-                    { Icon: MessageSquareReply, label: 'Auto-Responder' },
-                  ].map(({ Icon, label }, i) => (
-                    <div key={label} style={{ padding: '9px 12px', borderRadius: 8, marginBottom: 3, fontSize: 13, background: i === 0 ? 'rgba(37,99,235,0.18)' : 'transparent', color: i === 0 ? '#7EB3F7' : '#4A6080', display: 'flex', alignItems: 'center', gap: 8, fontWeight: i === 0 ? 600 : 400 }}>
-                      <Icon size={14} /> {label}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: '-0.3px' }}>Welcome back! 👋</p>
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                    {[['24', 'Scheduled Posts', '#3B82F6'], ['12', 'Active Clients', '#10B981'], ['8', 'Open Leads', '#F59E0B'], ['6', 'Social Accounts', '#8B5CF6']].map(([n, l, c]) => (
-                      <div key={l} style={{ background: '#070B12', border: '1px solid #1A2840', borderRadius: 10, padding: '12px 14px', flex: 1 }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: c, letterSpacing: '-0.5px' }}>{n}</div>
-                        <div style={{ fontSize: 11, color: '#4A6080', marginTop: 3, fontWeight: 500 }}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ background: '#070B12', borderRadius: 10, padding: 16, border: '1px solid #1A2840' }}>
-                    <p style={{ fontSize: 11, color: '#4A6080', marginBottom: 12, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' as const }}>Upcoming Posts</p>
-                    {[
-                      { platform: '📘 Facebook', time: 'Today 2:00 PM', text: 'New product launch announcement...' },
-                      { platform: '📸 Instagram', time: 'Today 5:00 PM', text: 'Behind the scenes at our office...' },
-                      { platform: '💼 LinkedIn', time: 'Tomorrow 9:00 AM', text: 'Industry insights for Q2 2026...' },
-                    ].map((post, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: i < 2 ? '1px solid #1A2840' : 'none' }}>
-                        <span style={{ fontSize: 12, color: '#8BA0BC', fontWeight: 500, minWidth: 110 }}>{post.platform}</span>
-                        <span style={{ fontSize: 12, color: '#4A6080', flex: 1 }}>{post.text}</span>
-                        <span style={{ fontSize: 11, color: '#3B82F6', background: 'rgba(37,99,235,0.15)', padding: '3px 10px', borderRadius: 5, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{post.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              {/* Real product screenshot — AI Agent */}
+              <img
+                src="/marketing/hero-agent.png"
+                alt="eWork Social AI Agent — proposing on-brand drafts for a campaign"
+                loading="eager"
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
             </div>
           </div>
         </div>
@@ -309,21 +278,21 @@ export default function LandingPage() {
         <div className="ticker-wrap">
           <div className="ticker">
             {[
-              { Icon: Calendar, label: 'Smart Scheduling', color: '#3B82F6' },
-              { Icon: Users, label: 'CRM Pipeline', color: '#10B981' },
-              { Icon: BarChart3, label: 'Analytics Dashboard', color: '#F59E0B' },
-              { Icon: MessageSquareReply, label: 'Auto-Responder', color: '#A78BFA' },
-              { Icon: CreditCard, label: 'Paystack Billing', color: '#F472B6' },
-              { Icon: Globe, label: 'Global-Ready', color: '#34D399' },
-              { Icon: Zap, label: 'AI-Powered', color: '#FB923C' },
+              { Icon: Sparkles, label: 'AI Agent', color: '#3B82F6' },
+              { Icon: Zap, label: 'Autopilot', color: '#FB923C' },
+              { Icon: Brain, label: 'Brand Brain', color: '#A78BFA' },
+              { Icon: ImagePlus, label: 'AI Creative Studio', color: '#F472B6' },
+              { Icon: Calendar, label: '8-Platform Publishing', color: '#10B981' },
+              { Icon: MessageSquareReply, label: 'Engagement Hub', color: '#F59E0B' },
+              { Icon: Workflow, label: 'Zapier / Make / n8n', color: '#34D399' },
               { Icon: Shield, label: 'Multi-Tenant Security', color: '#818CF8' },
-              { Icon: Calendar, label: 'Smart Scheduling', color: '#3B82F6' },
-              { Icon: Users, label: 'CRM Pipeline', color: '#10B981' },
-              { Icon: BarChart3, label: 'Analytics Dashboard', color: '#F59E0B' },
-              { Icon: MessageSquareReply, label: 'Auto-Responder', color: '#A78BFA' },
-              { Icon: CreditCard, label: 'Paystack Billing', color: '#F472B6' },
-              { Icon: Globe, label: 'Global-Ready', color: '#34D399' },
-              { Icon: Zap, label: 'AI-Powered', color: '#FB923C' },
+              { Icon: Sparkles, label: 'AI Agent', color: '#3B82F6' },
+              { Icon: Zap, label: 'Autopilot', color: '#FB923C' },
+              { Icon: Brain, label: 'Brand Brain', color: '#A78BFA' },
+              { Icon: ImagePlus, label: 'AI Creative Studio', color: '#F472B6' },
+              { Icon: Calendar, label: '8-Platform Publishing', color: '#10B981' },
+              { Icon: MessageSquareReply, label: 'Engagement Hub', color: '#F59E0B' },
+              { Icon: Workflow, label: 'Zapier / Make / n8n', color: '#34D399' },
               { Icon: Shield, label: 'Multi-Tenant Security', color: '#818CF8' },
             ].map((item, i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '0 30px', fontSize: 15, fontWeight: 600, color: item.color }}>
@@ -341,18 +310,18 @@ export default function LandingPage() {
         <div style={{ textAlign: 'center', marginBottom: 72 }}>
           <span className="section-label">Features</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1.1, color: '#F0F6FF' }}>
-            Everything your agency needs<br />to scale social media
+            An AI teammate,<br />not just another tool
           </h2>
-          <p style={{ color: '#6B8299', fontSize: 17, marginTop: 18, fontWeight: 400 }}>Built for agencies managing multiple clients at once</p>
+          <p style={{ color: '#6B8299', fontSize: 17, marginTop: 18, fontWeight: 400 }}>The AI does the heavy lifting. You stay in control of every post.</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
           {[
-            { Icon: Calendar, title: 'Smart Scheduler', desc: 'Schedule posts across Facebook, Instagram, LinkedIn and more. Bulk upload, calendar view, and intelligent queue management powered by BullMQ.', color: '#3B82F6' },
-            { Icon: Users, title: 'CRM & Lead Pipeline', desc: 'Full client relationship management with pipeline stages: Lead → Contacted → Proposal → Active. Never miss a follow-up.', color: '#10B981' },
-            { Icon: BarChart3, title: 'Analytics Dashboard', desc: 'Track engagement, reach, clicks, and follower growth across all platforms. Up to 12 months of history on Agency Pro.', color: '#F59E0B' },
-            { Icon: MessageSquareReply, title: 'Auto-Responder', desc: 'Auto-reply to comments and DMs with keyword triggers and template responses. Automatically update lead stages in CRM.', color: '#8B5CF6' },
-            { Icon: Shield, title: 'Multi-Tenant Workspaces', desc: 'Each client workspace is fully isolated with separate branding, accounts, and permissions. Scale without chaos.', color: '#EC4899' },
-            { Icon: Globe, title: 'White-Label Ready', desc: 'Agency Pro users get a fully white-labeled dashboard with custom domain support. Resell it as your own product.', color: '#14B8A6' },
+            { Icon: Sparkles, title: 'AI Agent & Autopilot', desc: 'Give it a campaign brief and it proposes a whole week of on-brand posts — grounded in your analytics, inbox, and clients. Put it on Autopilot and it runs itself on a schedule. Nothing publishes without your approval.', color: '#3B82F6' },
+            { Icon: Brain, title: 'Brand Brain', desc: 'The agent learns your voice from your own published posts and clients, so every draft sounds like your brand — not generic AI. Semantic memory that gets sharper over time.', color: '#8B5CF6' },
+            { Icon: ImagePlus, title: 'AI Creative Studio', desc: 'Describe an image and get it in seconds (OpenAI + Google Gemini), saved to a searchable, auto-tagged asset library. The agent can even create matching visuals for its own drafts.', color: '#EC4899' },
+            { Icon: Calendar, title: 'Publish to 8 Platforms', desc: 'Schedule and publish across Instagram, Facebook, LinkedIn, TikTok, YouTube, X, Threads and Bluesky — from one dashboard, with bulk scheduling and a calendar view.', color: '#10B981' },
+            { Icon: MessageSquareReply, title: 'Engagement Hub', desc: 'Every DM and comment across platforms in one inbox, with AI reply suggestions and a keyword auto-responder that updates your CRM automatically.', color: '#F59E0B' },
+            { Icon: Workflow, title: 'Automation & Integrations', desc: 'Bring your own AI key (OpenAI/Gemini/Voyage), and connect Zapier, Make, or n8n via signed webhooks to wire eWork into your whole stack. White-label on Agency Pro.', color: '#14B8A6' },
           ].map((f, i) => (
             <div key={i} className="feature-card">
               <div style={{ width: 52, height: 52, background: `${f.color}18`, border: `1px solid ${f.color}30`, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}><f.Icon size={24} color={f.color} /></div>
@@ -366,32 +335,54 @@ export default function LandingPage() {
       {/* AI SECTION */}
       <section style={{ padding: '110px 48px', background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
-          <span className="section-label">AI, Built In</span>
+          <span className="section-label">The AI OS</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1.1, color: '#F0F6FF', marginBottom: 18 }}>
-            Real AI. Doing real work.<br />Not a chatbot bolted on top.
+            An AI that does the work.<br />Not a chatbot bolted on top.
           </h2>
-          <p style={{ color: '#6B8299', fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: '0 auto 64px', fontWeight: 400 }}>
-            Every AI feature in eWork Social runs on Claude, Anthropic's frontier model — the same technology enterprises trust for production-grade work. We didn't add an AI button. We built AI into the workflow itself.
+          <p style={{ color: '#6B8299', fontSize: 17, lineHeight: 1.8, maxWidth: 660, margin: '0 auto 64px', fontWeight: 400 }}>
+            eWork Social is built around an AI agent that researches, plans, writes, and creates — powered by Claude, with a full audit trail and a kill switch. It proposes; you approve. Always.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, textAlign: 'left' as const, marginBottom: 40 }}>
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Caption writing that sounds like you</h3>
-              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Describe what you want to say. Claude drafts platform-optimized captions for Instagram, LinkedIn, TikTok, and every platform you manage — in seconds, not staring at a blank box.</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>It plans campaigns, not just captions</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Give the agent a goal and a brief. It checks your analytics, reads your inbox, looks up the client&apos;s CRM stage, and proposes a full multi-day series — each post ready to approve and schedule.</p>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Reply suggestions that read the message</h3>
-              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>In the Engagement Hub, Claude reads each DM or comment and drafts a contextual reply — not a canned response. You review, edit if needed, and send. AI drafts. You decide.</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>It sounds like your brand</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>The Brand Brain learns your voice from what you&apos;ve already published, so drafts read like you — and it pulls real assets from your Creative Hub or generates new visuals to match.</p>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>Hashtags and rewrites, on demand</h3>
-              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Stuck on hashtags, or need a caption reworked for a different platform's tone? One click, powered by the same model behind every suggestion in your dashboard.</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>You stay in control</h3>
+              <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Every run is logged, nothing publishes on its own, and one switch pauses the agent instantly. Run it manually, or put it on Autopilot — either way, you approve before anything goes out.</p>
             </div>
           </div>
 
           <p style={{ color: '#4A6080', fontSize: 13, fontWeight: 500 }}>
-            Powered by Claude, built by Anthropic. eWork Social is not a Claude reseller or a wrapper — Claude works inside features we built specifically for social media agencies.
+            Powered by Claude, built by Anthropic — working inside an agent we built specifically for social media. Bring your own AI key if you prefer.
           </p>
+        </div>
+      </section>
+
+      {/* SEE IT IN ACTION */}
+      <section className="section-pad" style={{ paddingTop: 100, paddingBottom: 100, maxWidth: 1000, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <span className="section-label">See it in action</span>
+          <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, letterSpacing: '-1px', color: '#F0F6FF' }}>
+            The AI Agent &amp; Creative Studio, live
+          </h2>
+          <p style={{ color: '#6B8299', fontSize: 16, marginTop: 14 }}>Watch a campaign go from brief to on-brand drafts and generated visuals.</p>
+        </div>
+        <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid #1A2840', boxShadow: '0 48px 96px rgba(0,0,0,0.6)' }}>
+          <video
+            src="/marketing/demo.mp4"
+            poster="/marketing/demo-poster.jpg"
+            controls
+            muted
+            playsInline
+            preload="metadata"
+            style={{ display: 'block', width: '100%', height: 'auto', background: '#070B12' }}
+          />
         </div>
       </section>
 

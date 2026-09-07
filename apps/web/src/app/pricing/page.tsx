@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import EnterpriseLeadForm from '@/components/marketing/EnterpriseLeadForm';
 
 export const metadata: Metadata = {
   title: 'Plans & Pricing — eWork Social',
@@ -201,7 +202,7 @@ export default function PricingPage() {
                   <span style={{ color: '#C8D8EC', fontSize: 14 }}>{f}</span>
                 </div>
               ))}
-              <a href="mailto:hello@eworksocial.com?subject=Enterprise%20software%20enquiry" className="pbtn-primary" style={{ marginTop: 22, width: '100%', textAlign: 'center' }}>
+              <a href="#lead-form" className="pbtn-primary" style={{ marginTop: 22, width: '100%', textAlign: 'center' }}>
                 Talk to sales
               </a>
             </div>
@@ -221,10 +222,23 @@ export default function PricingPage() {
                   <span style={{ color: '#C8D8EC', fontSize: 14 }}>{f}</span>
                 </div>
               ))}
-              <a href="mailto:hello@eworksocial.com?subject=Managed%20service%20consultation" className="pbtn-outline" style={{ marginTop: 22, width: '100%', textAlign: 'center' }}>
+              <a href="https://calendly.com/aiservices-agent/30min" target="_blank" rel="noopener noreferrer" className="pbtn-outline" style={{ marginTop: 22, width: '100%', textAlign: 'center' }}>
                 Book a consultation
               </a>
             </div>
+          </div>
+
+          {/* Lead form */}
+          <div id="lead-form" style={{ maxWidth: 640, margin: '56px auto 0', scrollMarginTop: 90 }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 26, fontWeight: 700, color: '#F0F6FF' }}>
+                Talk to our team
+              </h3>
+              <p style={{ color: '#6B8299', fontSize: 15, marginTop: 10 }}>
+                Tell us a little about what you need and we&apos;ll get back to you.
+              </p>
+            </div>
+            <EnterpriseLeadForm />
           </div>
         </div>
       </section>
