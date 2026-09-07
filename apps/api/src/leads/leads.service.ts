@@ -26,15 +26,24 @@ export class LeadsService {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new BadRequestException('Please enter a valid email.');
 
     const interest = dto.interest === 'managed' ? 'managed' : 'software';
-    const lead = await this.prisma.enterpriseLead.create({
-      data: {
-        name,
-        email,
-        company: dto.company?.trim() || null,
-        message: dto.message?.trim() || null,
-        interest,
-      },
-    });
+
+    // Save to DB — but if the table isn't there yet (migration not run), don't
+    // lose the lead: log it and still fire the email below so it's never dropped.
+    let leadId: string | null = null;
+    try {
+      const lead = await this.prisma.enterpriseLead.create({
+        data: {
+          name,
+          email,
+          company: dto.company?.trim() || null,
+          message: dto.message?.trim() || null,
+          interest,
+        },
+      });
+      leadId = lead.id;
+    } catch (err: any) {
+      this.logger.error(`EnterpriseLead DB save failed (table missing?) — continuing to email: ${err.message}`);
+    }
 
     // Notify sales — best-effort, never fail the request if email hiccups.
     try {
@@ -56,6 +65,6 @@ export class LeadsService {
       this.logger.error(`Enterprise lead email failed (lead still saved): ${err.message}`);
     }
 
-    return { ok: true, id: lead.id };
+    return { ok: true, id: leadId };
   }
 }
