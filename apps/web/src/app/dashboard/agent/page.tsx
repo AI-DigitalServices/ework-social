@@ -84,6 +84,7 @@ export default function AgentPage() {
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [newAutoRun, setNewAutoRun] = useState('off');
 
   const [runningId, setRunningId] = useState<string | null>(null);
   const [runError, setRunError] = useState<Record<string, string>>({});
@@ -168,8 +169,14 @@ export default function AgentPage() {
     setCreating(true);
     setCreateError('');
     try {
-      await api.post(`/agent/${workspaceId}/campaigns`, { goal: goal.trim(), brief: brief.trim(), platforms });
-      setGoal(''); setBrief(''); setPlatforms([]);
+      await api.post(`/agent/${workspaceId}/campaigns`, {
+        goal: goal.trim(),
+        brief: brief.trim(),
+        platforms,
+        autoRunEnabled: newAutoRun !== 'off',
+        autoRunCadence: newAutoRun === 'off' ? undefined : newAutoRun,
+      });
+      setGoal(''); setBrief(''); setPlatforms([]); setNewAutoRun('off');
       setShowCreateForm(false);
       loadCampaigns();
     } catch (err: any) {
@@ -495,6 +502,23 @@ export default function AgentPage() {
                     {p.charAt(0) + p.slice(1).toLowerCase()}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Autopilot</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={newAutoRun}
+                  onChange={e => setNewAutoRun(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                >
+                  <option value="off">Off (recommended to start)</option>
+                  <option value="daily">Daily auto-run</option>
+                  <option value="weekly">Weekly auto-run</option>
+                </select>
+                <span className="text-[11px] text-slate-400">
+                  Tip: run it once manually and review the drafts before turning Autopilot on.
+                </span>
               </div>
             </div>
             {createError && (

@@ -23,7 +23,7 @@ export class AgentController {
   @Post(':workspaceId/campaigns')
   createCampaign(
     @Param('workspaceId') workspaceId: string,
-    @Body() body: { goal: string; brief: string; platforms: string[]; clientId?: string },
+    @Body() body: { goal: string; brief: string; platforms: string[]; clientId?: string; autoRunEnabled?: boolean; autoRunCadence?: string },
   ) {
     return this.agentService.createCampaign(workspaceId, body);
   }

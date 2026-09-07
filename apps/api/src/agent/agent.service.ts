@@ -90,12 +90,20 @@ export class AgentService {
    */
   async createCampaign(
     workspaceId: string,
-    dto: { goal: string; brief: string; platforms: string[]; clientId?: string },
+    dto: {
+      goal: string;
+      brief: string;
+      platforms: string[];
+      clientId?: string;
+      autoRunEnabled?: boolean;
+      autoRunCadence?: string;
+    },
   ) {
     await this.assertWorkspace(workspaceId);
     if (!dto.goal?.trim() || !dto.brief?.trim() || !dto.platforms?.length) {
       throw new BadRequestException('goal, brief, and at least one platform are required.');
     }
+    const autoRun = !!dto.autoRunEnabled;
     return this.prisma.campaign.create({
       data: {
         workspaceId,
@@ -104,6 +112,9 @@ export class AgentService {
         brief: dto.brief.trim(),
         platforms: dto.platforms,
         status: 'DRAFT',
+        // Autopilot defaults OFF; can be opted into at creation.
+        autoRunEnabled: autoRun,
+        autoRunCadence: autoRun ? (dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily') : null,
       },
     });
   }
