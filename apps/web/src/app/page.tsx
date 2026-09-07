@@ -482,6 +482,11 @@ export default function LandingPage() {
             );
           })}
         </div>
+        <div style={{ textAlign: 'center', marginTop: 36 }}>
+          <a href="/pricing" className="btn-outline" style={{ display: 'inline-block', padding: '13px 26px' }}>
+            Compare all plans & Enterprise →
+          </a>
+        </div>
         <p style={{ textAlign: 'center', color: '#4A6080', fontSize: 12, marginTop: 24, fontWeight: 500 }}>
           * Prices shown are approximate conversions based on your region. Final billing currency depends on your payment method.
         </p>
