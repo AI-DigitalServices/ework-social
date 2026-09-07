@@ -12,6 +12,7 @@ import { SearchInboxTool } from './tools/search-inbox.tool';
 import { ListSocialAccountsTool } from './tools/list-social-accounts.tool';
 import { SearchAssetsTool } from './tools/search-assets.tool';
 import { GetClientContextTool } from './tools/get-client-context.tool';
+import { GenerateImageTool } from './tools/generate-image.tool';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
@@ -27,7 +28,7 @@ import { AssetsModule } from '../assets/assets.module';
 @Module({
   imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule, AssetsModule],
   controllers: [AgentController, IntegrationsController],
-  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool, SearchAssetsTool, GetClientContextTool],
+  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool, SearchAssetsTool, GetClientContextTool, GenerateImageTool],
   exports: [AgentService],
 })
 export class AgentModule {}

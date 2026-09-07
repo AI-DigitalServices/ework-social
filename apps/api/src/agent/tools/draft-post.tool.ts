@@ -42,6 +42,12 @@ export class DraftPostTool implements AgentTool {
         type: 'string',
         description: 'One or two sentences on why this post serves the campaign goal — shown to the human reviewer.',
       },
+      suggestedScheduleAt: {
+        type: 'string',
+        description:
+          'Optional ISO 8601 datetime suggesting when this post should go out. When proposing a multi-day ' +
+          'series, spread posts across days/times here — it pre-fills the reviewer\'s schedule picker (they can change it).',
+      },
     },
     required: ['socialAccountId', 'content'],
   };
@@ -86,6 +92,7 @@ export class DraftPostTool implements AgentTool {
             content: input.content,
             mediaUrls: input.mediaUrls || [],
             rationale: input.rationale || null,
+            suggestedScheduleAt: input.suggestedScheduleAt || null,
           },
           status: 'PROPOSED',
           postId: post.id,

@@ -33,7 +33,7 @@ type CampaignTask = {
   id: string;
   type: string;
   status: string;
-  payload: { content?: string; mediaUrls?: string[]; rationale?: string };
+  payload: { content?: string; mediaUrls?: string[]; rationale?: string; suggestedScheduleAt?: string | null };
   postId?: string | null;
   post?: { id: string; status: string; scheduledAt?: string | null } | null;
 };
@@ -199,9 +199,12 @@ export default function AgentPage() {
     setTaskBusy(prev => ({ ...prev, [task.id]: 'approve' }));
     setTaskError(prev => ({ ...prev, [task.id]: '' }));
     try {
+      // Use the reviewer's picked time, else the AI-suggested time, else now.
+      const effectiveSchedule = edit?.scheduledAt
+        ? new Date(edit.scheduledAt).toISOString()
+        : task.payload?.suggestedScheduleAt || undefined;
       await api.post(`/agent/${workspaceId}/tasks/${task.id}/approve`, {
-        // Only send fields the reviewer actually changed; empty scheduledAt = now
-        ...(edit?.scheduledAt ? { scheduledAt: new Date(edit.scheduledAt).toISOString() } : {}),
+        ...(effectiveSchedule ? { scheduledAt: effectiveSchedule } : {}),
         ...(edit?.content != null && edit.content !== task.payload?.content ? { content: edit.content } : {}),
         ...(media !== undefined ? { mediaUrls: media } : {}),
       });
@@ -695,10 +698,17 @@ export default function AgentPage() {
 
                               <div className="flex items-end gap-2 flex-wrap">
                                 <div>
-                                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Schedule (leave blank = post now)</label>
+                                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                                    Schedule {t.payload?.suggestedScheduleAt ? '(AI-suggested — edit if needed)' : '(leave blank = post now)'}
+                                  </label>
                                   <input
                                     type="datetime-local"
-                                    value={edit?.scheduledAt ?? ''}
+                                    value={
+                                      edit?.scheduledAt ??
+                                      (t.payload?.suggestedScheduleAt
+                                        ? (() => { const d = new Date(t.payload.suggestedScheduleAt as string); return isNaN(d.getTime()) ? '' : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })()
+                                        : '')
+                                    }
                                     onChange={e => setEdit({ scheduledAt: e.target.value })}
                                     className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500"
                                   />
