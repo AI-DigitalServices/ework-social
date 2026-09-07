@@ -15,6 +15,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'African Market':       '#10B981',
   'Tools & Reviews':      '#EC4899',
   'Analytics & Growth':   '#6366F1',
+  'Webinars':             '#F43F5E',
 };
 
 function formatDate(iso: string) {

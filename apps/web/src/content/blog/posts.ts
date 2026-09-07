@@ -924,6 +924,153 @@ export const posts: BlogPost[] = [
 <p><em>— Bernard Oshapi, Founder, eWork Social</em></p>
     `,
   },
+  {
+    slug: "ework-social-webinar-recap-manage-clients-one-dashboard",
+    title: "eWork Social Webinar Recap: Managing Every Client's Social Media From One Dashboard",
+    excerpt: "We just wrapped our first live webinar walking through how agencies and creators run every client's social media from a single dashboard. Missed it? Here's the segment-by-segment recap — with the full replay.",
+    category: "Webinars",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-09-02",
+    readTime: 6,
+    coverImage: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=80",
+    content: `
+<p>We held our first live eWork Social webinar — a full walkthrough of how freelancers, agencies, and brands manage every client's social media from one place. If you couldn't make it live, the complete replay is on YouTube, and this post breaks it down segment by segment so you can jump straight to what matters to you.</p>
+
+<p><strong>▶️ Watch the full webinar replay: <a href="https://youtu.be/GKkcBc5ZhPw" target="_blank" rel="noopener noreferrer">eWork Social — Live Product Walkthrough</a></strong></p>
+
+<h2>Segment 1: One dashboard, every client</h2>
+<p>We opened with the problem every social media manager knows — five browser tabs, separate logins for each client, a content calendar living in a spreadsheet. We showed how client workspaces keep each brand fully isolated while you switch between them in one click. If you manage more than one account, start here. <a href="https://youtu.be/GKkcBc5ZhPw" target="_blank" rel="noopener noreferrer">Watch the walkthrough →</a></p>
+
+<h2>Segment 2: Scheduling across 8 platforms</h2>
+<p>Next we demonstrated scheduling and publishing to Instagram, Facebook, LinkedIn, TikTok, YouTube, X, Threads, and Bluesky — from a single composer, with a calendar view and bulk scheduling. One post, every platform, adapted per network.</p>
+
+<h2>Segment 3: The Engagement Hub</h2>
+<p>We showed how every DM and comment across platforms lands in one unified inbox, with an auto-responder that replies by keyword and updates your CRM automatically — so no message slips through and no lead goes cold.</p>
+
+<h2>Segment 4: CRM and client approvals</h2>
+<p>Finally, we walked through the built-in CRM pipeline (Lead → Contacted → Proposal → Active) and the client approval portal, where clients review and approve content in their own clean workspace without seeing any of your other clients.</p>
+
+<h2>Watch it, then try it free</h2>
+<p>The webinar is the fastest way to see whether eWork Social fits how you work. Watch the <a href="https://youtu.be/GKkcBc5ZhPw" target="_blank" rel="noopener noreferrer">full replay here</a>, then <a href="/register">start free</a> — no credit card required. We run these live sessions regularly, so follow along for the next one.</p>
+`,
+  },
+  {
+    slug: "introducing-ework-social-ai-os",
+    title: "Introducing the eWork Social AI OS: Social Media on Autopilot",
+    excerpt: "eWork Social is no longer just a scheduler. It's an AI Operating System that plans your campaigns, writes on-brand content, generates the visuals, and can run on autopilot — with you approving every post.",
+    category: "AI & Automation",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-09-04",
+    readTime: 7,
+    coverImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80",
+    content: `
+<p>When we started eWork Social, it was a social media scheduler built for agencies juggling many clients. Today it's something bigger: an <strong>AI Operating System for social media</strong> — an AI agent that researches, plans, writes, and creates, while you stay in control of everything that goes out.</p>
+
+<p>Most tools that claim to be "AI-powered" bolt a caption generator onto a scheduler. That's a feature. What we built is a system.</p>
+
+<h2>An AI agent that plans, not just writes</h2>
+<p>Give the agent a campaign brief — a goal and a few notes — and it studies your analytics, reads your inbox, checks the client's CRM stage, and proposes a full multi-day series of posts. Each one arrives ready to review, edit, and schedule. It doesn't just write one caption; it plans a week of content.</p>
+
+<h2>Brand Brain: AI that sounds like you</h2>
+<p>The agent writes in <em>your</em> voice because of the Brand Brain — memory it builds from your own published posts and clients. Instead of generic marketing filler, drafts read like your brand, and they get sharper the more you use it.</p>
+
+<h2>AI Creative Studio: describe it, get the image</h2>
+<p>Need a visual? Describe it and the AI Creative Studio generates an on-brand image in seconds, saved to a searchable asset library. The agent can even pull an existing asset or create a matching visual for its own drafts.</p>
+
+<h2>Autopilot — but you approve</h2>
+<p>Put a campaign on Autopilot and the agent runs on a schedule, proposing fresh drafts without you lifting a finger. Nothing publishes automatically — every draft waits for your one-click approval. It's supervised autonomy: the AI does the work, you keep the judgment.</p>
+
+<h2>Built for real agencies</h2>
+<p>All of it runs across 8 platforms, connects to your stack via webhooks and Zapier/Make/n8n, and even lets power users bring their own AI key. It's the same eWork Social you know — now with an AI teammate inside it.</p>
+
+<p><a href="/register">Start free</a> and meet your AI teammate, or <a href="/pricing">compare plans</a> to see what's included at each tier.</p>
+`,
+  },
+  {
+    slug: "ai-agent-plans-week-of-social-content",
+    title: "How the eWork Social AI Agent Plans a Full Week of Content (You Just Approve)",
+    excerpt: "Stop staring at a blank content calendar. Here's exactly how the eWork Social AI agent turns a one-line brief into a week of on-brand, ready-to-schedule posts — and how Autopilot keeps them coming.",
+    category: "AI & Automation",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-09-05",
+    readTime: 6,
+    coverImage: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&q=80",
+    content: `
+<p>The hardest part of social media isn't posting — it's deciding what to post, week after week, for every client. The eWork Social AI agent exists to remove that blank-page problem. Here's how it actually works.</p>
+
+<h2>1. You give it a brief</h2>
+<p>Open the AI Agent, create a campaign, and write a goal and a short brief — "promote our new savings feature to young professionals, warm and practical tone." Pick the platforms. That's your entire input.</p>
+
+<h2>2. It researches before it writes</h2>
+<p>The agent doesn't guess. It checks your recent analytics, reads what people are saying in your Engagement Hub inbox, looks up the client's stage and notes in your CRM, and recalls your brand voice from the Brand Brain. Then it drafts.</p>
+
+<h2>3. It proposes a full series</h2>
+<p>Instead of one post, it proposes a multi-day series that builds toward the goal — a hook, a value post, social proof, a call to action — each with a suggested schedule time. Where it can, it attaches a real image from your Creative Hub library.</p>
+
+<h2>4. You approve — nothing auto-publishes</h2>
+<p>Every draft lands in a review queue. Edit the copy, swap the media, adjust the time, then approve and schedule in one click. The agent never posts on its own — that boundary is deliberate.</p>
+
+<h2>5. Autopilot keeps it going</h2>
+<p>Set the campaign to run daily or weekly and the agent proposes fresh drafts on schedule, so your calendar never runs dry. It respects a kill switch and your plan limits, and everything is logged in an audit trail.</p>
+
+<p>This is what "AI social media" should mean — not a caption button, but a teammate that plans the work and hands it to you for approval. <a href="/register">Try the AI agent free</a> or <a href="/pricing">see which plan includes Autopilot</a>.</p>
+`,
+  },
+  {
+    slug: "brand-brain-ai-creative-studio-on-brand-content",
+    title: "AI That Sounds Like Your Brand: Inside Brand Brain and the AI Creative Studio",
+    excerpt: "Generic AI content is easy to spot — and easy to ignore. Here's how eWork Social's Brand Brain and AI Creative Studio produce copy and visuals that actually sound and look like your brand.",
+    category: "Tools & Reviews",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-09-06",
+    readTime: 6,
+    coverImage: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=1200&q=80",
+    content: `
+<p>The problem with most AI content tools is that everything they produce sounds the same — polished, generic, and instantly forgettable. eWork Social solves that with two features working together: the Brand Brain and the AI Creative Studio.</p>
+
+<h2>Brand Brain: memory that learns your voice</h2>
+<p>The Brand Brain is the memory your AI agent reads before it writes anything. You build it from your own data — your published posts, your clients, what's worked before — and it distills that into a durable sense of your tone, your themes, and even your phrasing.</p>
+<p>Because it uses semantic memory, the agent pulls the <em>most relevant</em> brand knowledge for each campaign, not a random sample. The result: drafts that read like you wrote them, and get sharper as your memory grows.</p>
+
+<h2>AI Creative Studio: on-brand visuals in seconds</h2>
+<p>Words are only half of a post. The AI Creative Studio turns a text prompt into an image in seconds, saved straight to your Creative Hub as a reusable, auto-tagged asset. Search your library by meaning — "bright product flat-lay," "team celebration" — and reuse assets across campaigns.</p>
+
+<h2>They work together</h2>
+<p>When the AI agent drafts a post, it first looks for a real, on-brand asset in your Creative Hub — and only generates a new visual when nothing suitable exists. Copy that sounds like you, paired with visuals that look like you, without the blank-page grind.</p>
+
+<h2>Bring your own AI, if you want</h2>
+<p>Prefer to run on your own provider? eWork Social supports bring-your-own-key for OpenAI, Google Gemini, and Voyage — so the AI runs on your account and quota. It's optional; everything works out of the box.</p>
+
+<p><a href="/register">Start free</a> and build your Brand Brain, or <a href="/pricing">compare plans</a> to see AI limits per tier.</p>
+`,
+  },
+  {
+    slug: "automate-agency-webhooks-zapier-byok-ework-social",
+    title: "Automate Your Agency: Webhooks, Zapier, and Bring-Your-Own-AI-Key in eWork Social",
+    excerpt: "Your social media tool shouldn't be an island. Here's how eWork Social connects to your whole stack — Zapier, Make, n8n, and your own AI provider — so your agency runs on autopilot end to end.",
+    category: "Agency Tips",
+    author: "Bernard Oshapi",
+    publishedAt: "2026-09-07",
+    readTime: 5,
+    coverImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
+    content: `
+<p>Great tools don't lock your data inside them — they connect to everything else you use. As part of the eWork Social AI OS, we added the plumbing that lets your agency automate work across your entire stack.</p>
+
+<h2>Outbound webhooks for Zapier, Make, and n8n</h2>
+<p>eWork Social can now push events to any HTTPS endpoint — when a post publishes, when a post fails, when a new lead is created, or when a new message hits your inbox. Point them at a Zapier "Catch Hook," a Make scenario, or an n8n workflow and you can trigger anything: log posts to a sheet, alert your team in Slack, or push new leads into your sales tools. Every delivery is signed (HMAC-SHA256) so you can trust it came from us.</p>
+
+<h2>Bring your own AI key</h2>
+<p>Power users and larger teams can connect their own AI provider — OpenAI, Google Gemini, or Voyage. When you do, embeddings and image generation run on <em>your</em> account and quota instead of the platform default. It's a simple, encrypted setting in Integrations, and it's entirely optional.</p>
+
+<h2>One inbox, eight platforms, your workflow</h2>
+<p>Combine automation with the Engagement Hub and the AI agent, and a genuinely hands-off loop emerges: the agent proposes content, you approve, it publishes across 8 platforms, replies flow into one inbox, and webhooks keep the rest of your tools in sync. That's an agency running on rails.</p>
+
+<h2>Built for how agencies actually work</h2>
+<p>Automation and API access sit on our higher tiers because that's where teams need them — but the building blocks are there to make eWork Social the hub your whole operation runs through.</p>
+
+<p><a href="/pricing">Compare plans</a> to see what's included, or <a href="/register">start free</a> and wire up your first webhook today.</p>
+`,
+  },
 ];
 
 
