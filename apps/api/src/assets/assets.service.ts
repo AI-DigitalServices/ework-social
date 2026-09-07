@@ -165,6 +165,60 @@ export class AssetsService {
   }
 
   /**
+   * Generate an image AND persist it as a reusable Creative Hub asset, returning
+   * its public URL. Used by the agent's generate_image tool, which (unlike the
+   * frontend) can't upload to the bucket itself. Uploads via Supabase Storage's
+   * REST API using a server key — no new npm package.
+   */
+  async generateAndStoreImage(
+    workspaceId: string,
+    prompt: string,
+    size?: string,
+    provider?: string,
+  ): Promise<{ assetId: string; url: string; provider: string }> {
+    const gen = await this.generateImage(workspaceId, prompt, size, provider); // meters IMAGE_GEN
+    const url = await this.uploadBase64ToBucket(gen.b64, gen.mimeType, workspaceId);
+    // recordUpload skips the meter for GENERATED (already metered above) and
+    // fires auto-tag + embedding in the background.
+    const asset = await this.recordUpload(workspaceId, {
+      url,
+      fileName: `AI: ${prompt.trim().slice(0, 60)}`,
+      mimeType: gen.mimeType,
+      kind: 'IMAGE',
+      source: 'GENERATED',
+    } as RecordAssetDto);
+    return { assetId: asset.id, url, provider: gen.provider };
+  }
+
+  private async uploadBase64ToBucket(b64: string, mimeType: string, workspaceId: string): Promise<string> {
+    const base = this.config.get<string>('SUPABASE_URL');
+    // Prefer the service-role (secret) key — it bypasses RLS, so a backend upload
+    // with no user session always works. Fall back to the publishable/anon key,
+    // which only succeeds if the bucket allows anon inserts.
+    const key =
+      this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ||
+      this.config.get<string>('SUPABASE_SERVICE_KEY') ||
+      this.config.get<string>('SUPABASE_PUBLISHABLE_KEY') ||
+      this.config.get<string>('SUPABASE_ANON_KEY');
+    const bucket = this.config.get<string>('SUPABASE_BUCKET') || 'media';
+    if (!base || !key) {
+      throw new BadRequestException(
+        'Server-side image storage is not configured. Set SUPABASE_URL (and ideally SUPABASE_SERVICE_ROLE_KEY) so the agent can save generated images.',
+      );
+    }
+    const ext = mimeType.includes('jpeg') || mimeType.includes('jpg') ? 'jpg' : 'png';
+    const path = `ai-generated/${workspaceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const buffer = Buffer.from(b64, 'base64');
+    await axios.post(`${base}/storage/v1/object/${bucket}/${path}`, buffer, {
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': mimeType, 'x-upsert': 'true' },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      timeout: 30000,
+    });
+    return `${base}/storage/v1/object/public/${bucket}/${path}`;
+  }
+
+  /**
    * Gemini image models to try, in order. Primary is the current stable model;
    * a fallback can be set via env so a retired model never breaks generation.
    *   GEMINI_IMAGE_MODEL          (default: gemini-2.5-flash-image — stable)
