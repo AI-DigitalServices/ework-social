@@ -98,6 +98,24 @@ export default function RootLayout({
             })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");`}
           </Script>
         )}
+        {/* Google Analytics (GA4). Override the ID via NEXT_PUBLIC_GA_ID if needed. */}
+        {(() => {
+          const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-140RZZZGLL';
+          return (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+                strategy="afterInteractive"
+              />
+              <Script id="ga4-script" strategy="afterInteractive">
+                {`window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');`}
+              </Script>
+            </>
+          );
+        })()}
         <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
