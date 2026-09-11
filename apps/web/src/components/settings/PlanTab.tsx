@@ -83,19 +83,37 @@ export default function PlanTab() {
     setShowCurrencyMenu(false);
   };
 
+  // Region-aware billing: African currencies use Paystack; international (USD)
+  // uses Lemon Squeezy (Merchant of Record — accepts card + PayPal, handles tax).
+  const TIER_BY_NAME: Record<string, string> = {
+    'Starter': 'STARTER',
+    'Growth': 'GROWTH',
+    'Agency Pro': 'AGENCY_PRO',
+  };
+
   const handleUpgrade = async (planCode: string, planName: string) => {
     setCheckoutError('');
     setLoading(planName);
     try {
-      const res = await api.post('/billing/checkout', {
-        priceId: planCode,
-        workspaceId: workspace!.id,
-        userId: user!.id,
-        currency,
-      });
-      if (res.data?.url) window.location.href = res.data.url;
+      if (currency === 'USD') {
+        const tier = TIER_BY_NAME[planName];
+        if (!tier) throw new Error('This plan is not available for international checkout.');
+        const res = await api.post('/billing/lemonsqueezy/checkout', {
+          tier,
+          workspaceId: workspace!.id,
+        });
+        if (res.data?.url) window.location.href = res.data.url;
+      } else {
+        const res = await api.post('/billing/checkout', {
+          priceId: planCode,
+          workspaceId: workspace!.id,
+          userId: user!.id,
+          currency,
+        });
+        if (res.data?.url) window.location.href = res.data.url;
+      }
     } catch (err: any) {
-      setCheckoutError(err.response?.data?.message || 'Checkout failed. Please try again.');
+      setCheckoutError(err.response?.data?.message || err.message || 'Checkout failed. Please try again.');
     } finally {
       setLoading(null);
     }
