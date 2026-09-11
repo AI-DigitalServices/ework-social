@@ -3,6 +3,7 @@ import {
   Headers, Req, UseGuards, Query,
 } from '@nestjs/common';
 import { BillingService } from './billing.service';
+import { LemonSqueezyService } from './lemonsqueezy.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
@@ -10,6 +11,7 @@ import { JwtGuard } from '../auth/jwt.guard';
 export class BillingController {
   constructor(
     private billingService: BillingService,
+    private lemonSqueezy: LemonSqueezyService,
     private planGuard: PlanGuardService,
   ) {}
 
@@ -22,6 +24,18 @@ export class BillingController {
       dto.userId,
       req.user.email,
     );
+  }
+
+  // International checkout via Lemon Squeezy (Merchant of Record).
+  @Post('lemonsqueezy/checkout')
+  @UseGuards(JwtGuard)
+  async createLsCheckout(@Body() dto: { tier: string; workspaceId: string }, @Req() req: any) {
+    return this.lemonSqueezy.createCheckout(dto.tier, dto.workspaceId, req.user.email);
+  }
+
+  @Post('lemonsqueezy/webhook')
+  async handleLsWebhook(@Req() req: any, @Headers('x-signature') signature: string) {
+    return this.lemonSqueezy.handleWebhook(req.rawBody as Buffer, signature);
   }
 
   @Post('portal')
