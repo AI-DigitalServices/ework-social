@@ -142,8 +142,28 @@ export class SchedulerService {
     if (duePosts.length === 0) return;
     this.logger.log(`Processing ${duePosts.length} scheduled posts...`);
 
+    // A post whose slot passed long ago almost always means the workspace was
+    // inactive (lapsed trial, failed payment) and has just been reactivated.
+    // Publishing a days-old post now is worse than not publishing it — it
+    // dumps stale content onto a client's feed in one burst. Surface it for a
+    // human instead.
+    const STALE_AFTER_MS = 6 * 60 * 60 * 1000; // 6 hours
+
     for (const post of duePosts) {
       try {
+        if (post.scheduledAt && now.getTime() - post.scheduledAt.getTime() > STALE_AFTER_MS) {
+          await this.prisma.post.update({
+            where: { id: post.id },
+            data: {
+              status: 'DRAFT',
+              errorMessage:
+                'Missed its scheduled time while the workspace was inactive. Review and reschedule.',
+            },
+          });
+          this.logger.warn(`Post ${post.id} was stale (${post.scheduledAt.toISOString()}) — moved to DRAFT.`);
+          continue;
+        }
+
         // Actually publish to platform
         const platform = post.socialAccount?.platform;
         if (platform === 'LINKEDIN') {
