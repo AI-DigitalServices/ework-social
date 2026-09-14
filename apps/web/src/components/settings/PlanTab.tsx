@@ -98,8 +98,11 @@ export default function PlanTab() {
       if (currency === 'USD') {
         const tier = TIER_BY_NAME[planName];
         if (!tier) throw new Error('This plan is not available for international checkout.');
-        const res = await api.post('/billing/lemonsqueezy/checkout', {
+        // Provider (PayPal / Lemon Squeezy) is chosen server-side so it can be
+        // switched without a frontend deploy — see INTERNATIONAL_PROVIDER.
+        const res = await api.post('/billing/international/checkout', {
           tier,
+          interval: 'MONTHLY',
           workspaceId: workspace!.id,
         });
         if (res.data?.url) window.location.href = res.data.url;

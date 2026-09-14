@@ -110,7 +110,9 @@ model Subscription {
   status      SubStatus @default(ACTIVE)
   paystackRef String?
   lemonSqueezySubId String?
-  provider    String?   // 'paystack' | 'lemonsqueezy'
+  paypalSubscriptionId String?  @unique
+  provider    String?   // 'paystack' | 'lemonsqueezy' | 'paypal'
+  billingInterval String?       // 'MONTHLY' | 'ANNUAL'
   trialEndsAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
