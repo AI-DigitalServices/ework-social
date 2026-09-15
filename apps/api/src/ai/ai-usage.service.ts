@@ -2,10 +2,15 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getPlanLimits } from '../common/plan-limits';
 import { PostHogService } from '../analytics/posthog.service';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Injectable()
 export class AiUsageService {
-  constructor(private prisma: PrismaService, private posthog: PostHogService) {}
+  constructor(
+    private prisma: PrismaService,
+    private posthog: PostHogService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   private getCurrentMonth(): string {
     const now = new Date();
@@ -19,10 +24,8 @@ export class AiUsageService {
     const month = this.getCurrentMonth();
 
     // Get subscription + plan limits
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { workspaceId },
-    });
-    const limits = getPlanLimits(subscription?.plan || 'FREE');
+    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    const limits = getPlanLimits(plan);
 
     // Check limit based on type
     let limit = 0;
@@ -103,10 +106,8 @@ export class AiUsageService {
       where: { workspaceId, month },
     });
 
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { workspaceId },
-    });
-    const limits = getPlanLimits(subscription?.plan || 'FREE');
+    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    const limits = getPlanLimits(plan);
 
     return {
       month,
