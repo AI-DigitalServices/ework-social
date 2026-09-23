@@ -639,7 +639,7 @@ export default function LandingPage() {
               Join early. Pay less. Forever.
             </h2>
             <p style={{ color: '#6B8299', fontSize: 17, lineHeight: 1.75, maxWidth: 560, margin: '0 auto' }}>
-              We&apos;re opening early access to a limited group of Founding Members before our public launch. Lock in 50% off your first 3 months and help shape the product.
+              We&apos;re opening early access to a limited group of Founding Members before our public launch. Lock in 50% off Agency Pro, forever, and help shape the product.
             </p>
           </div>
 
@@ -663,7 +663,7 @@ export default function LandingPage() {
           {/* Perks list */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 40 }}>
             {[
-              { icon: '💰', title: '50% off first 3 months', desc: 'Locked in at founding price' },
+              { icon: '💰', title: '50% off Agency Pro, forever', desc: 'Locked in at founding price' },
               { icon: '🚀', title: 'Priority early access', desc: 'Before public launch' },
               { icon: '🏅', title: 'Founding Member badge', desc: 'On your workspace profile' },
               { icon: '📞', title: 'Direct founder access', desc: 'WhatsApp & email support' },
