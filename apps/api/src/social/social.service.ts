@@ -6,6 +6,8 @@ import { BskyAgent, RichText } from '@atproto/api';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { PostHogService } from '../analytics/posthog.service';
 
+import { signOAuthState, verifyOAuthState } from './oauth-state.util';
+
 @Injectable()
 export class SocialService {
   private readonly logger = new Logger(SocialService.name);
@@ -58,7 +60,7 @@ export class SocialService {
   getFacebookAuthUrl(workspaceId: string, userId: string) {
     const appId = this.config.get('META_APP_ID');
     const redirectUri = this.config.get('META_REDIRECT_URI');
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('facebook', workspaceId, userId);
 
     const scopes = [
       'public_profile',
@@ -105,7 +107,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('facebook', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
       this.dbg('workspaceId:', workspaceId);
@@ -566,7 +568,7 @@ export class SocialService {
   getLinkedInAuthUrl(workspaceId: string, userId: string) {
     const clientId = this.config.get('LINKEDIN_CLIENT_ID');
     const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('linkedin', workspaceId, userId);
     const scopes = ['openid', 'profile', 'email', 'w_member_social'].join(' ');
     return {
       url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
@@ -581,7 +583,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('linkedin', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
     } catch {
@@ -989,7 +991,7 @@ export class SocialService {
       );
     }
 
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('linkedin-org', workspaceId, userId);
     // This app has ONLY Community Management API — no openid/profile scopes available
     const scopes = ['w_organization_social', 'r_organization_social', 'rw_organization_admin'].join(' ');
 
@@ -1006,7 +1008,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('linkedin-org', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
     } catch {
@@ -1125,7 +1127,7 @@ export class SocialService {
   getYouTubeAuthUrl(workspaceId: string, userId: string) {
     const clientId = this.config.get('YOUTUBE_CLIENT_ID');
     const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('youtube', workspaceId, userId);
     // Scopes ordered per incremental authorization best practice:
     // identity scopes first, then feature-specific scopes at point of need.
     // youtube.upload is requested here because the explicit "Connect YouTube"
@@ -1151,7 +1153,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('youtube', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
     } catch {
@@ -1309,7 +1311,7 @@ export class SocialService {
   getTikTokAuthUrl(workspaceId: string, userId: string) {
     const clientKey = this.config.get('TIKTOK_CLIENT_KEY');
     const redirectUri = this.config.get('TIKTOK_REDIRECT_URI');
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('tiktok', workspaceId, userId);
     const scopes = 'user.info.basic,video.publish,video.upload';
     return {
       url: `https://www.tiktok.com/v2/auth/authorize?client_key=${clientKey}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code`,
@@ -1323,7 +1325,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('tiktok', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
     } catch {
@@ -1472,7 +1474,7 @@ export class SocialService {
       throw new BadRequestException('THREADS_REDIRECT_URI is not configured. Please add it to Railway environment variables.');
     }
 
-    const state = Buffer.from(JSON.stringify({ workspaceId, userId })).toString('base64');
+    const state = signOAuthState('threads', workspaceId, userId);
     const scopes = ['threads_basic', 'threads_content_publish'].join(',');
     return {
       url: `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&state=${state}&response_type=code`,
@@ -1488,7 +1490,7 @@ export class SocialService {
     let workspaceId: string;
     let userId: string;
     try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+      const decoded = verifyOAuthState('threads', state);
       workspaceId = decoded.workspaceId;
       userId = decoded.userId;
     } catch {
