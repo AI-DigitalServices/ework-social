@@ -48,6 +48,12 @@ export class AdminController {
     return this.adminService.getWaitlist();
   }
 
+  @Get('leads')
+  @UseGuards(AdminGuard)
+  async getLeads() {
+    return this.adminService.getEnterpriseLeads();
+  }
+
   @Get('partners')
   @UseGuards(AdminGuard)
   async getPartners() {

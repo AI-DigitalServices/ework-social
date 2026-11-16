@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { getPostsAction, getSocialAccountsAction } from '@/actions/scheduler.actions';
@@ -122,7 +124,7 @@ export default function SchedulerPage() {
               }}>
                 <Zap size={18} color="#fff" />
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>Post Scheduler</h1>
+              <h1 className={libreBaskerville.className} style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>Post Scheduler</h1>
             </div>
             <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0 }}>
               Create, schedule and manage content across all your connected accounts

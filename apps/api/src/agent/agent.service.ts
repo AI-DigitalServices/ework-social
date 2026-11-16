@@ -1,9 +1,13 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
+import { BrandBrainService } from './brand-brain.service';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { getPlanLimits, getPlanDisplayName } from '../common/plan-limits';
 
 // Bounds a single run to a handful of think→act turns so a confused model
 // can't loop forever burning tokens. 6 is generous for "check analytics,
@@ -21,6 +25,8 @@ export class AgentService {
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
     private toolRegistry: ToolRegistryService,
+    private brandBrain: BrandBrainService,
+    private planGuard: PlanGuardService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
@@ -76,6 +82,233 @@ export class AgentService {
     });
   }
 
+  // ── Campaigns ────────────────────────────────────────────────────────
+
+  /**
+   * Creates a Campaign row for a human to later trigger runs against. This
+   * doesn't touch the agent or any tool — it's just the brief record. No
+   * frontend exists yet for this (Phase 1 backend only); this endpoint also
+   * lets us test the orchestrator end-to-end before building the real
+   * Campaign Wizard UI.
+   */
+  async createCampaign(
+    workspaceId: string,
+    dto: {
+      goal: string;
+      brief: string;
+      platforms: string[];
+      clientId?: string;
+      autoRunEnabled?: boolean;
+      autoRunCadence?: string;
+    },
+  ) {
+    await this.assertWorkspace(workspaceId);
+    if (!dto.goal?.trim() || !dto.brief?.trim() || !dto.platforms?.length) {
+      throw new BadRequestException('goal, brief, and at least one platform are required.');
+    }
+    let autoRun = !!dto.autoRunEnabled;
+    if (autoRun) {
+      // Silently ignore Autopilot opt-in on plans without it (rather than block
+      // campaign creation) — the campaign is still created, just not on Autopilot.
+      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+      if (!getPlanLimits(plan).autopilotEnabled) autoRun = false;
+    }
+    return this.prisma.campaign.create({
+      data: {
+        workspaceId,
+        clientId: dto.clientId || null,
+        goal: dto.goal.trim(),
+        brief: dto.brief.trim(),
+        platforms: dto.platforms,
+        status: 'DRAFT',
+        // Autopilot defaults OFF; can be opted into at creation.
+        autoRunEnabled: autoRun,
+        autoRunCadence: autoRun ? (dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily') : null,
+      },
+    });
+  }
+
+  async listCampaigns(workspaceId: string) {
+    await this.assertWorkspace(workspaceId);
+    return this.prisma.campaign.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tasks: {
+          orderBy: { createdAt: 'desc' },
+          include: { post: { select: { id: true, status: true, scheduledAt: true } } },
+        },
+      },
+    });
+  }
+
+  // ── Approval loop: turn an agent proposal into a real scheduled post ─────
+
+  /**
+   * Approves a PROPOSED content-draft task. The linked DRAFT post is moved to
+   * SCHEDULED (optionally at a chosen time, else immediately), so the normal —
+   * and now reliable — scheduler cron picks it up and publishes it. The human
+   * may also tweak the copy/media inline before approving. This is the single
+   * bridge between "agent proposed" and "content goes out"; it is the only path
+   * that promotes an agent draft, and it still requires an explicit human click.
+   */
+  async approveTask(
+    workspaceId: string,
+    taskId: string,
+    dto: { scheduledAt?: string; content?: string; mediaUrls?: string[] },
+  ) {
+    await this.assertWorkspace(workspaceId);
+
+    const task = await this.prisma.campaignTask.findUnique({
+      where: { id: taskId },
+      include: { campaign: true },
+    });
+    if (!task || task.campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Task not found for this workspace.');
+    }
+    if (task.status !== 'PROPOSED') {
+      throw new BadRequestException(`Task is already ${task.status} — only PROPOSED tasks can be approved.`);
+    }
+    if (task.type !== 'CONTENT_DRAFT' || !task.postId) {
+      throw new BadRequestException('Only content-draft tasks with a linked post can be scheduled.');
+    }
+
+    const scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : new Date();
+    if (isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('Invalid scheduled time.');
+    }
+
+    const post = await this.prisma.post.update({
+      where: { id: task.postId },
+      data: {
+        status: 'SCHEDULED',
+        scheduledAt,
+        ...(dto.content?.trim() ? { content: dto.content.trim() } : {}),
+        ...(Array.isArray(dto.mediaUrls) ? { mediaUrls: dto.mediaUrls } : {}),
+      },
+      include: { socialAccount: true },
+    });
+
+    await this.prisma.campaignTask.update({
+      where: { id: taskId },
+      data: { status: 'APPROVED' },
+    });
+
+    this.logger.log(`Agent task ${taskId} approved → post ${post.id} scheduled for ${scheduledAt.toISOString()}`);
+    return {
+      taskId,
+      postId: post.id,
+      status: 'SCHEDULED',
+      scheduledAt: scheduledAt.toISOString(),
+      platform: post.socialAccount?.platform ?? null,
+    };
+  }
+
+  /** Rejects a PROPOSED task. Non-destructive: the linked draft stays in the
+   *  dashboard's Drafts view so the human can still salvage or edit it. */
+  async rejectTask(workspaceId: string, taskId: string) {
+    await this.assertWorkspace(workspaceId);
+
+    const task = await this.prisma.campaignTask.findUnique({
+      where: { id: taskId },
+      include: { campaign: true },
+    });
+    if (!task || task.campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Task not found for this workspace.');
+    }
+    if (task.status !== 'PROPOSED') {
+      throw new BadRequestException(`Task is already ${task.status} — only PROPOSED tasks can be rejected.`);
+    }
+
+    await this.prisma.campaignTask.update({
+      where: { id: taskId },
+      data: { status: 'REJECTED' },
+    });
+    this.logger.log(`Agent task ${taskId} rejected — linked draft left intact.`);
+    return { taskId, status: 'REJECTED' };
+  }
+
+  // ── Autopilot: scheduled auto-runs ───────────────────────────────────
+
+  /** Turn a campaign's scheduled auto-run on/off and set its cadence. */
+  async setCampaignSchedule(
+    workspaceId: string,
+    campaignId: string,
+    dto: { autoRunEnabled: boolean; autoRunCadence?: string },
+  ) {
+    await this.assertWorkspace(workspaceId);
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || campaign.workspaceId !== workspaceId) {
+      throw new NotFoundException('Campaign not found for this workspace.');
+    }
+    if (dto.autoRunEnabled) {
+      const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+      if (!getPlanLimits(plan).autopilotEnabled) {
+        throw new ForbiddenException(
+          `Autopilot (scheduled auto-runs) is available on Agency Pro and Enterprise. Your ${getPlanDisplayName(plan)} plan includes manual agent runs — upgrade to let campaigns run themselves.`,
+        );
+      }
+    }
+    const cadence = dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily';
+    return this.prisma.campaign.update({
+      where: { id: campaignId },
+      data: {
+        autoRunEnabled: !!dto.autoRunEnabled,
+        autoRunCadence: dto.autoRunEnabled ? cadence : null,
+      },
+    });
+  }
+
+  /**
+   * Autopilot cron — hourly, runs every campaign whose auto-run is due. Honors
+   * the workspace kill switch (agentEnabled/agentPaused) and plan limits (the
+   * AGENT_ACTION meter inside runCampaignCycle throws when a workspace is over
+   * its cap; we catch it so one workspace never blocks the rest). Cadence is
+   * enforced by lastAutoRunAt so a campaign runs at most once per window.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async processScheduledCampaigns() {
+    let campaigns: any[];
+    try {
+      campaigns = await this.prisma.campaign.findMany({
+        where: { autoRunEnabled: true, workspace: { agentEnabled: true, agentPaused: false } },
+        include: { workspace: { select: { id: true } } },
+      });
+    } catch {
+      return; // columns not migrated yet — skip silently
+    }
+    if (campaigns.length === 0) return;
+
+    const now = Date.now();
+    for (const c of campaigns) {
+      const windowMs = c.autoRunCadence === 'weekly' ? 6.5 * 24 * 3600 * 1000 : 20 * 3600 * 1000;
+      const last = c.lastAutoRunAt ? new Date(c.lastAutoRunAt).getTime() : 0;
+      if (now - last < windowMs) continue; // not due yet
+
+      // Defense in depth: skip if the workspace's plan no longer includes
+      // Autopilot (e.g. downgraded after enabling it).
+      try {
+        const plan = await this.planGuard.getWorkspacePlan(c.workspaceId);
+        if (!getPlanLimits(plan).autopilotEnabled) continue;
+      } catch {
+        continue;
+      }
+
+      try {
+        await this.runCampaignCycle(c.workspaceId, c.id, 'scheduled');
+        await this.prisma.campaign.update({ where: { id: c.id }, data: { lastAutoRunAt: new Date() } });
+        this.logger.log(`Autopilot ran campaign ${c.id} (${c.autoRunCadence}).`);
+      } catch (err: any) {
+        // Over plan cap, paused mid-loop, or a model error — log and move on.
+        // Still stamp lastAutoRunAt so we don't retry a capped workspace hourly.
+        await this.prisma.campaign
+          .update({ where: { id: c.id }, data: { lastAutoRunAt: new Date() } })
+          .catch(() => {});
+        this.logger.warn(`Autopilot skipped campaign ${c.id}: ${err.message}`);
+      }
+    }
+  }
+
   // ── The orchestrator loop ────────────────────────────────────────────
 
   /**
@@ -106,11 +339,12 @@ export class AgentService {
     // feature in this codebase.
     await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
 
-    const memories = await this.prisma.workspaceMemory.findMany({
-      where: { workspaceId },
-      orderBy: { updatedAt: 'desc' },
-      take: 20,
-    });
+    // Semantic retrieval: pull the memories most relevant to THIS campaign
+    // (falls back to recent memory when embeddings aren't configured).
+    const memories = await this.brandBrain.getRelevantMemories(
+      workspaceId,
+      `${campaign.goal}\n${campaign.brief}`,
+    );
 
     const system = this.buildSystemPrompt(campaign, memories);
     const toolDefs = this.toolRegistry.getAnthropicToolDefs();
@@ -223,11 +457,31 @@ export class AgentService {
 
     return [
       'You are the eWork Social AI campaign agent, running in SHADOW MODE.',
-      'You cannot publish or schedule anything — there is no tool that does that.',
-      'Your only ways to act are the tools you are given: draft_post creates a DRAFT',
-      'awaiting human review, get_analytics and search_inbox are read-only.',
-      'Always ground content proposals in get_analytics and search_inbox before drafting.',
-      'When you are done, write a short plain-language summary of what you proposed and why.',
+      'You cannot publish or schedule anything - there is no tool that does that.',
+      'Your only mutating tool is draft_post, which creates a DRAFT awaiting human review.',
+      'Read-only context tools:',
+      '- get_analytics, search_inbox, list_social_accounts: performance, audience, and accounts.',
+      '- search_assets: find an existing on-brand image/video in the Creative Hub; put its url in',
+      '  draft_post.mediaUrls instead of inventing a media reference.',
+      '- get_client_context: if the campaign targets a specific client, look up their CRM stage,',
+      '  notes, and recent posts, and tailor the tone to where the relationship stands (e.g. reassure',
+      '  an At Risk client, celebrate a Won one). Pass no arguments to list clients first if unsure.',
+      'generate_image (costs a credit): create a NEW on-brand image only when search_assets finds',
+      '  nothing suitable and the post needs a visual. Use at most once or twice per run; put the',
+      '  returned url in draft_post.mediaUrls.',
+      'draft_post requires a real socialAccountId. If you do not already know the id for a',
+      'platform, call list_social_accounts first - never guess an id, and never give up and',
+      'just describe a post in your summary instead of calling draft_post.',
+      '',
+      'PLAN A SERIES, NOT ONE POST. Unless the brief clearly asks for a single post, propose a short',
+      'multi-day content series (typically 3-7 posts) that builds toward the goal: vary the angle',
+      '(hook, value, proof, CTA), and for each post set suggestedScheduleAt to spread them across',
+      'sensible days/times. Call draft_post once per post. If the brief spans multiple platforms,',
+      'adapt each post to the platform and call draft_post per platform (skip platforms with no',
+      'connected account and say so).',
+      'Ground proposals in get_analytics, search_inbox, and (when a client is named) get_client_context',
+      'before drafting. Prefer attaching a real asset via search_assets over generating a new one.',
+      'When you are done, write a short plain-language summary of the series you proposed and why.',
       '',
       'Brand Brain (workspace memory):',
       memoryBlock,

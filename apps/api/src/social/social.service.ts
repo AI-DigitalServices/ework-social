@@ -76,16 +76,12 @@ export class SocialService {
       // instagram_content_publish — which breaks publishing entirely
       // ("Media ID is not available"). See commit 1217034.
       'instagram_manage_messages',
-      // STAGING-ONLY (Meta Test App review flow, Aug 2026): pages_manage_engagement
-      // and pages_messaging are added here so the reply-from-hub and DM flows can be
-      // demoed/screencast against a Meta Test App. Test Apps do not carry the token-
-      // degradation risk that requesting an unapproved scope causes on the real app.
-      // DO NOT merge this branch's change to main until Meta shows Advanced Access
-      // GRANTED for both scopes (App Dashboard -> App Review -> Permissions) — see
-      // the instagram_manage_comments incident above for what happens if an
-      // ungranted scope ships to production.
+      // Advanced Access GRANTED by Meta 2026-08-24 for all three below (App
+      // Review submission approved — pages_read_user_content, pages_manage_engagement,
+      // pages_messaging). Safe to request on production now.
       'pages_manage_engagement',
       'pages_messaging',
+      'pages_read_user_content',
       'business_management',
     ].join(',');
 
@@ -1333,6 +1329,7 @@ export class SocialService {
     }
     let accessToken: string;
     let openId: string;
+    let refreshTokenValue: string | undefined;
     try {
       const tokenRes = await axios.post(
         'https://open.tiktokapis.com/v2/oauth/token/',
@@ -1347,6 +1344,7 @@ export class SocialService {
       );
       accessToken = tokenRes.data.access_token;
       openId = tokenRes.data.open_id;
+      refreshTokenValue = tokenRes.data.refresh_token;
     } catch (err: any) {
       throw new BadRequestException('TikTok token exchange failed: ' + JSON.stringify(err?.response?.data));
     }
@@ -1362,11 +1360,37 @@ export class SocialService {
     }
     const account = await this.prisma.socialAccount.upsert({
       where: { workspaceId_platform_accountId: { workspaceId, platform: 'TIKTOK', accountId: openId } },
-      update: { accountName: displayName, accessToken, isActive: true },
-      create: { workspaceId, platform: 'TIKTOK', accountId: openId, accountName: displayName, accessToken, isActive: true },
+      update: { accountName: displayName, accessToken, refreshToken: refreshTokenValue, isActive: true },
+      create: { workspaceId, platform: 'TIKTOK', accountId: openId, accountName: displayName, accessToken, refreshToken: refreshTokenValue, isActive: true },
     });
     this.posthog.capture(workspaceId, 'social_account_connected', { platform: 'TIKTOK' });
     return { success: true, connectedAccounts: [account], message: 'TikTok connected successfully' };
+  }
+
+  // TikTok access tokens are short-lived (~24h). Rather than tracking expiry proactively,
+  // refresh reactively: on an auth error during publish, use the stored refresh_token to get
+  // a fresh access token (TikTok rotates the refresh_token on each use, so persist the new one
+  // too), then retry the publish exactly once before giving up.
+  private async refreshTikTokToken(socialAccountId: string, refreshToken: string): Promise<string> {
+    const clientKey = this.config.get('TIKTOK_CLIENT_KEY');
+    const clientSecret = this.config.get('TIKTOK_CLIENT_SECRET');
+    const res = await axios.post(
+      'https://open.tiktokapis.com/v2/oauth/token/',
+      new URLSearchParams({
+        client_key: clientKey,
+        client_secret: clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+      }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+    );
+    const newAccessToken = res.data.access_token;
+    const newRefreshToken = res.data.refresh_token;
+    await this.prisma.socialAccount.update({
+      where: { id: socialAccountId },
+      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+    });
+    return newAccessToken;
   }
 
   async publishToTikTok(postId: string) {
@@ -1377,8 +1401,9 @@ export class SocialService {
     if (!post || !post.socialAccount?.accessToken) throw new BadRequestException('Post or account not found');
     const videoUrl = post.mediaUrls?.find((url: string) => url.match(/\.(mp4|mov|avi|webm)$/i));
     if (!videoUrl) throw new BadRequestException('TikTok posts require a video file');
-    try {
-      const initRes = await axios.post(
+
+    const attemptPublish = (token: string) =>
+      axios.post(
         'https://open.tiktokapis.com/v2/post/publish/video/init/',
         {
           post_info: {
@@ -1390,8 +1415,23 @@ export class SocialService {
           },
           source_info: { source: 'URL', video_url: videoUrl },
         },
-        { headers: { Authorization: `Bearer ${post.socialAccount.accessToken}`, 'Content-Type': 'application/json' } }
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
       );
+
+    try {
+      let initRes;
+      try {
+        initRes = await attemptPublish(post.socialAccount.accessToken);
+      } catch (err: any) {
+        const isAuthError =
+          err?.response?.status === 401 || err?.response?.data?.error?.code === 'access_token_invalid';
+        if (isAuthError && post.socialAccount.refreshToken) {
+          const freshToken = await this.refreshTikTokToken(post.socialAccount.id, post.socialAccount.refreshToken);
+          initRes = await attemptPublish(freshToken);
+        } else {
+          throw err;
+        }
+      }
       const publishId = initRes.data?.data?.publish_id;
       await this.prisma.post.update({ where: { id: postId }, data: { status: 'PUBLISHED', externalId: publishId } });
       return { success: true, publishId };

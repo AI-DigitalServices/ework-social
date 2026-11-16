@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
@@ -106,7 +108,7 @@ export default function ApprovalsPage() {
               <ClipboardCheck size={20} color="#fff" />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Client Approvals</h2>
+              <h2 className={libreBaskerville.className} style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Client Approvals</h2>
               <p style={{ margin: '4px 0 0', fontSize: 13, color: '#cbd5e1' }}>Track content approval status across all your clients</p>
             </div>
           </div>

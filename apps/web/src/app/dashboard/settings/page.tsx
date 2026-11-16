@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 export const dynamic = 'force-dynamic';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -11,7 +13,8 @@ import PlanTab from '@/components/settings/PlanTab';
 import PasswordTab from '@/components/settings/PasswordTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
 import ReferralTab from '@/components/settings/ReferralTab';
-import { Share2, User, Building2, CreditCard, CheckCircle, Gift, KeyRound, Bell } from 'lucide-react';
+import IntegrationsTab from '@/components/settings/IntegrationsTab';
+import { Share2, User, Building2, CreditCard, CheckCircle, Gift, KeyRound, Bell, Plug } from 'lucide-react';
 import api from '@/lib/api';
 
 // Agency/owner tabs — full access
@@ -20,6 +23,7 @@ const agencyTabs = [
   { id: 'profile',   label: 'Profile',          icon: User },
   { id: 'workspace', label: 'Workspace',         icon: Building2 },
   { id: 'plan',      label: 'Plan & Billing',    icon: CreditCard },
+  { id: 'integrations', label: 'Integrations',   icon: Plug },
   { id: 'referral',  label: 'Referrals 🎁',      icon: Gift },
 ];
 
@@ -94,7 +98,7 @@ function SettingsContent() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+        <h2 className={`text-2xl font-bold text-slate-800 ${libreBaskerville.className}`}>Settings</h2>
         <p className="text-slate-500 mt-1">
           {isAgencyUser ? 'Manage your account and workspace settings.' : 'Manage your account preferences.'}
         </p>
@@ -142,6 +146,7 @@ function SettingsContent() {
         {isAgencyUser && activeTab === 'social'    && <SocialAccountsTab />}
         {isAgencyUser && activeTab === 'workspace' && <WorkspaceTab />}
         {isAgencyUser && activeTab === 'plan'      && <PlanTab key={paymentSuccess ? 'paid' : 'free'} />}
+        {isAgencyUser && activeTab === 'integrations' && <IntegrationsTab />}
         {isAgencyUser && activeTab === 'referral'  && <ReferralTab />}
 
         {/* Shared — profile visible to all roles */}

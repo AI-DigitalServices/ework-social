@@ -3,6 +3,8 @@ import {
   Headers, Req, UseGuards, Query,
 } from '@nestjs/common';
 import { BillingService } from './billing.service';
+import { LemonSqueezyService } from './lemonsqueezy.service';
+import { PayPalService } from './paypal.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { JwtGuard } from '../auth/jwt.guard';
 
@@ -10,6 +12,8 @@ import { JwtGuard } from '../auth/jwt.guard';
 export class BillingController {
   constructor(
     private billingService: BillingService,
+    private lemonSqueezy: LemonSqueezyService,
+    private paypal: PayPalService,
     private planGuard: PlanGuardService,
   ) {}
 
@@ -22,6 +26,49 @@ export class BillingController {
       dto.userId,
       req.user.email,
     );
+  }
+
+  /**
+   * International checkout. The provider is chosen server-side from
+   * INTERNATIONAL_PROVIDER so the gateway can be switched — or rolled back —
+   * with an env change and a restart, no frontend deploy. Defaults to PayPal,
+   * falling back to Lemon Squeezy when PayPal is not configured yet.
+   */
+  @Post('international/checkout')
+  @UseGuards(JwtGuard)
+  async createInternationalCheckout(
+    @Body() dto: { tier: string; interval?: 'MONTHLY' | 'ANNUAL'; workspaceId: string },
+    @Req() req: any,
+  ) {
+    const preferred = (process.env.INTERNATIONAL_PROVIDER || 'paypal').toLowerCase();
+    const usePaypal = preferred === 'paypal' && this.paypal.isConfigured();
+
+    if (usePaypal) {
+      return this.paypal.createSubscription(
+        dto.tier as any,
+        dto.interval || 'MONTHLY',
+        dto.workspaceId,
+        req.user.email,
+      );
+    }
+    return this.lemonSqueezy.createCheckout(dto.tier, dto.workspaceId, req.user.email);
+  }
+
+  @Post('paypal/webhook')
+  async handlePaypalWebhook(@Req() req: any) {
+    return this.paypal.handleWebhook(req.headers, req.rawBody as Buffer);
+  }
+
+  // Kept alongside PayPal until the cutover is proven — see INTERNATIONAL_PROVIDER.
+  @Post('lemonsqueezy/checkout')
+  @UseGuards(JwtGuard)
+  async createLsCheckout(@Body() dto: { tier: string; workspaceId: string }, @Req() req: any) {
+    return this.lemonSqueezy.createCheckout(dto.tier, dto.workspaceId, req.user.email);
+  }
+
+  @Post('lemonsqueezy/webhook')
+  async handleLsWebhook(@Req() req: any, @Headers('x-signature') signature: string) {
+    return this.lemonSqueezy.handleWebhook(req.rawBody as Buffer, signature);
   }
 
   @Post('portal')

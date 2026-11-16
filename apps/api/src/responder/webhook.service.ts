@@ -3,12 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Platform, InboxMessageType } from '@prisma/client';
 import { createDecipheriv } from 'crypto';
 import axios from 'axios';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private webhooks: WebhooksService,
+  ) {}
 
   async processWebhookEvent(body: any) {
     const { object, entry } = body;
@@ -18,12 +22,26 @@ export class WebhookService {
         if (pageEntry.changes) {
           for (const change of pageEntry.changes) {
             if (change.field === 'feed' && change.value?.item === 'comment') {
+              // Diagnostic only — structural fields, never message content.
+              this.logger.log(
+                `[diag] FB comment change — pageId:${pageId} fromId:${change.value?.from?.id} ` +
+                `commentId:${change.value?.comment_id} parentId:${change.value?.parent_id ?? 'none'} ` +
+                `verb:${change.value?.verb ?? 'unknown'}`,
+              );
               await this.handleFacebookComment(pageId, change.value);
             }
           }
         }
         if (pageEntry.messaging) {
           for (const messagingEvent of pageEntry.messaging) {
+            if (messagingEvent.message) {
+              // Diagnostic only — structural fields, never message content.
+              this.logger.log(
+                `[diag] FB messaging event — pageId:${pageId} senderId:${messagingEvent.sender?.id} ` +
+                `recipientId:${messagingEvent.recipient?.id} isEcho:${!!messagingEvent.message?.is_echo} ` +
+                `mid:${messagingEvent.message?.mid}`,
+              );
+            }
             if (messagingEvent.message && !messagingEvent.message.is_echo) {
               await this.handleFacebookDM(pageId, messagingEvent);
             }
@@ -82,6 +100,10 @@ export class WebhookService {
       // loop and inbox spam. (DMs already avoid this via the is_echo flag;
       // comment webhooks have no equivalent, so this has to be explicit.)
       if (commentData.from?.id === pageId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Facebook comment ${commentData.comment_id} ` +
+          `(from.id ${commentData.from?.id} matches pageId ${pageId})`,
+        );
         return;
       }
 
@@ -169,7 +191,9 @@ export class WebhookService {
         );
       }
     } catch (err: any) {
-      this.logger.error('Error handling Facebook comment:', err?.message);
+      this.logger.error(
+        `Error handling Facebook comment: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
     }
   }
 
@@ -177,6 +201,22 @@ export class WebhookService {
     try {
       const senderId = messagingEvent.sender?.id;
       const messageText = messagingEvent.message?.text || '';
+
+      // Guard against messages the Page itself sent showing up as a brand-new
+      // inbound conversation. Meta's is_echo flag (checked before this method
+      // is even called) is only reliable for messages sent via our own Send
+      // API — replies sent from the native Facebook/Messenger app don't
+      // consistently carry is_echo:true, so without this check they slip
+      // through with senderId === pageId and get grouped into a new
+      // "conversation" instead of being ignored (mirrors the existing guard
+      // already in place for comments).
+      if (senderId === pageId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Facebook DM (senderId ${senderId} matches pageId ${pageId}, ` +
+          `likely sent from native app — is_echo:${!!messagingEvent.message?.is_echo})`,
+        );
+        return;
+      }
 
       const account = await this.prisma.socialAccount.findFirst({
         where: { accountId: pageId, platform: 'FACEBOOK', isActive: true },
@@ -191,7 +231,7 @@ export class WebhookService {
       // already written, and even then only used for the CRM contact, never
       // fed back into the inbox message itself. That's why DMs showed "there"
       // with no photo while Instagram (which resolves profile first) didn't.
-      let fromName = 'there';
+      let fromName = senderId ? `Facebook User ${senderId}` : 'there';
       let senderAvatar: string | undefined;
       if (senderId && account.accessToken) {
         const profile = await this.fetchFacebookMessengerProfile(senderId, account.accessToken);
@@ -259,7 +299,9 @@ export class WebhookService {
         );
       }
     } catch (err: any) {
-      this.logger.error('Error handling Facebook DM:', err?.message);
+      this.logger.error(
+        `Error handling Facebook DM: ${JSON.stringify(err?.response?.data ?? err?.message)}`,
+      );
     }
   }
 
@@ -279,6 +321,10 @@ export class WebhookService {
       // Skip comments authored by the connected Instagram account itself —
       // same self-reply-loop guard as handleFacebookComment above.
       if (commentData.from?.id === igAccountId) {
+        this.logger.log(
+          `[diag] Skipped self-authored Instagram comment ${commentData.id} ` +
+          `(from.id ${commentData.from?.id} matches igAccountId ${igAccountId})`,
+        );
         return;
       }
 
@@ -636,6 +682,15 @@ export class WebhookService {
           socialAccountId: data.socialAccountId,
         },
       });
+      // Outbound webhook — "inbox.message" (only for genuinely new messages,
+      // so duplicate Meta deliveries don't double-fire).
+      this.webhooks.dispatch(data.workspaceId, 'inbox.message', {
+        platform: data.platform,
+        type: data.type,
+        senderName: data.senderName,
+        content: data.content,
+        externalId: data.externalId,
+      }).catch(() => {});
       return { isNew: true };
     } catch (err: any) {
       if (err?.code === 'P2002') {

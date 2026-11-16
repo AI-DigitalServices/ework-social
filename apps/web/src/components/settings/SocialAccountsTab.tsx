@@ -52,6 +52,7 @@ interface ConnectedAccount {
   accountId: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 /* ── Twitter OAuth 2.0 connect modal ─────────────────────── */
@@ -349,7 +350,7 @@ export default function SocialAccountsTab() {
                         <p className="text-slate-500 text-xs mt-0.5">{platform.description}</p>
                         {account && (
                           <span className={`inline-block text-xs font-medium mt-1.5 px-2 py-0.5 rounded-full ${colors.badge}`}>
-                            @{account.accountName} · {new Date(account.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            @{account.accountName} · {new Date(account.updatedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
                         )}
                       </div>

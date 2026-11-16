@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { SocialService } from '../social/social.service';
 import { PostHogService } from '../analytics/posthog.service';
 import { TwitterPollerService } from '../twitter/twitter-poller.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class SchedulerService {
@@ -19,6 +20,7 @@ export class SchedulerService {
     private socialService: SocialService,
     private posthog: PostHogService,
     private twitterService: TwitterPollerService,
+    private webhooks: WebhooksService,
   ) {}
 
   async getPosts(workspaceId: string) {
@@ -140,8 +142,28 @@ export class SchedulerService {
     if (duePosts.length === 0) return;
     this.logger.log(`Processing ${duePosts.length} scheduled posts...`);
 
+    // A post whose slot passed long ago almost always means the workspace was
+    // inactive (lapsed trial, failed payment) and has just been reactivated.
+    // Publishing a days-old post now is worse than not publishing it — it
+    // dumps stale content onto a client's feed in one burst. Surface it for a
+    // human instead.
+    const STALE_AFTER_MS = 6 * 60 * 60 * 1000; // 6 hours
+
     for (const post of duePosts) {
       try {
+        if (post.scheduledAt && now.getTime() - post.scheduledAt.getTime() > STALE_AFTER_MS) {
+          await this.prisma.post.update({
+            where: { id: post.id },
+            data: {
+              status: 'DRAFT',
+              errorMessage:
+                'Missed its scheduled time while the workspace was inactive. Review and reschedule.',
+            },
+          });
+          this.logger.warn(`Post ${post.id} was stale (${post.scheduledAt.toISOString()}) — moved to DRAFT.`);
+          continue;
+        }
+
         // Actually publish to platform
         const platform = post.socialAccount?.platform;
         if (platform === 'LINKEDIN') {
@@ -183,16 +205,30 @@ export class SchedulerService {
           );
         }
         this.logger.log(`Post ${post.id} published successfully`);
+        // Outbound webhook — "post.published"
+        this.webhooks.dispatch(post.workspaceId, 'post.published', {
+          postId: post.id,
+          platform: post.socialAccount?.platform,
+          content: post.content,
+          publishedAt: new Date().toISOString(),
+        }).catch(() => {});
       } catch (err) {
         this.logger.error(`Failed to publish post ${post.id}`, err);
+        const failMessage = (err as any)?.response?.data?.message ?? (err as Error)?.message ?? 'Unknown publish error';
         // Mark as failed
         await this.prisma.post.update({
           where: { id: post.id },
           data: {
             status: 'FAILED',
-            errorMessage: (err as any)?.response?.data?.message ?? (err as Error)?.message ?? 'Unknown publish error',
+            errorMessage: failMessage,
           },
         });
+        // Outbound webhook — "post.failed"
+        this.webhooks.dispatch(post.workspaceId, 'post.failed', {
+          postId: post.id,
+          platform: post.socialAccount?.platform,
+          error: failMessage,
+        }).catch(() => {});
         // Notify owner of failure
         const ownerId = post.workspace?.ownerId;
         if (ownerId) {

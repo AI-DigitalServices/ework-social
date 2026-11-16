@@ -7,10 +7,8 @@ import api from '@/lib/api';
 import {
   Users, TrendingUp, DollarSign, BarChart3, CheckCircle,
   AlertCircle, RefreshCw, Globe, Crown, Activity,
-  Zap, Server, Clock, MessageSquare, Send, Star,
-  FileText, UserCheck,
+  Server, Clock,
 } from 'lucide-react';
-import { BLOG_POST_COUNT } from '@/content/blog/posts';
 
 const ADMIN_EMAILS = ['admin@eworksocial.com', 'eworksocial@gmail.com', 'aiservices.agent@gmail.com'];
 
@@ -32,10 +30,11 @@ export default function AdminPage() {
   const [referrals, setReferrals] = useState<any[]>([]);
   const [partners, setPartners] = useState<any>(null);
   const [waitlist, setWaitlist] = useState<{ total: number; entries: any[] } | null>(null);
+  const [leads, setLeads] = useState<{ total: number; entries: any[] } | null>(null);
   const [loading, setLoading]   = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [hasHydrated, setHasHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'subscriptions' | 'failed' | 'health' | 'waitlist'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'subscriptions' | 'failed' | 'health' | 'waitlist' | 'leads'>('overview');
 
   useEffect(() => { setHasHydrated(true); }, []);
 
@@ -49,7 +48,7 @@ export default function AdminPage() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [kpiRes, failedRes, subsRes, healthRes, refRes, waitlistRes, partnersRes] = await Promise.all([
+      const [kpiRes, failedRes, subsRes, healthRes, refRes, waitlistRes, partnersRes, leadsRes] = await Promise.all([
         api.get('/admin/kpi'),
         api.get('/admin/failed-posts'),
         api.get('/admin/subscriptions'),
@@ -57,6 +56,7 @@ export default function AdminPage() {
         api.get('/admin/referrals'),
         api.get('/admin/waitlist'),
         api.get('/admin/partners'),
+        api.get('/admin/leads').catch(() => ({ data: { total: 0, entries: [] } })),
       ]);
       setKpi(kpiRes.data);
       setFailedPosts(failedRes.data);
@@ -65,6 +65,7 @@ export default function AdminPage() {
       setReferrals(refRes.data);
       setWaitlist(waitlistRes.data);
       setPartners(partnersRes.data);
+      setLeads(leadsRes.data);
       setLastRefresh(new Date());
     } catch (err) {
       console.error(err);
@@ -108,17 +109,6 @@ export default function AdminPage() {
     { label: 'Total Clients',   value: kpi.product.totalClients,    sub: 'in CRM',                                                              icon: Users,       color: '#EC4899', bg: '#500724' },
   ];
 
-  const kpiRow2 = [
-    { label: 'Auto-Responder Triggers', value: kpi.engagement.totalAutoTriggers, sub: `${kpi.engagement.activeAutoRules} active rules`,         icon: Zap,         color: '#F59E0B', bg: '#451A03' },
-    { label: 'Open Inbox Threads',      value: kpi.engagement.openInboxThreads,  sub: `${kpi.engagement.totalInboxMessages} total received`,     icon: MessageSquare,color: '#06B6D4', bg: '#0C4A6E' },
-    { label: 'Pending Approvals',       value: kpi.engagement.pendingApprovals,  sub: `${kpi.engagement.totalApprovals} total sent`,             icon: Send,        color: '#8B5CF6', bg: '#2E1065' },
-    { label: 'Blog Posts Live',         value: BLOG_POST_COUNT,                  sub: 'driving SEO traffic',                                     icon: FileText,    color: '#10B981', bg: '#064E3B' },
-    { label: 'Total Partners',          value: partners?.summary?.totalPartners ?? 0,    sub: `${partners?.summary?.foundingPartners ?? 0} founding`, icon: Star,    color: '#F59E0B', bg: '#451A03' },
-    { label: 'Partner Referrals',       value: partners?.summary?.totalPayingReferrals ?? 0, sub: `${partners?.summary?.totalReferrals ?? 0} total referred`, icon: UserCheck, color: '#EC4899', bg: '#500724' },
-    { label: 'Est. Commission Owed',    value: `₦${(partners?.summary?.totalEstimatedCommission ?? 0).toLocaleString()}`, sub: 'to all partners', icon: DollarSign, color: '#8B5CF6', bg: '#2E1065' },
-    { label: 'Waitlist Signups',        value: waitlist?.total ?? 0,             sub: `${waitlist?.entries?.filter((e: any) => new Date(e.createdAt) > new Date(Date.now() - 7*86400000)).length ?? 0} this week`, icon: Users, color: '#2563EB', bg: '#1E3A5F' },
-  ];
-
   const tabs = [
     { id: 'overview',       label: '📊 Overview' },
     { id: 'partners',       label: `⭐ Partners (${partners?.summary?.totalPartners ?? 0})` },
@@ -126,6 +116,7 @@ export default function AdminPage() {
     { id: 'failed',         label: `❌ Failed Posts (${failedPosts.length})` },
     { id: 'health',         label: '🖥️ System Health' },
     { id: 'waitlist',       label: `🏆 Waitlist (${waitlist?.total ?? 0})` },
+    { id: 'leads',          label: `📨 Enterprise Leads (${leads?.total ?? 0})` },
   ];
 
   return (
@@ -155,29 +146,11 @@ export default function AdminPage() {
 
         {/* ── KPI Row 1 — Core metrics ───────────────────────────── */}
         <p style={{ color: '#4A6080', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>Core Metrics</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 32 }}>
           {kpiRow1.map((card, i) => {
             const Icon = card.icon;
             return (
               <div key={i} style={s.card}>
-                <div style={{ width: 34, height: 34, background: card.bg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                  <Icon size={16} color={card.color} />
-                </div>
-                <p style={s.value}>{card.value}</p>
-                <p style={s.label}>{card.label}</p>
-                <p style={{ ...s.sub, marginTop: 4 }}>{card.sub}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ── KPI Row 2 — Engagement & Growth ───────────────────── */}
-        <p style={{ color: '#4A6080', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10, marginTop: 6 }}>Engagement · Partners · Growth</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 32 }}>
-          {kpiRow2.map((card, i) => {
-            const Icon = card.icon;
-            return (
-              <div key={i} style={{ ...s.card, borderLeft: `3px solid ${card.color}30` }}>
                 <div style={{ width: 34, height: 34, background: card.bg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
                   <Icon size={16} color={card.color} />
                 </div>
@@ -565,6 +538,46 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'leads' && leads && (
+          <div style={s.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ color: '#F0F6FF', fontSize: 15, fontWeight: 700 }}>📨 Enterprise Leads</h3>
+              <span style={{ color: '#4A6080', fontSize: 13 }}>{leads.total} total</span>
+            </div>
+            {leads.entries.length === 0 ? (
+              <p style={{ color: '#4A6080', textAlign: 'center', padding: '40px 0' }}>No enterprise leads yet — they arrive from the pricing page &quot;Talk to sales&quot; form.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1A2840' }}>
+                      {['Name', 'Email', 'Company', 'Interest', 'Message', 'Date'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', color: '#4A6080', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, padding: '0 0 12px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.entries.map((lead: any) => (
+                      <tr key={lead.id} style={{ borderBottom: '1px solid #111827', verticalAlign: 'top' }}>
+                        <td style={{ padding: '14px 12px 14px 0', color: '#E8F0FA', fontSize: 14, fontWeight: 600 }}>{lead.name}</td>
+                        <td style={{ padding: '14px 12px 14px 0', color: '#93C5FD', fontSize: 14 }}>{lead.email}</td>
+                        <td style={{ padding: '14px 12px 14px 0', color: '#C8D8EC', fontSize: 14 }}>{lead.company || '—'}</td>
+                        <td style={{ padding: '14px 12px 14px 0' }}>
+                          <span style={{ background: lead.interest === 'managed' ? '#064E3B' : '#1E3A5F', color: lead.interest === 'managed' ? '#10B981' : '#93C5FD', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}>
+                            {lead.interest === 'managed' ? 'Managed' : 'Software'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 12px 14px 0', color: '#6B8299', fontSize: 13, maxWidth: 280 }}>{lead.message || '—'}</td>
+                        <td style={{ padding: '14px 0', color: '#4A6080', fontSize: 13, whiteSpace: 'nowrap' }}>{new Date(lead.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

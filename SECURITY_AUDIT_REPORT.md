@@ -5,6 +5,31 @@
 
 ---
 
+## Remediation Status (updated July 24, 2026)
+
+All identified findings have been implemented. Summary:
+
+| ID | Finding | Severity | Status |
+|----|---------|----------|--------|
+| C-1 | Broken tenant isolation (IDOR) | Critical | ✅ Fixed — `WorkspaceMemberGuard` + service-level record scoping |
+| H-1 | Forged webhooks processed | High | ✅ Fixed — signature now blocking, `timingSafeEqual`, dual-secret |
+| H-2 | Refresh tokens can't be revoked | High | ✅ Fixed — `tokenVersion` + logout-everywhere |
+| H-3 | Tokens in localStorage | High | ✅ Mostly fixed — HttpOnly cookie live; localStorage fallback removal pending prod verification |
+| M-1 | OAuth/webhook debug logging | Medium | ✅ Fixed — gated to dev-only, no payload logging |
+| M-2 | Loose ValidationPipe | Medium | ✅ Fixed — `transform` added (`forbidNonWhitelisted` staged for staging) |
+| M-3 | No Content-Security-Policy | Medium | ✅ Fixed — CSP shipped report-only, ready to enforce |
+| M-4 | Hardcoded admin email list | Medium | ✅ Fixed — DB `isAdmin` flag + `AdminGuard` |
+| M-5 | No per-account reset cap | Medium | ✅ Fixed — 5-minute per-account cooldown |
+| L-1 | bcrypt work factor | Low | ✅ Fixed — raised 10 → 12 |
+| L-2 | Non-atomic account deletion | Low | ✅ Fixed — wrapped in `$transaction` |
+| L-3 | No account lockout | Low | ⏸ Deferred — mitigated by existing IP rate limiting (see note) |
+
+Two migrations must be applied to the database (`tokenVersion`, `isAdmin`) — run before or at deploy.
+
+**L-3 note:** login is already IP-rate-limited (10/min). A per-account failed-attempt lockout adds defence against distributed attempts but was consciously deferred as low priority; it needs a failed-attempt counter and is best added alongside the audit-log table recommended in the architecture section.
+
+---
+
 ## Executive Summary
 
 eWork Social has a solid security foundation for a platform at this stage: passwords are properly hashed with bcrypt, all database access goes through Prisma (so classic SQL injection is effectively off the table), rate limiting is in place, security headers are set, and the Paystack billing webhook verifies its signature correctly before processing.

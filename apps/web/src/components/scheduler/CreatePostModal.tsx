@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles, Smartphone } from 'lucide-react';
+import { X, Calendar, Send, FileText, Clock, Zap, CheckCircle, Copy, Lock, ImagePlus, Trash2, Film, Sparkles, FolderOpen, Smartphone } from 'lucide-react';
 import AiCaptionDrawer from '@/components/scheduler/AiCaptionDrawer';
 import { createPostAction, publishNowAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { uploadMedia } from '@/lib/supabase';
+import AssetPickerModal from '@/components/creative-hub/AssetPickerModal';
 import { useRouter } from 'next/navigation';
 
 const platformLimits: Record<string, { limit: number; label: string }> = {
@@ -73,6 +74,7 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
   const [syncMode, setSyncMode] = useState(true);
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [showAiDrawer, setShowAiDrawer] = useState(false);
   const [aspectWarnings, setAspectWarnings] = useState<string[]>([]);
 
@@ -157,7 +159,8 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
     const [hours, minutes] = time.split(':');
     now.setHours(parseInt(hours), parseInt(minutes), 0);
     if (now < new Date()) now.setDate(now.getDate() + 1);
-    setScheduledAt(now.toISOString().slice(0, 16));
+    // Local time for the datetime-local input (avoids UTC drift).
+    setScheduledAt(new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
     setShowBestTimes(false);
   };
 
@@ -206,7 +209,10 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
               socialAccountId: accountId,
               content: contentMap[accountId] || '',
               mediaUrls,
-              scheduledAt: scheduledAt || undefined,
+              // Convert the local datetime-local value to a UTC ISO string so the
+              // server schedules the exact moment the user picked (a raw local
+              // string was parsed as UTC and could publish immediately).
+              scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
               status,
             })
           )
@@ -474,16 +480,33 @@ export default function CreatePostModal({ accounts, onClose, onCreated }: Props)
                     ))}
                   </div>
                 )}
-                <label className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
-                  <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
-                  {uploading ? (
-                    <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
-                  ) : (
-                    <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add images or videos</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
-                  )}
-                </label>
+                <div className="flex gap-2">
+                  <label className={`flex-1 flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                    <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
+                    {uploading ? (
+                      <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
+                    ) : (
+                      <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add images or videos</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAssetPicker(true)}
+                    className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl text-sm text-slate-500 font-medium transition"
+                  >
+                    <FolderOpen className="w-5 h-5 text-slate-400" /> Hub
+                  </button>
+                </div>
               </div>
             </div>
+
+            {showAssetPicker && (
+              <AssetPickerModal
+                workspaceId={workspace!.id}
+                onSelect={(urls) => setMediaUrls(prev => [...prev, ...urls])}
+                onClose={() => setShowAssetPicker(false)}
+              />
+            )}
 
             {/* Instagram warnings */}
             {instagramSelected && (instagramNeedsImage || aspectWarnings.length > 0) && (

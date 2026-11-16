@@ -259,12 +259,26 @@ export class BillingService {
           where: { userId: workspace.ownerId, type: 'trial_expired' },
         });
         if (!existing) {
+          // Naming what is actually stuck converts far better than a generic
+          // expiry notice — "3 scheduled posts are paused" is a concrete loss.
+          const pausedPosts = await this.prisma.post.count({
+            where: {
+              workspaceId,
+              status: 'SCHEDULED',
+              scheduledAt: { gte: new Date() },
+            },
+          });
+
+          const message = pausedPosts > 0
+            ? `${pausedPosts} scheduled post${pausedPosts === 1 ? ' is' : 's are'} paused. Choose a plan to resume publishing — nothing has been deleted.`
+            : 'Choose a plan to keep publishing. Your clients, posts and settings are all still here.';
+
           await this.prisma.notification.create({
             data: {
               userId: workspace.ownerId,
               type: 'trial_expired',
               title: '⏰ Your free trial has ended',
-              message: 'Upgrade to a paid plan to continue using eWork Social.',
+              message,
               link: '/dashboard/settings?tab=plan',
             },
           });

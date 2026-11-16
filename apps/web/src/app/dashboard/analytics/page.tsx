@@ -1,5 +1,7 @@
 'use client';
 
+import { libreBaskerville } from '@/lib/fonts';
+
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import {
@@ -124,7 +126,7 @@ export default function AnalyticsPage() {
             <BarChart2 size={20} color="#fff" />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Analytics</h2>
+            <h2 className={libreBaskerville.className} style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>Analytics</h2>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#cbd5e1' }}>Track performance across all your platforms and clients</p>
           </div>
         </div>

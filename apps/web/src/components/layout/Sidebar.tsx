@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import {
   LayoutDashboard, CalendarDays, Users, BarChart3,
   MessageSquareReply, Settings, LogOut, X, Menu,
-  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock, Inbox,
+  ChevronDown, Plus, Check, Building2, ClipboardCheck, Lock, Inbox, Sparkles, Image,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
@@ -37,6 +37,18 @@ const navItems = [
     href: '/dashboard/inbox', icon: Inbox,
     proOnly: false,
     roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'AI Agent',        clientLabel: null,
+    href: '/dashboard/agent', icon: Sparkles,
+    proOnly: false,
+    roles: ['OWNER','ADMIN'] as const,
+  },
+  {
+    label: 'Creative Hub',    clientLabel: null,
+    href: '/dashboard/creative-hub', icon: Image,
+    proOnly: false,
+    roles: ['OWNER','ADMIN','EDITOR'] as const,
   },
   {
     label: 'Client Approvals', clientLabel: 'Post Approvals',

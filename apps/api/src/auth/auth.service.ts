@@ -153,6 +153,7 @@ export class AuthService {
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
+    const ownWs = user.ownedWorkspaces[0];
     return {
       user: {
         id: user.id,
@@ -160,7 +161,17 @@ export class AuthService {
         email: user.email,
         isVerified: user.isVerified,
       },
-      workspace: user.ownedWorkspaces[0],
+      // Tag as owner so the dashboard shows the full agency nav immediately —
+      // the raw workspace row has no isOwner/role, which defaulted new signups
+      // to the limited VIEWER (client) view.
+      workspace: {
+        id: ownWs.id,
+        name: ownWs.name,
+        slug: ownWs.slug,
+        plan: 'FREE',
+        isOwner: true,
+        role: 'OWNER',
+      },
       ...tokens,
     };
   }
@@ -182,6 +193,7 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const tokens = await this.generateTokens(user.id, user.email);
+    const ownWs = user.ownedWorkspaces[0];
     return {
       user: {
         id: user.id,
@@ -189,7 +201,17 @@ export class AuthService {
         email: user.email,
         isVerified: user.isVerified,
       },
-      workspace: user.ownedWorkspaces[0],
+      // Tag as owner so the full agency nav shows immediately (raw row lacks role).
+      workspace: ownWs
+        ? {
+            id: ownWs.id,
+            name: ownWs.name,
+            slug: ownWs.slug,
+            plan: ownWs.subscription?.plan || 'FREE',
+            isOwner: true,
+            role: 'OWNER',
+          }
+        : null,
       ...tokens,
     };
   }

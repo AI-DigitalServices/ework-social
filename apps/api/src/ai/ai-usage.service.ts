@@ -2,10 +2,15 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getPlanLimits } from '../common/plan-limits';
 import { PostHogService } from '../analytics/posthog.service';
+import { PlanGuardService } from '../common/plan-guard.service';
 
 @Injectable()
 export class AiUsageService {
-  constructor(private prisma: PrismaService, private posthog: PostHogService) {}
+  constructor(
+    private prisma: PrismaService,
+    private posthog: PostHogService,
+    private planGuard: PlanGuardService,
+  ) {}
 
   private getCurrentMonth(): string {
     const now = new Date();
@@ -14,15 +19,13 @@ export class AiUsageService {
 
   async checkAndIncrement(
     workspaceId: string,
-    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION',
+    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN',
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
     // Get subscription + plan limits
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { workspaceId },
-    });
-    const limits = getPlanLimits(subscription?.plan || 'FREE');
+    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    const limits = getPlanLimits(plan);
 
     // Check limit based on type
     let limit = 0;
@@ -53,6 +56,16 @@ export class AiUsageService {
         // AI OS Phase 1 — shadow-mode agent runs, gated by agentActionsPerMonth (0 below Growth)
         limit = limits.agentActionsPerMonth;
         limitLabel = 'AI agent action';
+        break;
+      case 'ASSET_UPLOAD':
+        // Creative Hub — covers the vision tagging + embedding cost of one asset upload
+        limit = limits.assetUploadsPerMonth;
+        limitLabel = 'Creative Hub asset upload';
+        break;
+      case 'IMAGE_GEN':
+        // AI OS Phase 2 — generative creative, premium only (0 below Growth)
+        limit = limits.aiImageGenPerMonth;
+        limitLabel = 'AI image generation';
         break;
     }
 
@@ -93,10 +106,8 @@ export class AiUsageService {
       where: { workspaceId, month },
     });
 
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { workspaceId },
-    });
-    const limits = getPlanLimits(subscription?.plan || 'FREE');
+    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    const limits = getPlanLimits(plan);
 
     return {
       month,
@@ -107,6 +118,8 @@ export class AiUsageService {
         CRM_INSIGHT:  { used: usage.find(u => u.type === 'CRM_INSIGHT')?.count  || 0, limit: limits.aiCrmInsightsEnabled ? 'unlimited' : 0 },
         REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count || 0, limit: limits.aiReplyEnabled ? limits.aiReplyPerMonth : 0 },
         AGENT_ACTION: { used: usage.find(u => u.type === 'AGENT_ACTION')?.count || 0, limit: limits.agentActionsPerMonth },
+        ASSET_UPLOAD: { used: usage.find(u => u.type === 'ASSET_UPLOAD')?.count || 0, limit: limits.assetUploadsPerMonth },
+        IMAGE_GEN:    { used: usage.find(u => u.type === 'IMAGE_GEN')?.count    || 0, limit: limits.aiImageGenPerMonth },
       },
     };
   }

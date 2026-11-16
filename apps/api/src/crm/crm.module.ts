@@ -7,9 +7,10 @@ import { EmailService } from '../email/email.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CommonModule } from '../common/common.module';
 import { PostHogModule } from '../analytics/posthog.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, PostHogModule, CommonModule],
+  imports: [AuthModule, PrismaModule, PostHogModule, CommonModule, WebhooksModule],
   providers: [CrmService, AutomationService, EmailService],
   controllers: [CrmController],
   exports: [AutomationService],

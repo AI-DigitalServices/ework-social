@@ -63,9 +63,32 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {process.env.NEXT_PUBLIC_GTM_ID && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','${process.env.NEXT_PUBLIC_GTM_ID}');`,
+            }}
+          />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {process.env.NEXT_PUBLIC_GTM_ID && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}`}
+              height={0}
+              width={0}
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        )}
         {process.env.NEXT_PUBLIC_CLARITY_ID && (
           <Script id="clarity-script" strategy="afterInteractive">
             {`(function(c,l,a,r,i,t,y){
@@ -75,6 +98,24 @@ export default function RootLayout({
             })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");`}
           </Script>
         )}
+        {/* Google Analytics (GA4). Override the ID via NEXT_PUBLIC_GA_ID if needed. */}
+        {(() => {
+          const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-140RZZZGLL';
+          return (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+                strategy="afterInteractive"
+              />
+              <Script id="ga4-script" strategy="afterInteractive">
+                {`window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');`}
+              </Script>
+            </>
+          );
+        })()}
         <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>

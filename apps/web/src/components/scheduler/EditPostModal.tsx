@@ -1,13 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Save, FileText, Clock, Zap, ImagePlus, Trash2, Film, Sparkles, Smartphone, CheckCircle, Copy } from 'lucide-react';
+import { X, Calendar, Save, FileText, Clock, Zap, ImagePlus, Trash2, Film, Sparkles, FolderOpen, Smartphone, CheckCircle, Copy } from 'lucide-react';
 import AiCaptionDrawer from '@/components/scheduler/AiCaptionDrawer';
 import { updatePostAction, createPostAction } from '@/actions/scheduler.actions';
 import { useAuthStore } from '@/store/auth.store';
 import PlatformIcon from '@/components/ui/PlatformIcon';
 import { uploadMedia } from '@/lib/supabase';
+import AssetPickerModal from '@/components/creative-hub/AssetPickerModal';
 import { Dialog } from '@/components/ui';
+
+// Format a Date as a <input type="datetime-local"> value in the USER's local
+// time (the input is local; a plain toISOString() would show UTC and drift).
+function toDatetimeLocal(d: Date): string {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 
 const platformLimits: Record<string, { limit: number }> = {
   TWITTER:   { limit: 280 },
@@ -62,9 +69,10 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
   const [content, setContent] = useState<string>(post.content || '');
   const [mediaUrls, setMediaUrls] = useState<string[]>(post.mediaUrls || []);
   const [scheduledAt, setScheduledAt] = useState<string>(
-    post.scheduledAt ? new Date(post.scheduledAt).toISOString().slice(0, 16) : ''
+    post.scheduledAt ? toDatetimeLocal(new Date(post.scheduledAt)) : ''
   );
   const [uploading, setUploading] = useState(false);
+  const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showBestTimes, setShowBestTimes] = useState(false);
   const [showAiDrawer, setShowAiDrawer] = useState(false);
@@ -144,7 +152,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
     const [h, m] = time.split(':');
     now.setHours(parseInt(h), parseInt(m), 0);
     if (now < new Date()) now.setDate(now.getDate() + 1);
-    setScheduledAt(now.toISOString().slice(0, 16));
+    setScheduledAt(toDatetimeLocal(now));
     setShowBestTimes(false);
   };
 
@@ -152,11 +160,14 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
     if (isEmpty || isOver || instagramNeedsImage) return;
     setSaving(true);
     try {
+      // Convert the local datetime-local value to a UTC ISO string so the server
+      // schedules the exact moment picked (raw local strings were read as UTC).
+      const scheduledIso = scheduledAt ? new Date(scheduledAt).toISOString() : null;
       if (mode === 'edit') {
         await updatePostAction(post.id, {
           content,
           mediaUrls,
-          scheduledAt: scheduledAt || null,
+          scheduledAt: scheduledIso,
           socialAccountId: selectedAccountId,
           status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         });
@@ -167,7 +178,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           socialAccountId: selectedAccountId,
           content,
           mediaUrls,
-          scheduledAt: scheduledAt || undefined,
+          scheduledAt: scheduledIso || undefined,
           status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         });
       }
@@ -291,16 +302,33 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
                     ))}
                   </div>
                 )}
-                <label className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
-                  <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
-                  {uploading ? (
-                    <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
-                  ) : (
-                    <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add or replace media</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
-                  )}
-                </label>
+                <div className="flex gap-2">
+                  <label className={`flex-1 flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition ${uploading ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                    <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} className="hidden" disabled={uploading} />
+                    {uploading ? (
+                      <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /><span className="text-sm text-blue-600 font-medium">Uploading...</span></>
+                    ) : (
+                      <><ImagePlus className="w-5 h-5 text-slate-400" /><span className="text-sm text-slate-500">Add or replace media</span><span className="text-xs text-slate-400 ml-auto">JPG, PNG, MP4, MOV</span></>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAssetPicker(true)}
+                    className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl text-sm text-slate-500 font-medium transition"
+                  >
+                    <FolderOpen className="w-5 h-5 text-slate-400" /> Hub
+                  </button>
+                </div>
               </div>
             </div>
+
+            {showAssetPicker && (
+              <AssetPickerModal
+                workspaceId={workspace!.id}
+                onSelect={(urls) => setMediaUrls(prev => [...prev, ...urls])}
+                onClose={() => setShowAssetPicker(false)}
+              />
+            )}
 
             {/* Instagram warnings */}
             {instagramSelected && (instagramNeedsImage || aspectWarnings.length > 0) && (

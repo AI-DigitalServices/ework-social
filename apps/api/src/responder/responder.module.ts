@@ -7,9 +7,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { CommonModule } from '../common/common.module';
 import { PostHogModule } from '../analytics/posthog.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CommonModule, PostHogModule],
+  imports: [PrismaModule, AuthModule, CommonModule, PostHogModule, WebhooksModule],
   controllers: [ResponderController, WebhookController],
   providers: [ResponderService, WebhookService],
   exports: [ResponderService, WebhookService],

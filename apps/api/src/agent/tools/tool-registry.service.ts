@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { DraftPostTool } from './draft-post.tool';
 import { GetAnalyticsTool } from './get-analytics.tool';
 import { SearchInboxTool } from './search-inbox.tool';
+import { ListSocialAccountsTool } from './list-social-accounts.tool';
+import { SearchAssetsTool } from './search-assets.tool';
+import { GetClientContextTool } from './get-client-context.tool';
+import { GenerateImageTool } from './generate-image.tool';
 import { AgentTool, AgentToolContext } from './tool.interface';
 
 /**
@@ -18,8 +22,12 @@ export class ToolRegistryService {
     draftPost: DraftPostTool,
     getAnalytics: GetAnalyticsTool,
     searchInbox: SearchInboxTool,
+    listSocialAccounts: ListSocialAccountsTool,
+    searchAssets: SearchAssetsTool,
+    getClientContext: GetClientContextTool,
+    generateImage: GenerateImageTool,
   ) {
-    for (const tool of [draftPost, getAnalytics, searchInbox]) {
+    for (const tool of [draftPost, getAnalytics, searchInbox, listSocialAccounts, searchAssets, getClientContext, generateImage]) {
       this.tools.set(tool.name, tool);
     }
   }
