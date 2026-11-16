@@ -5,6 +5,7 @@ import { createDecipheriv } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecordAssetDto } from './dto/record-asset.dto';
+import { storageAuthHeaders } from './media-upload.util';
 import { AiUsageService } from '../ai/ai-usage.service';
 
 const IMAGE_SIZES = ['1024x1024', '1024x1536', '1536x1024', 'auto'];
@@ -210,7 +211,7 @@ export class AssetsService {
     const path = `ai-generated/${workspaceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const buffer = Buffer.from(b64, 'base64');
     await axios.post(`${base}/storage/v1/object/${bucket}/${path}`, buffer, {
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': mimeType, 'x-upsert': 'true' },
+      headers: { ...storageAuthHeaders(key), 'Content-Type': mimeType, 'x-upsert': 'true' },
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
       timeout: 30000,

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
+import { MediaUploadService } from './media-upload.service';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
@@ -10,7 +11,7 @@ import { AiModule } from '../ai/ai.module';
 @Module({
   imports: [CommonModule, AuthModule, AiModule],
   controllers: [AssetsController],
-  providers: [AssetsService],
+  providers: [AssetsService, MediaUploadService],
   exports: [AssetsService],
 })
 export class AssetsModule {}
