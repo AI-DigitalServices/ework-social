@@ -58,7 +58,7 @@ export async function uploadMedia(file: File, workspaceId: string): Promise<stri
   } catch (err: any) {
     const status = err?.response?.status;
     // Endpoint not deployed (404) or not configured (503) yet → old behaviour.
-    if (status === 404 || status === 503) return legacyUpload(file, workspaceId);
+    if (status === 404 || status === 502 || status === 503) return legacyUpload(file, workspaceId);
     const msg = err?.response?.data?.message;
     throw new Error(`Upload failed: ${Array.isArray(msg) ? msg.join(', ') : msg || err?.message || 'unknown error'}`);
   }
