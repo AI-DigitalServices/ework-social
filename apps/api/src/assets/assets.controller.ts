@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AssetsService } from './assets.service';
 import { RecordAssetDto } from './dto/record-asset.dto';
+import { SignUploadDto } from './dto/sign-upload.dto';
+import { MediaUploadService } from './media-upload.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
@@ -13,7 +15,17 @@ import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 @Controller('assets')
 @UseGuards(JwtGuard, WorkspaceMemberGuard)
 export class AssetsController {
-  constructor(private assetsService: AssetsService) {}
+  constructor(
+    private assetsService: AssetsService,
+    private mediaUpload: MediaUploadService,
+  ) {}
+
+  // Signed, deduplicated upload: returns the URL of an identical stored file,
+  // or a one-time token the client uses to upload straight to the bucket.
+  @Post(':workspaceId/upload-url')
+  uploadUrl(@Param('workspaceId') workspaceId: string, @Body() dto: SignUploadDto) {
+    return this.mediaUpload.createUpload(workspaceId, dto);
+  }
 
   @Post(':workspaceId')
   record(@Param('workspaceId') workspaceId: string, @Body() dto: RecordAssetDto) {
