@@ -95,7 +95,9 @@ export default function PlanTab() {
     setCheckoutError('');
     setLoading(planName);
     try {
-      if (currency === 'USD') {
+      // Only Naira goes through Paystack. Every other display currency (USD, KES,
+      // ZAR, GHS) is billed in US dollars through the international checkout.
+      if (currency !== 'NGN') {
         const tier = TIER_BY_NAME[planName];
         if (!tier) throw new Error('This plan is not available for international checkout.');
         // Provider (PayPal / Lemon Squeezy) is chosen server-side so it can be
@@ -134,7 +136,13 @@ export default function PlanTab() {
     <div>
       {/* Currency selector */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-slate-500">Prices shown in your local currency</p>
+        <p className="text-sm text-slate-500">
+          {currency === 'NGN'
+            ? 'Billed in Naira through Paystack.'
+            : currency === 'USD'
+              ? 'Billed in US dollars at checkout.'
+              : 'Local prices are approximate. You are billed in US dollars at checkout.'}
+        </p>
         <div className="relative">
           <button
             onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
