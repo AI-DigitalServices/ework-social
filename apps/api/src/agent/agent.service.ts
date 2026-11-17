@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { BrandBrainService } from './brand-brain.service';
+import { LlmClientService } from './llm-client.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { getPlanDisplayName, getAutopilotCadences, resolveAutopilotCadence } from '../common/plan-limits';
 
@@ -30,6 +31,7 @@ export class AgentService {
     private toolRegistry: ToolRegistryService,
     private brandBrain: BrandBrainService,
     private planGuard: PlanGuardService,
+    private llm: LlmClientService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
@@ -357,7 +359,15 @@ export class AgentService {
     // Meters + gates by plan (agentActionsPerMonth — 0 below Growth). Throws
     // ForbiddenException on cap/plan block, same pattern as every other AI
     // feature in this codebase.
-    await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
+    // Platform key: metered against the plan's monthly cap. Own Claude key: the
+    // customer pays Anthropic directly, so the run is not counted - but the plan
+    // must still include the agent and bring-your-own-key.
+    const llm = await this.llm.resolve(workspaceId, this.anthropic);
+    if (llm.source === 'platform') {
+      await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
+    } else {
+      await this.llm.assertOwnKeyAllowed(workspaceId);
+    }
 
     // Semantic retrieval: pull the memories most relevant to THIS campaign
     // (falls back to recent memory when embeddings aren't configured).
@@ -384,7 +394,7 @@ export class AgentService {
 
     try {
       for (let turn = 0; turn < MAX_TURNS; turn++) {
-        const response = await this.anthropic.messages.create({
+        const response = await llm.client.messages.create({
           model: MODEL,
           max_tokens: 2048,
           system,
@@ -440,7 +450,9 @@ export class AgentService {
       }
     } catch (err: any) {
       outcome = 'FAILED';
-      summary = `Agent run failed: ${err.message}`;
+      summary = llm.source === 'workspace'
+        ? `Agent run failed on your connected Claude key: ${err.message}. Check the key in Settings > Integrations.`
+        : `Agent run failed: ${err.message}`;
       this.logger.error(summary, err.stack);
     }
 
@@ -449,7 +461,7 @@ export class AgentService {
         workspaceId,
         campaignId,
         trigger,
-        model: MODEL,
+        model: llm.source === 'workspace' ? `${MODEL} (own key)` : MODEL,
         toolCalls: toolCallLog as any,
         tokensIn,
         tokensOut,

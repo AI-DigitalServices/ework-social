@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { EmbeddingsService } from './embeddings.service';
+import { LlmClientService } from './llm-client.service';
 
 // Marks memories written by the auto-seeder so a re-seed can replace only its
 // own output and never clobber memories a human added by hand.
@@ -28,6 +29,7 @@ export class BrandBrainService {
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
     private embeddings: EmbeddingsService,
+    private llm: LlmClientService,
   ) {
     this.anthropic = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY') });
   }
@@ -90,7 +92,15 @@ export class BrandBrainService {
     if (!workspace) throw new NotFoundException('Workspace not found.');
 
     // Gated + metered like every other AI feature (Growth+ via agentActionsPerMonth).
-    await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
+    // Platform key: metered against the plan's monthly cap. Own Claude key: the
+    // customer pays Anthropic directly, so the run is not counted - but the plan
+    // must still include the agent and bring-your-own-key.
+    const llm = await this.llm.resolve(workspaceId, this.anthropic);
+    if (llm.source === 'platform') {
+      await this.aiUsage.checkAndIncrement(workspaceId, 'AGENT_ACTION');
+    } else {
+      await this.llm.assertOwnKeyAllowed(workspaceId);
+    }
 
     const [publishedPosts, clients, rejectedTasks] = await Promise.all([
       this.prisma.post.findMany({
@@ -149,7 +159,7 @@ export class BrandBrainService {
 
     let entries: Array<{ kind: string; content: string }> = [];
     try {
-      const message = await this.anthropic.messages.create({
+      const message = await llm.client.messages.create({
         model: MODEL,
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }],
@@ -163,6 +173,11 @@ export class BrandBrainService {
         .filter((e) => e && VALID_KINDS.includes(e.kind) && typeof e.content === 'string' && e.content.trim())
         .map((e) => ({ kind: e.kind, content: e.content.trim().slice(0, 600) }));
     } catch (err: any) {
+      if (llm.source === 'workspace') {
+        throw new BadRequestException(
+          `Brand Brain could not run on your connected Claude key: ${err.message}. Check the key in Settings > Integrations.`,
+        );
+      }
       this.logger.error(`Brand Brain seeding — model/parse error: ${err.message}`);
       throw new BadRequestException('Could not generate brand memory right now — please try again.');
     }
