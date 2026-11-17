@@ -7,6 +7,8 @@ import { LemonSqueezyService } from './lemonsqueezy.service';
 import { PayPalService } from './paypal.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { ManagerRoleGuard } from '../common/role.guards';
 
 @Controller('billing')
 export class BillingController {
@@ -18,12 +20,12 @@ export class BillingController {
   ) {}
 
   @Post('checkout')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async createCheckout(@Body() dto: any, @Req() req: any) {
     return this.billingService.createCheckoutSession(
       dto.priceId,
       dto.workspaceId,
-      dto.userId,
+      req.user.sub, // the logged-in user, never an id from the request body
       req.user.email,
       dto.currency,
     );
@@ -36,7 +38,7 @@ export class BillingController {
    * falling back to Lemon Squeezy when PayPal is not configured yet.
    */
   @Post('international/checkout')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async createInternationalCheckout(
     @Body() dto: { tier: string; interval?: 'MONTHLY' | 'ANNUAL'; workspaceId: string },
     @Req() req: any,
@@ -62,7 +64,7 @@ export class BillingController {
 
   // Kept alongside PayPal until the cutover is proven — see INTERNATIONAL_PROVIDER.
   @Post('lemonsqueezy/checkout')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async createLsCheckout(@Body() dto: { tier: string; workspaceId: string }, @Req() req: any) {
     return this.lemonSqueezy.createCheckout(dto.tier, dto.workspaceId, req.user.email);
   }
@@ -73,7 +75,7 @@ export class BillingController {
   }
 
   @Post('portal')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async createPortal(@Body() body: { workspaceId: string }) {
     return this.billingService.createPortalSession(body.workspaceId);
   }
@@ -88,7 +90,7 @@ export class BillingController {
   }
 
   @Get('verify')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async verifyTransaction(
     @Query('reference') reference: string,
     @Query('workspaceId') workspaceId: string,
@@ -97,19 +99,19 @@ export class BillingController {
   }
 
   @Get('subscription')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getSubscription(@Query('workspaceId') workspaceId: string) {
     return this.billingService.getSubscription(workspaceId);
   }
 
   @Get('limits')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getLimits(@Query('workspaceId') workspaceId: string) {
     return this.planGuard.getWorkspaceLimits(workspaceId);
   }
 
   @Get('trial-status')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getTrialStatus(@Query('workspaceId') workspaceId: string) {
     return this.billingService.checkAndEnforceTrialExpiry(workspaceId);
   }

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 import axios from 'axios';
+import { paymentBelongsToWorkspace } from './payment-binding.util';
 import { PostHogService } from '../analytics/posthog.service';
 
 @Injectable()
@@ -85,6 +86,19 @@ export class BillingService {
 
       const data = response.data.data;
       if (data.status !== 'success') return { success: false };
+
+      // A payment may only upgrade the workspace it was started for, and only once:
+      // checkout stamps the workspace id into the transaction metadata.
+      if (!paymentBelongsToWorkspace(data.metadata, workspaceId)) {
+        return { success: false, reason: 'This payment does not belong to this workspace.' };
+      }
+      const appliedElsewhere = await this.prisma.subscription.findFirst({
+        where: { paystackRef: data.reference, workspaceId: { not: workspaceId } },
+        select: { id: true },
+      });
+      if (appliedElsewhere) {
+        return { success: false, reason: 'This payment has already been applied to another workspace.' };
+      }
 
       const planCode = data.plan?.plan_code;
       const plan = planCode ? this.getPlanFromCode(planCode) : 'STARTER';

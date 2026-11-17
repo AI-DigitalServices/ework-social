@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { IntegrationsService } from './integrations.service';
 import { LlmClientService } from './llm-client.service';
+import { ManagerRoleGuard } from '../common/role.guards';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
@@ -22,6 +23,7 @@ export class IntegrationsController {
   }
 
   @Post(':workspaceId/ai')
+  @UseGuards(ManagerRoleGuard)
   connect(
     @Param('workspaceId') workspaceId: string,
     @Body() body: { provider: string; apiKey: string },
@@ -30,6 +32,7 @@ export class IntegrationsController {
   }
 
   @Delete(':workspaceId/ai')
+  @UseGuards(ManagerRoleGuard)
   disconnect(@Param('workspaceId') workspaceId: string) {
     return this.integrations.disconnect(workspaceId);
   }
@@ -42,11 +45,13 @@ export class IntegrationsController {
   }
 
   @Post(':workspaceId/llm')
+  @UseGuards(ManagerRoleGuard)
   connectLlm(@Param('workspaceId') workspaceId: string, @Body() body: { apiKey: string }) {
     return this.llm.connect(workspaceId, body?.apiKey);
   }
 
   @Delete(':workspaceId/llm')
+  @UseGuards(ManagerRoleGuard)
   disconnectLlm(@Param('workspaceId') workspaceId: string) {
     return this.llm.disconnect(workspaceId);
   }
