@@ -31,31 +31,73 @@ export class InboxService {
   }) {
     const { platform, type, isResolved, isRead, tag, search, page = 1, limit = 30 } = filters;
 
+    // Only the "hard" filters apply at the row level. isResolved/isRead are
+    // evaluated per-CONVERSATION further down (a thread counts as unread if
+    // ANY item in it is unread) — filtering rows here first would silently
+    // drop history from threads that still need to be shown in full.
     const where: any = { workspaceId };
     if (platform) where.platform = platform;
     if (type) where.type = type;
-    if (isResolved !== undefined) where.isResolved = isResolved;
-    if (isRead !== undefined) where.isRead = isRead;
     if (tag) where.tags = { has: tag };
     if (search) where.OR = [
       { content: { contains: search, mode: 'insensitive' } },
       { senderName: { contains: search, mode: 'insensitive' } },
     ];
 
-    const [messages, total] = await Promise.all([
-      this.prisma.inboxMessage.findMany({
-        where,
-        include: {
-          replies: { orderBy: { sentAt: 'asc' } },
-          crmClient: { select: { id: true, name: true, stage: true } },
-          assignedTo: { select: { id: true, name: true, email: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.inboxMessage.count({ where }),
-    ]);
+    // Bounded window, grouped in memory rather than a raw SQL GROUP BY —
+    // simple and fine at agency scale. Revisit if a single workspace's open
+    // inbox volume ever approaches 1000 between loads.
+    const rows = await this.prisma.inboxMessage.findMany({
+      where,
+      include: {
+        replies: { orderBy: { sentAt: 'asc' } },
+        crmClient: { select: { id: true, name: true, stage: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 1000,
+    });
+
+    // Comments group by postId (every comment on the same post = one
+    // thread); DMs group by senderId (every message from the same person =
+    // one thread). Namespaced by platform so IDs never collide across them.
+    const groups = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const groupKey = row.type === 'COMMENT'
+        ? `${row.platform}:post:${row.postId || row.id}`
+        : `${row.platform}:sender:${row.senderId || row.id}`;
+      const arr = groups.get(groupKey) || [];
+      arr.push(row);
+      groups.set(groupKey, arr);
+    }
+
+    // Each conversation is represented by its newest item — every existing
+    // action (reply, tag, CRM link, assign, resolve, hide, delete) keeps
+    // targeting that item's real id unchanged — plus the full ordered
+    // `items` array so the frontend can render the whole thread.
+    let conversations = Array.from(groups.values()).map(items => {
+      const newest = items[items.length - 1];
+      const unreadCount = items.filter(m => !m.isRead).length;
+      return {
+        ...newest,
+        unreadCount,
+        messageCount: items.length,
+        isRead: unreadCount === 0,
+        items,
+      };
+    });
+
+    if (isResolved !== undefined) {
+      conversations = conversations.filter(c => c.isResolved === isResolved);
+    }
+    if (isRead !== undefined) {
+      conversations = conversations.filter(c => c.isRead === isRead);
+    }
+
+    conversations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const total = conversations.length;
+    const messages = conversations.slice((page - 1) * limit, (page - 1) * limit + limit);
 
     return { messages, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
