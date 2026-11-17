@@ -39,7 +39,7 @@ const MATRIX: { group: string; rows: { label: string; vals: string[] }[] }[] = [
       { label: 'AI captions / month', vals: ['3', '20', '100', 'Unlimited', 'Unlimited'] },
       { label: 'AI hashtags & rewrite', vals: ['—', '—', '✓', '✓', '✓'] },
       { label: 'AI CRM insights', vals: ['—', '—', '✓', '✓', '✓'] },
-      { label: 'AI Agent runs / month', vals: ['—', '—', '20', 'Unlimited', 'Unlimited'] },
+      { label: 'AI Agent runs / month', vals: ['—', '—', '20, or unlimited with your own Claude key', 'Unlimited', 'Unlimited'] },
       { label: 'Autopilot (scheduled auto-runs)', vals: ['—', '—', 'Weekly', 'Daily or weekly', 'Daily or weekly'] },
       { label: 'AI image generation / month', vals: ['—', '—', '50', '500', 'Custom'] },
       { label: 'Bring your own AI key (BYOK)', vals: ['—', '—', '✓', '✓', '✓'] },
@@ -168,7 +168,7 @@ export default function PricingPage() {
             </tbody>
           </table>
           <p style={{ color: '#4A6080', fontSize: 12, marginTop: 20, textAlign: 'center' }}>
-            Prices shown in USD; billed in your local currency at checkout. Weekly Autopilot starts on Growth; daily Autopilot and heavy AI usage live on Agency Pro & Enterprise.
+            Prices shown in USD; billed in your local currency at checkout. Weekly Autopilot starts on Growth; daily Autopilot and heavy AI usage live on Agency Pro & Enterprise. From Growth up you can connect your own Claude key in Settings > Integrations to run the AI Agent without a monthly limit.
           </p>
         </div>
       </section>
