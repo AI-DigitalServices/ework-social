@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { Plug, Loader2, CheckCircle2, AlertTriangle, Trash2, KeyRound } from 'lucide-react';
 import WebhooksPanel from '@/components/settings/WebhooksPanel';
+import AgentKeyPanel from '@/components/settings/AgentKeyPanel';
 
 type Status = {
   connected: boolean;
@@ -75,12 +76,15 @@ export default function IntegrationsTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {/* Which Claude key the AI Agent runs on (platform by default, or the workspace's own) */}
+      <AgentKeyPanel />
+
       <div>
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Plug className="w-5 h-5 text-blue-600" /> AI Integrations
+          <Plug className="w-5 h-5 text-blue-600" /> Memory and image provider key
         </h3>
         <p className="text-sm text-slate-500 mt-1">
-          Connect your own AI provider key for semantic Brand Brain memory. When connected, embeddings
+          Separate from the AI Agent key above: connect your own provider key for semantic Brand Brain memory and image generation. When connected, embeddings
           run on <span className="font-semibold">your</span> account and quota instead of the platform default.
         </p>
       </div>

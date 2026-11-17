@@ -5,6 +5,7 @@ import { BrandBrainService } from './brand-brain.service';
 import { EmbeddingsService } from './embeddings.service';
 import { IntegrationsService } from './integrations.service';
 import { IntegrationsController } from './integrations.controller';
+import { LlmClientService } from './llm-client.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { DraftPostTool } from './tools/draft-post.tool';
 import { GetAnalyticsTool } from './tools/get-analytics.tool';
@@ -28,7 +29,7 @@ import { AssetsModule } from '../assets/assets.module';
 @Module({
   imports: [CommonModule, AuthModule, AiModule, SchedulerModule, AnalyticsModule, InboxModule, AssetsModule],
   controllers: [AgentController, IntegrationsController],
-  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool, SearchAssetsTool, GetClientContextTool, GenerateImageTool],
+  providers: [AgentService, BrandBrainService, EmbeddingsService, IntegrationsService, LlmClientService, ToolRegistryService, DraftPostTool, GetAnalyticsTool, SearchInboxTool, ListSocialAccountsTool, SearchAssetsTool, GetClientContextTool, GenerateImageTool],
   exports: [AgentService],
 })
 export class AgentModule {}
