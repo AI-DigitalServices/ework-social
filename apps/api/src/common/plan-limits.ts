@@ -142,11 +142,11 @@ export const PLAN_LIMITS = {
     aiReplyEnabled:         true,
     aiReplyPerMonth:        150,        // Increased from 50 — teams handle multiple client inboxes
     aiCrmInsightsEnabled:   true,       // Moved from AGENCY_PRO — makes Growth feel complete ✅
-    agentActionsPerMonth:   300,        // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
+    agentActionsPerMonth:   20,         // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
     assetUploadsPerMonth:   100,        // Creative Hub — vision tagging + embedding cap
     aiImageGenPerMonth:     50,         // AI image generation — unlocks at Growth
     byokEnabled:            true,       // Bring-your-own AI key — unlocks at Growth
-    autopilotEnabled:       false,      // Growth = manual agent only; Autopilot is Agency Pro+
+    autopilotEnabled:       true,       // Growth = WEEKLY Autopilot only (see AUTOPILOT_CADENCES); daily is Agency Pro+
 
     // ── Collaboration ─────────────────────────────────────
     clientApprovalEnabled:  true,       // Moved from AGENCY_PRO — core agency workflow ✅
@@ -310,5 +310,48 @@ export const FEATURE_MIN_PLAN: Record<string, string> = {
   aiImageGen:           'GROWTH',
   byok:                 'GROWTH',
   // Autopilot (scheduled auto-runs) — Agency Pro and above
-  autopilot:            'AGENCY_PRO',
+  autopilot:            'GROWTH',      // weekly on Growth; daily needs Agency Pro (AUTOPILOT_CADENCES)
 };
+
+// ── Autopilot cadence + trial caps ────────────────────────────────────────
+
+export type AutopilotCadence = 'daily' | 'weekly';
+
+/** Which Autopilot cadences each plan may use, fastest first. Growth is weekly-only. */
+export const AUTOPILOT_CADENCES: Record<string, readonly AutopilotCadence[]> = {
+  FREE: [],
+  STARTER: [],
+  GROWTH: ['weekly'],
+  AGENCY_PRO: ['daily', 'weekly'],
+  ENTERPRISE: ['daily', 'weekly'],
+};
+
+export function getAutopilotCadences(plan: string): readonly AutopilotCadence[] {
+  if (!getPlanLimits(plan).autopilotEnabled) return [];
+  return AUTOPILOT_CADENCES[plan] || [];
+}
+
+/**
+ * The cadence a plan may actually run:
+ *  - a valid requested cadence the plan allows  -> that cadence
+ *  - a valid requested cadence it does NOT allow -> null (caller rejects or falls back)
+ *  - nothing / anything else requested          -> the plan's fastest allowed cadence
+ *  - plan has no Autopilot                      -> null
+ */
+export function resolveAutopilotCadence(plan: string, requested?: string | null): AutopilotCadence | null {
+  const allowed = getAutopilotCadences(plan);
+  if (allowed.length === 0) return null;
+  if (requested === 'daily' || requested === 'weekly') {
+    return allowed.includes(requested) ? requested : null;
+  }
+  return allowed[0];
+}
+
+/** Agent runs allowed during a free trial, whatever tier the trial grants. */
+export const TRIAL_AGENT_ACTIONS = 5;
+
+/** Monthly agent-run cap for a plan, tightened (never raised) while trialling. */
+export function getAgentActionLimit(plan: string, isTrialing: boolean): number {
+  const base: number = getPlanLimits(plan).agentActionsPerMonth;
+  return isTrialing ? Math.min(base, TRIAL_AGENT_ACTIONS) : base;
+}

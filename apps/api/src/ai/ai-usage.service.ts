@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { getPlanLimits } from '../common/plan-limits';
+import { getPlanLimits, getAgentActionLimit } from '../common/plan-limits';
 import { PostHogService } from '../analytics/posthog.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 
@@ -23,8 +23,8 @@ export class AiUsageService {
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
-    // Get subscription + plan limits
-    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    // Get subscription + plan limits (trial-aware: agent runs are capped tighter on a trial)
+    const { plan, isTrialing } = await this.planGuard.getEffectivePlan(workspaceId);
     const limits = getPlanLimits(plan);
 
     // Check limit based on type
@@ -54,7 +54,7 @@ export class AiUsageService {
         break;
       case 'AGENT_ACTION':
         // AI OS Phase 1 — shadow-mode agent runs, gated by agentActionsPerMonth (0 below Growth)
-        limit = limits.agentActionsPerMonth;
+        limit = getAgentActionLimit(plan, isTrialing);
         limitLabel = 'AI agent action';
         break;
       case 'ASSET_UPLOAD':
@@ -106,7 +106,7 @@ export class AiUsageService {
       where: { workspaceId, month },
     });
 
-    const plan = await this.planGuard.getWorkspacePlan(workspaceId);
+    const { plan, isTrialing } = await this.planGuard.getEffectivePlan(workspaceId);
     const limits = getPlanLimits(plan);
 
     return {
@@ -117,7 +117,7 @@ export class AiUsageService {
         REWRITE:      { used: usage.find(u => u.type === 'REWRITE')?.count      || 0, limit: limits.aiRewriteEnabled ? 'unlimited' : 0 },
         CRM_INSIGHT:  { used: usage.find(u => u.type === 'CRM_INSIGHT')?.count  || 0, limit: limits.aiCrmInsightsEnabled ? 'unlimited' : 0 },
         REPLY_SUGGEST:{ used: usage.find(u => u.type === 'REPLY_SUGGEST')?.count || 0, limit: limits.aiReplyEnabled ? limits.aiReplyPerMonth : 0 },
-        AGENT_ACTION: { used: usage.find(u => u.type === 'AGENT_ACTION')?.count || 0, limit: limits.agentActionsPerMonth },
+        AGENT_ACTION: { used: usage.find(u => u.type === 'AGENT_ACTION')?.count || 0, limit: getAgentActionLimit(plan, isTrialing) },
         ASSET_UPLOAD: { used: usage.find(u => u.type === 'ASSET_UPLOAD')?.count || 0, limit: limits.assetUploadsPerMonth },
         IMAGE_GEN:    { used: usage.find(u => u.type === 'IMAGE_GEN')?.count    || 0, limit: limits.aiImageGenPerMonth },
       },
