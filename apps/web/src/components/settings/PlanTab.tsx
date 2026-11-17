@@ -7,10 +7,26 @@ import api from '@/lib/api';
 import PlanUsageMeter from '@/components/billing/PlanUsageMeter';
 import { useCurrencyStore, CURRENCY_SYMBOLS, PLAN_PRICES, Currency } from '@/store/currency.store';
 import { useCurrencyDetect } from '@/hooks/useCurrencyDetect';
+import { useFxRates } from '@/hooks/useFxRates';
+import { FxRates, USD_PRICES, convertUsd, formatAmount } from '@/lib/fx';
 
 const CURRENCIES: Currency[] = ['NGN', 'USD', 'KES', 'ZAR', 'GHS'];
 
-const getPlans = (currency: Currency) => [
+type Tier = 'starter' | 'growth' | 'agency';
+
+// NGN and USD are real prices. KES, ZAR and GHS are approximations of the USD
+// price at today's rate: customers in those countries are billed in USD.
+const priceFor = (tier: Tier, currency: Currency, rates: FxRates): string => {
+  if (currency === 'NGN' || currency === 'USD') return PLAN_PRICES[tier][currency];
+  const local = convertUsd(USD_PRICES[tier], currency, rates);
+  if (local === null) return PLAN_PRICES[tier][currency];
+  return `≈ ${formatAmount(currency === 'KES' ? 'KSh ' : CURRENCY_SYMBOLS[currency], local)}`;
+};
+
+const periodFor = (tier: Tier, currency: Currency): string =>
+  currency === 'NGN' || currency === 'USD' ? '/month' : `/month · billed $${USD_PRICES[tier]} USD`;
+
+const getPlans = (currency: Currency, rates: FxRates) => [
   {
     name: 'Free Trial',
     price: '0',
@@ -22,9 +38,9 @@ const getPlans = (currency: Currency) => [
   },
   {
     name: 'Starter',
-    price: PLAN_PRICES.starter[currency],
-    displayPrice: PLAN_PRICES.starter[currency],
-    period: '/month',
+    price: priceFor('starter', currency, rates),
+    displayPrice: priceFor('starter', currency, rates),
+    period: periodFor('starter', currency),
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_STARTER_PLAN,
     color: 'border-blue-200',
     badge: 'Most Popular',
@@ -33,9 +49,9 @@ const getPlans = (currency: Currency) => [
   },
   {
     name: 'Growth',
-    price: PLAN_PRICES.growth[currency],
-    displayPrice: PLAN_PRICES.growth[currency],
-    period: '/month',
+    price: priceFor('growth', currency, rates),
+    displayPrice: priceFor('growth', currency, rates),
+    period: periodFor('growth', currency),
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_GROWTH_PLAN,
     color: 'border-green-200',
     badge: 'Best Value',
@@ -44,9 +60,9 @@ const getPlans = (currency: Currency) => [
   },
   {
     name: 'Agency Pro',
-    price: PLAN_PRICES.agency[currency],
-    displayPrice: PLAN_PRICES.agency[currency],
-    period: '/month',
+    price: priceFor('agency', currency, rates),
+    displayPrice: priceFor('agency', currency, rates),
+    period: periodFor('agency', currency),
     planCode: process.env.NEXT_PUBLIC_PAYSTACK_AGENCY_PRO_PLAN,
     color: 'border-purple-200',
     badge: 'For Agencies',
@@ -64,7 +80,8 @@ export default function PlanTab() {
   const [checkoutError, setCheckoutError] = useState('');
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
 
-  const plans = getPlans(currency);
+  const fx = useFxRates();
+  const plans = getPlans(currency, fx.rates);
 
   useEffect(() => {
     if (workspace?.id) loadSubscription();
@@ -95,7 +112,9 @@ export default function PlanTab() {
     setCheckoutError('');
     setLoading(planName);
     try {
-      if (currency === 'USD') {
+      // Only Naira goes through Paystack. Every other display currency (USD, KES,
+      // ZAR, GHS) is billed in US dollars through the international checkout.
+      if (currency !== 'NGN') {
         const tier = TIER_BY_NAME[planName];
         if (!tier) throw new Error('This plan is not available for international checkout.');
         // Provider (PayPal / Lemon Squeezy) is chosen server-side so it can be
@@ -134,7 +153,20 @@ export default function PlanTab() {
     <div>
       {/* Currency selector */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-slate-500">Prices shown in your local currency</p>
+        <p className="text-sm text-slate-500">
+          {currency === 'NGN'
+            ? 'Billed in Naira through Paystack.'
+            : currency === 'USD'
+              ? 'Billed in US dollars at checkout.'
+              : (
+                <>
+                  Local prices are approximate and update daily. You are billed in US dollars at checkout.{' '}
+                  <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline">
+                    Rates By Exchange Rate API
+                  </a>
+                </>
+              )}
+        </p>
         <div className="relative">
           <button
             onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
