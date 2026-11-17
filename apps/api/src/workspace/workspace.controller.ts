@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { JwtGuard } from '../auth/jwt.guard';
+import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -39,9 +40,11 @@ export class WorkspaceController {
   }
 
   @Get(':workspaceId/members')
-  @UseGuards(JwtGuard)
-  getMembers(@Param('workspaceId') workspaceId: string) {
-    return this.workspaceService.getMembers(workspaceId);
+  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  getMembers(@Param('workspaceId') workspaceId: string, @Req() req: any) {
+    // req.workspaceRole is the role WorkspaceMemberGuard verified; invite tokens are
+    // only shown to owners and admins.
+    return this.workspaceService.getMembers(workspaceId, req.workspaceRole);
   }
 
   @Delete(':workspaceId/members/:userId')
