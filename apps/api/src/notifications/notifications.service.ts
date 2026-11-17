@@ -1,9 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from './push.service';
+import { toMobileTarget } from './notification-target.util';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  // PushService is optional: a module that provides this service without it
+  // simply sends no push, instead of failing to start.
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private push?: PushService,
+  ) {}
 
   async getNotifications(userId: string) {
     return this.prisma.notification.findMany({
@@ -37,9 +44,20 @@ export class NotificationsService {
   }
 
   async createNotification(userId: string, type: string, title: string, message: string, link?: string) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: { userId, type, title, message, link },
     });
+    // Best-effort mobile push: never awaited, never allowed to fail the notification.
+    if (this.push) {
+      Promise.resolve(
+        this.push.sendToUser(userId, {
+          title,
+          body: message,
+          data: { type, link: link ?? null, target: toMobileTarget(link), notificationId: notification.id },
+        }),
+      ).catch(() => undefined);
+    }
+    return notification;
   }
 
   async createWelcomeNotifications(userId: string) {
