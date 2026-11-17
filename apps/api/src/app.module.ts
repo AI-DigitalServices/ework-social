@@ -28,6 +28,7 @@ import { AgentModule } from './agent/agent.module';
 import { AssetsModule } from './assets/assets.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { LeadsModule } from './leads/leads.module';
+import { MobileModule } from './mobile/mobile.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { LeadsModule } from './leads/leads.module';
     AssetsModule,
     WebhooksModule,
     LeadsModule,
+    MobileModule,
   ],
   providers: [
     {
