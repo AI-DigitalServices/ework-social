@@ -4,6 +4,7 @@ import {
   Req, Res,
 } from '@nestjs/common';
 import { SocialService } from './social.service';
+import { buildOAuthReturnUrl } from './oauth-state.util';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import type { Response } from 'express';
@@ -16,9 +17,9 @@ export class SocialController {
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
   getFacebookAuthUrl(
     @Query('workspaceId') workspaceId: string,
-    @Req() req: any,
+    @Req() req: any, @Query('client') client?: string,
   ) {
-    return this.socialService.getFacebookAuthUrl(workspaceId, req.user.sub);
+    return this.socialService.getFacebookAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('facebook/callback')
@@ -32,16 +33,16 @@ export class SocialController {
 
     if (error || !code || !state) {
       console.log('Facebook callback aborted — error:', error, 'code present:', !!code, 'state present:', !!state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     }
 
     try {
       await this.socialService.handleFacebookCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err: any) {
       console.error('OAuth error:', err);
       const errorCode = err?.message === 'no_pages_found' ? 'no_pages' : 'failed';
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=${errorCode}`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=${errorCode}`));
     }
   }
 
@@ -70,8 +71,8 @@ export class SocialController {
 
   @Get('linkedin/auth-url')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
-  getLinkedInAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
-    return this.socialService.getLinkedInAuthUrl(workspaceId, req.user.sub);
+  getLinkedInAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
+    return this.socialService.getLinkedInAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('linkedin/callback')
@@ -82,13 +83,13 @@ export class SocialController {
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    if (error) return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     try {
       await this.socialService.handleLinkedInCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err) {
       console.error('LinkedIn OAuth error:', err);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=failed`));
     }
   }
 
@@ -96,8 +97,8 @@ export class SocialController {
 
   @Get('linkedin-org/auth-url')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
-  getLinkedInOrgAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
-    return this.socialService.getLinkedInOrgAuthUrl(workspaceId, req.user.sub);
+  getLinkedInOrgAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
+    return this.socialService.getLinkedInOrgAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('linkedin-org/callback')
@@ -108,14 +109,14 @@ export class SocialController {
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    if (error) return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     try {
       await this.socialService.handleLinkedInOrgCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err: any) {
       console.error('LinkedIn Org OAuth error:', err?.message);
       const errorCode = err?.message?.includes('no_pages_found') ? 'no_pages' : 'failed';
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=${errorCode}`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=${errorCode}`));
     }
   }
 
@@ -150,8 +151,8 @@ export class SocialController {
 
   @Get('youtube/auth-url')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
-  getYouTubeAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
-    return this.socialService.getYouTubeAuthUrl(workspaceId, req.user.sub);
+  getYouTubeAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
+    return this.socialService.getYouTubeAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('youtube/callback')
@@ -162,26 +163,26 @@ export class SocialController {
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    if (error) return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     try {
       await this.socialService.handleYouTubeCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err) {
       console.error('YouTube OAuth error:', err);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=failed`));
     }
   }
 
   @Get('tiktok/auth-url')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
-  getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
-    return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub);
+  getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
+    return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('threads/auth-url')
   @UseGuards(JwtGuard, WorkspaceMemberGuard)
-  getThreadsAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any) {
-    return this.socialService.getThreadsAuthUrl(workspaceId, req.user.sub);
+  getThreadsAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
+    return this.socialService.getThreadsAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('threads/callback')
@@ -196,15 +197,15 @@ export class SocialController {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     if (error) {
       console.error('Threads OAuth denied by Meta:', { error, errorReason, errorDescription });
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     }
     console.log('Threads callback received — code present:', !!code, 'state present:', !!state);
     try {
       await this.socialService.handleThreadsCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err: any) {
       console.error('Threads OAuth token exchange error:', err?.message, err?.response?.data ?? '');
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=failed`));
     }
   }
 
@@ -216,13 +217,13 @@ export class SocialController {
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (error) return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=cancelled`);
+    if (error) return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=cancelled`));
     try {
       await this.socialService.handleTikTokCallback(code, state);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&success=connected`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `success=connected`));
     } catch (err) {
       console.error('TikTok OAuth error:', err);
-      return res.redirect(`${frontendUrl}/dashboard/settings?tab=social&error=failed`);
+      return res.redirect(buildOAuthReturnUrl(state, frontendUrl, `error=failed`));
     }
   }
 
