@@ -18,8 +18,9 @@ export class SchedulerController {
   }
 
   @Post('posts')
-  createPost(@Body() dto: CreatePostDto) {
-    return this.schedulerService.createPost(dto);
+  createPost(@Body() dto: CreatePostDto, @Request() req: any) {
+    // req.workspaceRole is the role WorkspaceMemberGuard verified for dto.workspaceId
+    return this.schedulerService.createPost(dto, req.workspaceRole ?? 'NONE');
   }
 
   @Patch('posts/:id')

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -8,6 +8,7 @@ import { SocialService } from '../social/social.service';
 import { PostHogService } from '../analytics/posthog.service';
 import { TwitterPollerService } from '../twitter/twitter-poller.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { assertWriterRole, writeChecksEnabled } from '../common/roles';
 
 @Injectable()
 export class SchedulerService {
@@ -61,8 +62,44 @@ export class SchedulerService {
     throw new NotFoundException('Post not found');
   }
 
-  async createPost(dto: CreatePostDto) {
-    // Plan gating — check post limit before creating
+  /**
+   * Record-by-id WRITES (update, delete, retry, publish-now). The caller must be a
+   * member (or the legacy owner) with a writing role, and the workspace must not
+   * be read-only. Unknown or foreign posts look identical (404). Returns the post
+   * row so callers can check its status without another query.
+   */
+  private async assertPostWriteAccess(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, workspaceId: true, status: true },
+    });
+    if (!post) throw new NotFoundException('Post not found');
+
+    const member = await this.prisma.workspaceMember.findFirst({
+      where: { workspaceId: post.workspaceId, userId },
+      select: { role: true },
+    });
+    let role: string | null = member ? String(member.role) : null;
+    if (!role) {
+      const workspace = await this.prisma.workspace.findUnique({
+        where: { id: post.workspaceId },
+        select: { ownerId: true },
+      });
+      if (workspace?.ownerId === userId) role = 'OWNER'; // legacy workspaces may lack a membership row
+    }
+    if (!role) throw new NotFoundException('Post not found');
+
+    if (writeChecksEnabled()) {
+      assertWriterRole(role);
+      await this.planGuard.assertCanWrite(post.workspaceId);
+    }
+    return post;
+  }
+
+  /** `role` is the verified workspace role when called from HTTP; internal callers (e.g. the AI agent) omit it. */
+  async createPost(dto: CreatePostDto, role?: string) {
+    if (role !== undefined && writeChecksEnabled()) assertWriterRole(role);
+    // Plan gating — check post limit before creating (this also refuses read-only workspaces)
     await this.planGuard.checkPostLimit(dto.workspaceId);
 
     const post = await this.prisma.post.create({
@@ -88,7 +125,7 @@ export class SchedulerService {
   }
 
   async updatePost(id: string, dto: Partial<CreatePostDto>, userId: string) {
-    await this.assertPostAccess(id, userId);
+    await this.assertPostWriteAccess(id, userId);
     return this.prisma.post.update({
       where: { id },
       data: {
@@ -102,7 +139,7 @@ export class SchedulerService {
   }
 
   async deletePost(id: string, userId: string) {
-    await this.assertPostAccess(id, userId);
+    await this.assertPostWriteAccess(id, userId);
     return this.prisma.post.delete({ where: { id } });
   }
 
@@ -245,7 +282,10 @@ export class SchedulerService {
   }
 
   async retryPost(postId: string, userId: string) {
-    await this.assertPostAccess(postId, userId);
+    const current = await this.assertPostWriteAccess(postId, userId);
+    if (current.status !== 'FAILED') {
+      throw new BadRequestException('Only failed posts can be retried.');
+    }
     return this.prisma.post.update({
       where: { id: postId },
       data: { status: 'SCHEDULED' },
@@ -254,12 +294,19 @@ export class SchedulerService {
 
 
   async publishNow(postId: string, userId: string) {
-    await this.assertPostAccess(postId, userId);
+    await this.assertPostWriteAccess(postId, userId);
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: { socialAccount: true },
     });
     if (!post) throw new Error('Post not found');
+    // Never bypass client approval, and never publish the same post twice.
+    if (post.status === 'PENDING_APPROVAL') {
+      throw new BadRequestException('This post is waiting for client approval and cannot be published yet.');
+    }
+    if (post.status === 'PUBLISHED') {
+      throw new BadRequestException('This post is already published.');
+    }
     const platform = post.socialAccount?.platform;
     if (platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
     if (platform === 'FACEBOOK')  return this.socialService.publishToFacebook(postId);
