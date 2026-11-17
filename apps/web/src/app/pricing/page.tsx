@@ -168,7 +168,7 @@ export default function PricingPage() {
             </tbody>
           </table>
           <p style={{ color: '#4A6080', fontSize: 12, marginTop: 20, textAlign: 'center' }}>
-            Prices shown in USD; billed in your local currency at checkout. Weekly Autopilot starts on Growth; daily Autopilot and heavy AI usage live on Agency Pro & Enterprise. From Growth up you can connect your own Claude key in Settings, then Integrations to run the AI Agent without a monthly limit.
+            Prices shown in USD. Customers in Nigeria can pay in Naira; everyone else is billed in US dollars at checkout. Weekly Autopilot starts on Growth; daily Autopilot and heavy AI usage live on Agency Pro & Enterprise. From Growth up you can connect your own Claude key in Settings, then Integrations to run the AI Agent without a monthly limit.
           </p>
         </div>
       </section>

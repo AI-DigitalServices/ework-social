@@ -24,6 +24,8 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 
 
 import { useEffect } from 'react';
+import { useFxRates } from '@/hooks/useFxRates';
+import { landingPrice } from '@/lib/fx';
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$', flag: '🇺🇸', label: 'USD', rates: { starter: 5, growth: 12, pro: 29 } },
@@ -46,6 +48,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currency, setCurrency] = useState(CURRENCIES[0]);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const fx = useFxRates();
 
   // Waitlist state
   const [waitlistName, setWaitlistName] = useState('');
@@ -78,10 +81,10 @@ export default function LandingPage() {
     getWaitlistCountAction().then(setWaitlistCount).catch(() => {});
 
     // Auto-detect currency from IP geolocation
-    fetch('https://ipapi.co/json/')
+    fetch('/geo-country', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
-        const country = data.country_code;
+        const country = data.country;
         if (country === 'NG') setCurrency(CURRENCIES[1]);
         else if (country === 'KE') setCurrency(CURRENCIES[2]);
         else if (country === 'ZA') setCurrency(CURRENCIES[3]);
@@ -451,7 +454,10 @@ export default function LandingPage() {
           {plans.map((plan, i) => {
             const displayPrice = plan.isFree
               ? `${currency.symbol}0`
-              : formatPrice(currency.symbol, currency.rates[plan.priceKey!]);
+              : formatPrice(
+                  currency.symbol,
+                  landingPrice(currency.code, currency.rates[plan.priceKey!], CURRENCIES[0].rates[plan.priceKey!], fx.rates),
+                );
             return (
               <div key={i} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
                 {plan.popular && <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#2563EB', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 16px', borderRadius: 100, whiteSpace: 'nowrap' as const, letterSpacing: '0.5px' }}>MOST POPULAR</div>}
@@ -460,7 +466,7 @@ export default function LandingPage() {
                   <span style={{ fontSize: 38, fontWeight: 800, color: '#F0F6FF', letterSpacing: '-1.5px', fontFamily: 'Libre Baskerville, serif' }}>{displayPrice}</span>
                   <span style={{ color: '#4A6080', fontSize: 14, fontWeight: 500 }}>{plan.period}</span>
                 </div>
-                <p style={{ fontSize: 11, color: '#4A6080', marginBottom: 4, fontWeight: 500 }}>≈ billed in {currency.code}</p>
+                <p style={{ fontSize: 11, color: '#4A6080', marginBottom: 4, fontWeight: 500 }}>{currency.code === 'NGN' ? 'Billed in NGN' : currency.code === 'USD' ? 'Billed in USD' : '≈ local price · billed in USD'}</p>
                 <div style={{ borderTop: '1px solid #1A2840', margin: '20px 0' }} />
                 {plan.features.map((f, j) => (
                   <div key={j} className="check-item">
@@ -479,7 +485,7 @@ export default function LandingPage() {
           </a>
         </div>
         <p style={{ textAlign: 'center', color: '#4A6080', fontSize: 12, marginTop: 24, fontWeight: 500 }}>
-          * Prices shown are approximate conversions based on your region. Final billing currency depends on your payment method.
+          * Local prices are approximate and update daily. Customers in Nigeria pay in Naira; everyone else is billed in US dollars at checkout. <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" style={{ color: '#6B8299', textDecoration: 'underline' }}>Rates By Exchange Rate API</a>
         </p>
       </section>
 
@@ -605,7 +611,7 @@ export default function LandingPage() {
               },
               {
                 q: "What payment methods are accepted?",
-                a: "We support multiple payment methods including cards, bank transfers, and local options depending on your region. Pricing is displayed in your local currency and auto-detected from your location.",
+                a: "We support multiple payment methods including cards, bank transfers, and local options depending on your region. Pricing is shown in your local currency as an approximation, auto-detected from your location. Customers in Nigeria pay in Naira; everyone else is billed in US dollars.",
               },
               {
                 q: "What is the CRM pipeline automation?",
