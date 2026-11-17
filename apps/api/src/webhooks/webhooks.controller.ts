@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { WebhooksService, WEBHOOK_EVENTS } from './webhooks.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { ManagerRoleGuard } from '../common/role.guards';
 
 @Controller('webhooks')
 @UseGuards(JwtGuard, WorkspaceMemberGuard)
@@ -14,11 +15,13 @@ export class WebhooksController {
   }
 
   @Get(':workspaceId')
+  @UseGuards(ManagerRoleGuard)
   list(@Param('workspaceId') workspaceId: string) {
     return this.webhooks.list(workspaceId);
   }
 
   @Post(':workspaceId')
+  @UseGuards(ManagerRoleGuard)
   create(
     @Param('workspaceId') workspaceId: string,
     @Body() body: { url: string; events: string[] },
@@ -27,6 +30,7 @@ export class WebhooksController {
   }
 
   @Patch(':workspaceId/:id')
+  @UseGuards(ManagerRoleGuard)
   setEnabled(
     @Param('workspaceId') workspaceId: string,
     @Param('id') id: string,
@@ -36,11 +40,13 @@ export class WebhooksController {
   }
 
   @Post(':workspaceId/:id/test')
+  @UseGuards(ManagerRoleGuard)
   test(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
     return this.webhooks.sendTest(workspaceId, id);
   }
 
   @Delete(':workspaceId/:id')
+  @UseGuards(ManagerRoleGuard)
   remove(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
     return this.webhooks.remove(workspaceId, id);
   }

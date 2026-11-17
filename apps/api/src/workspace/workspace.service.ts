@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { canManage } from '../common/roles';
 import * as crypto from 'crypto';
 
 // Max workspaces per plan
@@ -30,6 +32,7 @@ export class WorkspaceService {
   constructor(
     private prisma: PrismaService,
     private email: EmailService,
+    private planGuard: PlanGuardService,
   ) {}
 
   async listWorkspaces(userId: string) {
@@ -134,9 +137,12 @@ export class WorkspaceService {
     });
     if (!workspace) throw new BadRequestException('Workspace not found');
     if (workspace.ownerId !== inviterId) throw new ForbiddenException('Only workspace owner can invite members');
+    if (!['ADMIN', 'EDITOR', 'VIEWER'].includes(role)) {
+      throw new BadRequestException('Role must be ADMIN, EDITOR or VIEWER');
+    }
 
     // Check plan limits
-    const memberCount = workspace.members.length + 1; // +1 for owner
+    await this.planGuard.checkTeamMemberLimit(workspaceId);
     
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({ where: { email: inviteEmail } });
@@ -209,7 +215,7 @@ export class WorkspaceService {
     return { success: true, workspaceId: invite.workspaceId, workspaceName: workspace?.name };
   }
 
-  async getMembers(workspaceId: string) {
+  async getMembers(workspaceId: string, viewerRole?: string) {
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
       include: {
@@ -230,7 +236,7 @@ export class WorkspaceService {
     });
     const pending = pendingInvites.map(i => ({
       id: i.id, name: i.email.split('@')[0], email: i.email,
-      role: i.role, isOwner: false, isPending: true, inviteToken: i.token,
+      role: i.role, isOwner: false, isPending: true, inviteToken: canManage(viewerRole) ? i.token : undefined,
     }));
     
     return [owner, ...members, ...pending];

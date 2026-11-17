@@ -5,16 +5,22 @@ import {
 } from '@nestjs/common';
 import { SocialService } from './social.service';
 import { buildOAuthReturnUrl } from './oauth-state.util';
+import { PrismaService } from '../prisma/prisma.service';
+import { ManagerRoleGuard, WriterRoleGuard } from '../common/role.guards';
+import * as NestCommon from '@nestjs/common';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import type { Response } from 'express';
 
 @Controller('social')
 export class SocialController {
-  constructor(private socialService: SocialService) {}
+  constructor(
+    private socialService: SocialService,
+    private prisma: PrismaService,
+  ) {}
 
   @Get('facebook/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getFacebookAuthUrl(
     @Query('workspaceId') workspaceId: string,
     @Req() req: any, @Query('client') client?: string,
@@ -55,13 +61,13 @@ export class SocialController {
   // Re-subscribe connected Meta accounts to their webhook fields (feed, messages,
   // comments) — fixes pages connected before a scope was approved.
   @Post('resync-webhooks')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   resyncWebhooks(@Body() body: { workspaceId: string }) {
     return this.socialService.resyncWebhooks(body.workspaceId);
   }
 
   @Delete('accounts/:id')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   disconnectAccount(
     @Param('id') id: string,
     @Body() body: { workspaceId: string },
@@ -70,7 +76,7 @@ export class SocialController {
   }
 
   @Get('linkedin/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getLinkedInAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
     return this.socialService.getLinkedInAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
@@ -96,7 +102,7 @@ export class SocialController {
   // ─── LinkedIn Community Management API (Company Pages — second OAuth app) ────
 
   @Get('linkedin-org/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getLinkedInOrgAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
     return this.socialService.getLinkedInOrgAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
@@ -121,11 +127,26 @@ export class SocialController {
   }
 
   @Post('publish/:postId')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, WriterRoleGuard)
   async publishPost(
     @Param('postId') postId: string,
-    @Body() body: { platform: string },
+    @Body() body: { platform: string; workspaceId: string },
   ) {
+    // The post must belong to the workspace the caller was verified for, and must be
+    // in a state that can be published: never past client approval, never twice.
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { workspaceId: true, status: true },
+    });
+    if (!post || post.workspaceId !== body.workspaceId) {
+      throw new NestCommon.NotFoundException('Post not found');
+    }
+    if (post.status === 'PENDING_APPROVAL') {
+      throw new NestCommon.BadRequestException('This post is waiting for client approval and cannot be published yet.');
+    }
+    if (post.status === 'PUBLISHED') {
+      throw new NestCommon.BadRequestException('This post is already published.');
+    }
     if (body.platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
     if (body.platform === 'LINKEDIN') return this.socialService.publishToLinkedIn(postId);
     if (body.platform === 'TIKTOK') return this.socialService.publishToTikTok(postId);
@@ -136,21 +157,21 @@ export class SocialController {
   }
 
   @Post('bluesky/connect')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   connectBluesky(@Body() body: { workspaceId: string; identifier: string; appPassword: string }) {
     return this.socialService.connectBluesky(body.workspaceId, body.identifier, body.appPassword);
   }
 
   // Temporary: manually set a Threads access token generated from Meta Developer Console
   @Post('threads/manual-token')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   setThreadsToken(@Body() body: { workspaceId: string; accessToken: string }) {
     return this.socialService.setThreadsTokenManually(body.workspaceId, body.accessToken);
   }
 
 
   @Get('youtube/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getYouTubeAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
     return this.socialService.getYouTubeAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
@@ -174,13 +195,13 @@ export class SocialController {
   }
 
   @Get('tiktok/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getTikTokAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
     return this.socialService.getTikTokAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
 
   @Get('threads/auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getThreadsAuthUrl(@Query('workspaceId') workspaceId: string, @Req() req: any, @Query('client') client?: string) {
     return this.socialService.getThreadsAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
   }
