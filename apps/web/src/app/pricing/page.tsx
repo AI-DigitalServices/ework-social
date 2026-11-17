@@ -39,8 +39,8 @@ const MATRIX: { group: string; rows: { label: string; vals: string[] }[] }[] = [
       { label: 'AI captions / month', vals: ['3', '20', '100', 'Unlimited', 'Unlimited'] },
       { label: 'AI hashtags & rewrite', vals: ['—', '—', '✓', '✓', '✓'] },
       { label: 'AI CRM insights', vals: ['—', '—', '✓', '✓', '✓'] },
-      { label: 'AI Agent (manual runs)', vals: ['—', '—', 'Capped', 'Unlimited', 'Unlimited'] },
-      { label: 'Autopilot (scheduled auto-runs)', vals: ['—', '—', '—', '✓', '✓'] },
+      { label: 'AI Agent runs / month', vals: ['—', '—', '20', 'Unlimited', 'Unlimited'] },
+      { label: 'Autopilot (scheduled auto-runs)', vals: ['—', '—', 'Weekly', 'Daily or weekly', 'Daily or weekly'] },
       { label: 'AI image generation / month', vals: ['—', '—', '50', '500', 'Custom'] },
       { label: 'Bring your own AI key (BYOK)', vals: ['—', '—', '✓', '✓', '✓'] },
     ],
@@ -168,7 +168,7 @@ export default function PricingPage() {
             </tbody>
           </table>
           <p style={{ color: '#4A6080', fontSize: 12, marginTop: 20, textAlign: 'center' }}>
-            Prices shown in USD; billed in your local currency at checkout. Autopilot and heavy AI usage live on Agency Pro & Enterprise.
+            Prices shown in USD; billed in your local currency at checkout. Weekly Autopilot starts on Growth; daily Autopilot and heavy AI usage live on Agency Pro & Enterprise.
           </p>
         </div>
       </section>
