@@ -234,7 +234,7 @@ export default function AgentPage() {
       await api.patch(`/agent/${workspaceId}/campaigns/${campaignId}/schedule`, { autoRunEnabled, autoRunCadence });
       loadCampaigns();
     } catch (err: any) {
-      // Surface the plan-gate message (Autopilot is Agency Pro+) instead of failing silently.
+      // Surface the plan-gate message (e.g. daily Autopilot needs Agency Pro) instead of failing silently.
       alert(err?.response?.data?.message || 'Could not update Autopilot.');
       loadCampaigns();
     }
@@ -515,8 +515,8 @@ export default function AgentPage() {
                   className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500"
                 >
                   <option value="off">Off (recommended to start)</option>
-                  <option value="daily">Daily auto-run</option>
-                  <option value="weekly">Weekly auto-run</option>
+                  <option value="daily">Daily auto-run (Agency Pro)</option>
+                  <option value="weekly">Weekly auto-run (Growth and above)</option>
                 </select>
                 <span className="text-[11px] text-slate-400">
                   Tip: run it once manually and review the drafts before turning Autopilot on.
@@ -607,7 +607,7 @@ export default function AgentPage() {
                       className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-[11px] outline-none focus:border-blue-500"
                     >
                       <option value="off">Off</option>
-                      <option value="daily">Daily</option>
+                      <option value="daily">Daily (Agency Pro)</option>
                       <option value="weekly">Weekly</option>
                     </select>
                     {c.autoRunEnabled && (

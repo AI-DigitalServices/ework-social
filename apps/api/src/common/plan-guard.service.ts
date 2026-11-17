@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { getPlanLimits, getPlanDisplayName, FEATURE_MIN_PLAN } from './plan-limits';
+import { getPlanLimits, getPlanDisplayName, FEATURE_MIN_PLAN, getAgentActionLimit, getAutopilotCadences } from './plan-limits';
 
 /**
  * The tier a 7-day trial grants. Growth is deliberate: it is the "Most Popular"
@@ -350,7 +350,13 @@ export class PlanGuardService {
   async getWorkspaceLimits(workspaceId: string) {
     const effective = await this.getEffectivePlan(workspaceId);
     const plan = effective.plan;
-    const limits = getPlanLimits(plan);
+    // A trial tightens the agent-run cap; surface the real number, and the
+    // Autopilot cadences this plan may use, so the dashboard never over-promises.
+    const limits = {
+      ...getPlanLimits(plan),
+      agentActionsPerMonth: getAgentActionLimit(plan, effective.isTrialing),
+      autopilotCadences: getAutopilotCadences(plan),
+    };
 
     const [socialAccounts, postsThisMonth, teamMembers, clients, autoResponderRules] =
       await Promise.all([

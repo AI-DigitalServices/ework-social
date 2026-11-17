@@ -7,13 +7,16 @@ import { AiUsageService } from '../ai/ai-usage.service';
 import { ToolRegistryService } from './tools/tool-registry.service';
 import { BrandBrainService } from './brand-brain.service';
 import { PlanGuardService } from '../common/plan-guard.service';
-import { getPlanLimits, getPlanDisplayName } from '../common/plan-limits';
+import { getPlanDisplayName, getAutopilotCadences, resolveAutopilotCadence } from '../common/plan-limits';
 
 // Bounds a single run to a handful of think→act turns so a confused model
 // can't loop forever burning tokens. 6 is generous for "check analytics,
 // check inbox, propose 1-3 drafts, summarize."
 const MAX_TURNS = 6;
 const MODEL = 'claude-sonnet-4-5';
+// Autopilot windows: slightly under a day / a week so an hourly cron never skips a slot.
+const DAILY_WINDOW_MS = 20 * 3600 * 1000;
+const WEEKLY_WINDOW_MS = 6.5 * 24 * 3600 * 1000;
 
 @Injectable()
 export class AgentService {
@@ -107,11 +110,15 @@ export class AgentService {
       throw new BadRequestException('goal, brief, and at least one platform are required.');
     }
     let autoRun = !!dto.autoRunEnabled;
+    let autoRunCadence: string | null = null;
     if (autoRun) {
       // Silently ignore Autopilot opt-in on plans without it (rather than block
       // campaign creation) — the campaign is still created, just not on Autopilot.
       const plan = await this.planGuard.getWorkspacePlan(workspaceId);
-      if (!getPlanLimits(plan).autopilotEnabled) autoRun = false;
+      // A plan may not allow the requested cadence (Growth is weekly-only): use
+      // the plan's own cadence rather than block creation or silently drop Autopilot.
+      autoRunCadence = resolveAutopilotCadence(plan, dto.autoRunCadence) ?? resolveAutopilotCadence(plan);
+      if (!autoRunCadence) autoRun = false;
     }
     return this.prisma.campaign.create({
       data: {
@@ -123,7 +130,7 @@ export class AgentService {
         status: 'DRAFT',
         // Autopilot defaults OFF; can be opted into at creation.
         autoRunEnabled: autoRun,
-        autoRunCadence: autoRun ? (dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily') : null,
+        autoRunCadence: autoRun ? autoRunCadence : null,
       },
     });
   }
@@ -241,15 +248,21 @@ export class AgentService {
     if (!campaign || campaign.workspaceId !== workspaceId) {
       throw new NotFoundException('Campaign not found for this workspace.');
     }
+    let cadence: string | null = null;
     if (dto.autoRunEnabled) {
       const plan = await this.planGuard.getWorkspacePlan(workspaceId);
-      if (!getPlanLimits(plan).autopilotEnabled) {
+      if (getAutopilotCadences(plan).length === 0) {
         throw new ForbiddenException(
-          `Autopilot (scheduled auto-runs) is available on Agency Pro and Enterprise. Your ${getPlanDisplayName(plan)} plan includes manual agent runs — upgrade to let campaigns run themselves.`,
+          `Autopilot (scheduled auto-runs) starts on the Growth plan. Your ${getPlanDisplayName(plan)} plan does not include it - upgrade to let campaigns run themselves.`,
+        );
+      }
+      cadence = resolveAutopilotCadence(plan, dto.autoRunCadence);
+      if (!cadence) {
+        throw new ForbiddenException(
+          `Daily Autopilot is available on Agency Pro and Enterprise. Your ${getPlanDisplayName(plan)} plan includes weekly Autopilot - choose Weekly, or upgrade for daily runs.`,
         );
       }
     }
-    const cadence = dto.autoRunCadence === 'weekly' ? 'weekly' : 'daily';
     return this.prisma.campaign.update({
       where: { id: campaignId },
       data: {
@@ -281,7 +294,7 @@ export class AgentService {
 
     const now = Date.now();
     for (const c of campaigns) {
-      const windowMs = c.autoRunCadence === 'weekly' ? 6.5 * 24 * 3600 * 1000 : 20 * 3600 * 1000;
+      const windowMs = c.autoRunCadence === 'weekly' ? WEEKLY_WINDOW_MS : DAILY_WINDOW_MS;
       const last = c.lastAutoRunAt ? new Date(c.lastAutoRunAt).getTime() : 0;
       if (now - last < windowMs) continue; // not due yet
 
@@ -289,7 +302,14 @@ export class AgentService {
       // Autopilot (e.g. downgraded after enabling it).
       try {
         const plan = await this.planGuard.getWorkspacePlan(c.workspaceId);
-        if (!getPlanLimits(plan).autopilotEnabled) continue;
+        const allowed = getAutopilotCadences(plan);
+        if (allowed.length === 0) continue;
+        // Plan allows Autopilot but not this cadence (a daily campaign on a
+        // workspace now on Growth): keep it running, at the plan's own pace.
+        if (!allowed.includes(c.autoRunCadence)) {
+          const fallbackMs = allowed[0] === 'weekly' ? WEEKLY_WINDOW_MS : DAILY_WINDOW_MS;
+          if (now - last < fallbackMs) continue;
+        }
       } catch {
         continue;
       }
