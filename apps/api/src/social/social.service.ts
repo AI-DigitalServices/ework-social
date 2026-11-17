@@ -57,10 +57,10 @@ export class SocialService {
     }
   }
 
-  getFacebookAuthUrl(workspaceId: string, userId: string) {
+  getFacebookAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const appId = this.config.get('META_APP_ID');
     const redirectUri = this.config.get('META_REDIRECT_URI');
-    const state = signOAuthState('facebook', workspaceId, userId);
+    const state = signOAuthState('facebook', workspaceId, userId, undefined, client);
 
     const scopes = [
       'public_profile',
@@ -561,10 +561,10 @@ export class SocialService {
     }
   }
 
-  getLinkedInAuthUrl(workspaceId: string, userId: string) {
+  getLinkedInAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const clientId = this.config.get('LINKEDIN_CLIENT_ID');
     const redirectUri = this.config.get('LINKEDIN_REDIRECT_URI');
-    const state = signOAuthState('linkedin', workspaceId, userId);
+    const state = signOAuthState('linkedin', workspaceId, userId, undefined, client);
     const scopes = ['openid', 'profile', 'email', 'w_member_social'].join(' ');
     return {
       url: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`,
@@ -977,7 +977,7 @@ export class SocialService {
 
   // ─── LinkedIn Community Management API (second app — org pages only) ────────
 
-  getLinkedInOrgAuthUrl(workspaceId: string, userId: string) {
+  getLinkedInOrgAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const clientId = this.config.get('LINKEDIN_ORG_CLIENT_ID');
     const redirectUri = this.config.get('LINKEDIN_ORG_REDIRECT_URI');
 
@@ -987,7 +987,7 @@ export class SocialService {
       );
     }
 
-    const state = signOAuthState('linkedin-org', workspaceId, userId);
+    const state = signOAuthState('linkedin-org', workspaceId, userId, undefined, client);
     // This app has ONLY Community Management API — no openid/profile scopes available
     const scopes = ['w_organization_social', 'r_organization_social', 'rw_organization_admin'].join(' ');
 
@@ -1120,10 +1120,10 @@ export class SocialService {
     };
   }
 
-  getYouTubeAuthUrl(workspaceId: string, userId: string) {
+  getYouTubeAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const clientId = this.config.get('YOUTUBE_CLIENT_ID');
     const redirectUri = this.config.get('YOUTUBE_REDIRECT_URI');
-    const state = signOAuthState('youtube', workspaceId, userId);
+    const state = signOAuthState('youtube', workspaceId, userId, undefined, client);
     // Scopes ordered per incremental authorization best practice:
     // identity scopes first, then feature-specific scopes at point of need.
     // youtube.upload is requested here because the explicit "Connect YouTube"
@@ -1304,10 +1304,10 @@ export class SocialService {
   }
 
 
-  getTikTokAuthUrl(workspaceId: string, userId: string) {
+  getTikTokAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const clientKey = this.config.get('TIKTOK_CLIENT_KEY');
     const redirectUri = this.config.get('TIKTOK_REDIRECT_URI');
-    const state = signOAuthState('tiktok', workspaceId, userId);
+    const state = signOAuthState('tiktok', workspaceId, userId, undefined, client);
     const scopes = 'user.info.basic,video.publish,video.upload';
     return {
       url: `https://www.tiktok.com/v2/auth/authorize?client_key=${clientKey}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&response_type=code`,
@@ -1502,7 +1502,7 @@ export class SocialService {
   }
 
 
-  getThreadsAuthUrl(workspaceId: string, userId: string) {
+  getThreadsAuthUrl(workspaceId: string, userId: string, client?: 'app') {
     const appId = this.config.get('THREADS_APP_ID') || this.config.get('META_APP_ID');
     const redirectUri = this.config.get('THREADS_REDIRECT_URI') || 
       this.config.get('META_REDIRECT_URI')?.replace('facebook', 'threads');
@@ -1514,7 +1514,7 @@ export class SocialService {
       throw new BadRequestException('THREADS_REDIRECT_URI is not configured. Please add it to Railway environment variables.');
     }
 
-    const state = signOAuthState('threads', workspaceId, userId);
+    const state = signOAuthState('threads', workspaceId, userId, undefined, client);
     const scopes = ['threads_basic', 'threads_content_publish'].join(',');
     return {
       url: `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&state=${state}&response_type=code`,

@@ -36,6 +36,7 @@ model User {
   assignedClients    Client[]          @relation("AssignedClients")
   assignedMessages   InboxMessage[]
   activityLogs       Activity[]
+  mobileDevices      MobileDevice[]
 }
 
 model Workspace {
@@ -633,4 +634,20 @@ model Asset {
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId, kind])
+}
+
+// Mobile app push devices (one row per installed app instance, unique by Expo push token).
+model MobileDevice {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushToken  String   @unique
+  platform   String // 'android' | 'ios'
+  appVersion String?
+  deviceName String?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }
