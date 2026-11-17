@@ -46,7 +46,15 @@ export class BillingService {
     workspaceId: string,
     userId: string,
     userEmail: string,
+    currency?: string,
   ) {
+    // Paystack plans here are Naira plans. Any other currency must use the
+    // international checkout - never charge Naira under another currency's label.
+    if (currency && currency.toUpperCase() !== 'NGN') {
+      throw new BadRequestException(
+        'Card checkout in this currency is billed in US dollars. Please use international checkout.',
+      );
+    }
     try {
       const amount = this.getPlanAmount(planCode);
       const response = await axios.post(

@@ -25,6 +25,7 @@ export class BillingController {
       dto.workspaceId,
       dto.userId,
       req.user.email,
+      dto.currency,
     );
   }
 
