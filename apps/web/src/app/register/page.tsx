@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { registerAction } from '@/actions/auth.actions';
 import Link from 'next/link';
+import { trackSignup } from '@/lib/analytics';
 
 // NEXT_PUBLIC_API_URL already includes /api (e.g. https://api.eworksocial.com/api)
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -69,6 +70,13 @@ function RegisterContent() {
         isInviteFlow ? inviteToken : undefined,
       );
       setAuth(data.user, data.workspace, data.accessToken, data.refreshToken);
+
+      // Google Ads signup conversion. Pushed before navigating so the event
+      // lands while the page is still alive. Invite-flow joins are excluded —
+      // a teammate accepting an invite never saw an ad.
+      if (!isInviteFlow) {
+        trackSignup({ email: form.email });
+      }
 
       router.push('/dashboard');
     } catch (err: any) {
