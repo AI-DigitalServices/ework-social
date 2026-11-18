@@ -40,6 +40,8 @@ export default function WebhooksPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [newSecret, setNewSecret] = useState('');
+  const [testingId, setTestingId] = useState('');
+  const [testResult, setTestResult] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   const load = useCallback(() => {
     if (!workspaceId) return;
@@ -72,11 +74,25 @@ export default function WebhooksPanel() {
 
   const handleTest = async (id: string) => {
     if (!workspaceId) return;
+    setTestingId(id);
     try {
       const res = await api.post(`/webhooks/${workspaceId}/${id}/test`);
+      const ok = !!res.data?.delivered;
+      setTestResult(prev => ({
+        ...prev,
+        [id]: {
+          ok,
+          text: ok
+            ? `Test delivered (HTTP ${res.data.status})`
+            : `Test failed (HTTP ${res.data?.status ?? 0}) - check the URL is live and accepts POST requests`,
+        },
+      }));
       load();
-      alert(res.data?.delivered ? `Test delivered (HTTP ${res.data.status})` : `Test failed (HTTP ${res.data?.status ?? 0})`);
-    } catch { alert('Test failed'); }
+    } catch {
+      setTestResult(prev => ({ ...prev, [id]: { ok: false, text: 'Test failed - could not reach the server.' } }));
+    } finally {
+      setTestingId('');
+    }
   };
 
   const handleToggle = async (h: Hook) => {
@@ -114,7 +130,7 @@ export default function WebhooksPanel() {
 
       {newSecret && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs">
-          <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Webhook created — copy your signing secret now (shown once):</p>
+          <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Webhook created — copy your signing secret now (shown once). Then press Send test below to check it works:</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-white border border-emerald-200 rounded px-2 py-1 break-all">{newSecret}</code>
             <button onClick={() => navigator.clipboard?.writeText(newSecret)} className="text-emerald-600 hover:text-emerald-800"><Copy className="w-4 h-4" /></button>
@@ -175,9 +191,26 @@ export default function WebhooksPanel() {
                   {h.enabled ? 'Enabled' : 'Disabled'}
                   {h.lastStatus != null && ` · last delivery HTTP ${h.lastStatus}`}
                 </p>
+                {testResult[h.id] && (
+                  <p className={`text-[11px] mt-1 font-semibold ${testResult[h.id].ok ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {testResult[h.id].text}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => handleTest(h.id)} title="Send test" className="p-1.5 text-slate-400 hover:text-blue-600"><Send className="w-4 h-4" /></button>
+                <button
+                  onClick={() => handleTest(h.id)}
+                  disabled={testingId === h.id}
+                  title="Send a sample event to this URL"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60 ${
+                    h.lastStatus == null
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'border border-blue-300 text-blue-700 hover:bg-blue-50'
+                  }`}
+                >
+                  {testingId === h.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {testingId === h.id ? 'Sending…' : 'Send test'}
+                </button>
                 <button onClick={() => handleToggle(h)} className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2">{h.enabled ? 'Disable' : 'Enable'}</button>
                 <button onClick={() => handleDelete(h.id)} title="Delete" className="p-1.5 text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
               </div>
