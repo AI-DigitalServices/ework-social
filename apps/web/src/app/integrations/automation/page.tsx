@@ -105,7 +105,7 @@ const TEMPLATES: Template[] = [
         'Paste that address into eWork Social under Webhooks and press Send test.',
         'Back in Make, the webhook module should say it successfully determined the data structure. If it does not, press Run once and send the test again.',
         'Add Google Sheets, then Add a Row. Map the data fields: name, email, phone, company, source, message.',
-        'Add Slack, then Create a Message. Write something like: New lead from the website, with the name and email fields inserted.',
+        'Add Slack, then Create a Message. Pick the channel from the drop-down list, or type its exact name in lowercase with dashes instead of spaces. Invite the Make app to that channel first, otherwise Slack answers channel_not_found. Write something like: New lead from the website, with the name and email fields inserted. The Send test event only holds a sample message, so name and email stay empty until a real lead arrives.',
         'Switch the scenario on.',
       ],
       n8n: [
@@ -155,9 +155,10 @@ const TEMPLATES: Template[] = [
     steps: {
       make: [
         'Create a scenario with Webhooks, Custom webhook as the trigger. Copy the address into eWork Social and press Send test.',
-        'Add a filter between the modules: the data field to must equal ACTIVE.',
-        'Add the HTTP app, then Make a request. URL: ' + API_BASE + '/clients/ followed by the clientId field, then /tasks. Method POST.',
-        'Add two headers: Authorization with the value Bearer then your key, and Content-Type with the value application/json. Body type Raw, content type JSON, body: a JSON object with a title such as Send welcome pack.',
+        'Add a filter on the link between the two modules. The left value is the data field to from the webhook, the operator is Text operators: Equal to, and the right value is the plain text ACTIVE (capitals).',
+        'Add the HTTP app, then Make a request. The URL box holds only the address: ' + API_BASE + '/clients/ then the clientId field from the webhook, then /tasks. Never paste a curl command into it. Method POST.',
+        'Authentication type: No authentication. Open the advanced settings and add two headers: Authorization with the value Bearer then a space then your key, and Content-Type with the value application/json. If you prefer Make API key connection, set the placement to Header and the name to X-API-Key, never to Query string.',
+        'Body type Raw, content type JSON, request content: a JSON object with a title, for example a title of Send welcome pack. Any value you insert from the webhook data must sit inside quotes, otherwise Make reports Enter valid JSON in the request body.',
         'Copy the module to add more tasks, or change the URL ending to /notes and send a content field to add a note.',
         'Switch the scenario on.',
       ],
@@ -205,8 +206,8 @@ const TEMPLATES: Template[] = [
     steps: {
       make: [
         'Create a scenario. For the trigger choose your form app: Typeform, Watch Responses, or Google Forms, Watch Responses.',
-        'Add the HTTP app, then Make a request. URL: your form address from eWork Social. Method POST. Body type Raw, content type JSON.',
-        'Build a JSON body that maps the answers to these field names: name, email, phone, company, message. Other answers can be sent too and are saved in the contact note.',
+        'Add the HTTP app, then Make a request. The URL box holds only your form address from eWork Social. Method POST. Authentication type: No authentication, because the private address is the credential.',
+        'Body type: application/x-www-form-urlencoded. Add one field per answer with these names: name, email, phone, company, message, and map each from the form response. This avoids the JSON errors that line breaks and quotation marks in answers can cause. Other answers can be added too and are saved in the contact note. Leave the thank-you page empty on the form link when you use Make.',
         'Run once with a real test response. eWork Social replies with ok true and created true for a new person, or created false if that email already exists (a note is added instead).',
         'Switch the scenario on.',
       ],
@@ -285,6 +286,41 @@ function isGenuine(rawBody, signatureHeader, signingSecret) {
 //   X-EWork-Delivery   unique id, use it to ignore duplicates
 //   X-EWork-Timestamp  when it was sent
 //   X-EWork-Signature  sha256=<hmac>`;
+
+const TROUBLE = [
+  [
+    'Make says: Enter valid JSON in the request body',
+    'A value inserted from your form or webhook is outside quotation marks, or contains a line break. Use the form-urlencoded body type instead of Raw JSON (see the form template), or put each inserted value inside quotes.',
+  ],
+  [
+    'Slack says: channel_not_found',
+    'Pick the channel from the list instead of typing it. Channel names are lowercase with dashes, no spaces. Invite the Make app to the channel, and for a private channel use its channel ID.',
+  ],
+  [
+    'HTTP says: Not Found',
+    'The URL box must contain only the web address. If a curl command or a header was pasted into it, the address becomes invalid. Check the base address ends with /api/public/v1 and the path matches the reference above.',
+  ],
+  [
+    'HTTP says 401 Unauthorized',
+    'The key is missing, wrong or sent in the wrong place. Send it in a header: Authorization with the value Bearer then your key, or X-API-Key with the key alone. Never put it in the query string.',
+  ],
+  [
+    'HTTP says 403 Forbidden',
+    'The key is valid but not allowed to do that. Create a key with the right permission ticked, or check the workspace is on Agency Pro or above.',
+  ],
+  [
+    'HTTP says 409 for a new contact',
+    'A contact with that email already exists. This is expected. The reply includes the existing contact id so you can update it instead.',
+  ],
+  [
+    'My filter lets nothing through',
+    'Compare the webhook field to plain text. For example the data field to equals the text ACTIVE, in capitals. Comparing two data fields to each other will never match.',
+  ],
+  [
+    'Name and email are empty in my test',
+    'The Send test button sends a sample message with no contact details. Trigger a real event, such as adding a lead or moving a client, to see real data.',
+  ],
+];
 
 const FAQ = [
   [
@@ -485,6 +521,18 @@ export default function AutomationGuidePage() {
               with the signing secret shown once when you created the webhook.
             </p>
             <Code>{SIGNATURE}</Code>
+          </div>
+        </section>
+
+        <section id="troubleshooting" style={{ margin: '0 0 48px' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>Troubleshooting</h2>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {TROUBLE.map(([q, a]) => (
+              <details key={q} className="ig-d">
+                <summary>{q}</summary>
+                <p style={{ color: C.text, fontSize: 14, lineHeight: 1.7, marginTop: 10 }}>{a}</p>
+              </details>
+            ))}
           </div>
         </section>
 
