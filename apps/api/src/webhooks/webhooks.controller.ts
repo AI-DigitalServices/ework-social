@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { WebhooksService, WEBHOOK_EVENTS } from './webhooks.service';
+import { WEBHOOK_EVENT_CATALOG } from './webhook-events';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import { ManagerRoleGuard } from '../common/role.guards';
@@ -11,7 +12,7 @@ export class WebhooksController {
 
   @Get(':workspaceId/events')
   events() {
-    return { events: WEBHOOK_EVENTS };
+    return { events: WEBHOOK_EVENTS, catalog: WEBHOOK_EVENT_CATALOG };
   }
 
   @Get(':workspaceId')

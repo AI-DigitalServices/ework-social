@@ -20,6 +20,12 @@ const EVENTS = [
   { id: 'post.failed', label: 'Post failed' },
   { id: 'lead.created', label: 'New lead (CRM)' },
   { id: 'inbox.message', label: 'New inbox message' },
+  { id: 'client.updated', label: 'Client updated (CRM)' },
+  { id: 'client.stage_changed', label: 'Pipeline stage changed' },
+  { id: 'client.deleted', label: 'Client deleted' },
+  { id: 'note.added', label: 'Note added' },
+  { id: 'task.created', label: 'Task created' },
+  { id: 'task.completed', label: 'Task completed' },
 ];
 
 export default function WebhooksPanel() {
