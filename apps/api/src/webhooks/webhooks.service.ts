@@ -4,16 +4,15 @@ import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { getPlanLimits, getPlanDisplayName } from '../common/plan-limits';
+import { WEBHOOK_EVENTS } from './webhook-events';
+import { assertPublicHost, validateWebhookUrl } from './webhook-url.util';
 
-// The events a workspace can subscribe to. Keep this list in sync with the
-// dispatch() calls sprinkled across the app.
-export const WEBHOOK_EVENTS = [
-  'post.published',
-  'post.failed',
-  'lead.created',
-  'inbox.message',
-] as const;
+// The events a workspace can subscribe to live in webhook-events.ts. Re-exported
+// here so existing imports keep working.
+export { WEBHOOK_EVENTS };
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
+
+const MAX_HOOKS_PER_WORKSPACE = 10;
 
 @Injectable()
 export class WebhooksService {
@@ -49,16 +48,22 @@ export class WebhooksService {
         `Webhooks are available on the Growth plan and above. Your ${getPlanDisplayName(plan)} plan doesn't include them yet — upgrade to connect Zapier, Make, or n8n.`,
       );
     }
-    if (!url || !/^https:\/\//i.test(url)) {
-      throw new BadRequestException('A valid https:// URL is required.');
-    }
+    const check = validateWebhookUrl(url);
+    if (!check.ok) throw new BadRequestException(check.reason);
+
     const valid = (events || []).filter((e) => (WEBHOOK_EVENTS as readonly string[]).includes(e));
     if (valid.length === 0) {
       throw new BadRequestException(`Select at least one event: ${WEBHOOK_EVENTS.join(', ')}`);
     }
+
+    const existing = await this.prisma.workspaceWebhook.count({ where: { workspaceId } });
+    if (existing >= MAX_HOOKS_PER_WORKSPACE) {
+      throw new BadRequestException(`You can have up to ${MAX_HOOKS_PER_WORKSPACE} webhooks. Delete one to add another.`);
+    }
+
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
     const hook = await this.prisma.workspaceWebhook.create({
-      data: { workspaceId, url, events: valid, secret },
+      data: { workspaceId, url: check.url!.toString(), events: valid, secret },
     });
     return { id: hook.id, url: hook.url, events: hook.events, enabled: hook.enabled, secret };
   }
@@ -73,7 +78,16 @@ export class WebhooksService {
   async setEnabled(workspaceId: string, id: string, enabled: boolean) {
     const hook = await this.prisma.workspaceWebhook.findUnique({ where: { id } });
     if (!hook || hook.workspaceId !== workspaceId) throw new NotFoundException('Webhook not found.');
-    return this.prisma.workspaceWebhook.update({ where: { id }, data: { enabled } });
+    const updated = await this.prisma.workspaceWebhook.update({ where: { id }, data: { enabled } });
+    // Do not echo the signing secret back.
+    return {
+      id: updated.id,
+      url: updated.url,
+      events: updated.events,
+      enabled: updated.enabled,
+      lastStatus: updated.lastStatus,
+      lastFiredAt: updated.lastFiredAt,
+    };
   }
 
   /** Send a test ping to one webhook so the user can confirm wiring. */
@@ -104,18 +118,42 @@ export class WebhooksService {
     }
   }
 
-  private async deliver(hook: { id: string; url: string; secret: string }, event: string, payload: Record<string, any>): Promise<number> {
-    const body = JSON.stringify({ event, firedAt: new Date().toISOString(), data: payload });
+  /**
+   * Envelope: { id, event, workspaceId, createdAt, firedAt, data }.
+   * `id` is unique per delivery (use it to ignore duplicates); the signature is
+   * HMAC-SHA256 of the raw body. `firedAt` is kept for older receivers.
+   */
+  private async deliver(
+    hook: { id: string; url: string; secret: string; workspaceId?: string },
+    event: string,
+    payload: Record<string, any>,
+  ): Promise<number> {
+    const now = new Date().toISOString();
+    const deliveryId = `evt_${randomBytes(12).toString('hex')}`;
+    const body = JSON.stringify({
+      id: deliveryId,
+      event,
+      workspaceId: hook.workspaceId,
+      createdAt: now,
+      firedAt: now,
+      data: payload,
+    });
     const signature = createHmac('sha256', hook.secret).update(body).digest('hex');
     let status = 0;
     try {
+      await assertPublicHost(new URL(hook.url).hostname);
       const res = await axios.post(hook.url, body, {
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'eWorkSocial-Webhooks/1.0',
           'X-EWork-Event': event,
+          'X-EWork-Delivery': deliveryId,
+          'X-EWork-Timestamp': now,
           'X-EWork-Signature': `sha256=${signature}`,
         },
         timeout: 10000,
+        maxRedirects: 0,
+        maxContentLength: 1_000_000,
         validateStatus: () => true,
       });
       status = res.status;
