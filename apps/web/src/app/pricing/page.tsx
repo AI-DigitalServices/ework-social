@@ -52,6 +52,7 @@ const MATRIX: { group: string; rows: { label: string; vals: string[] }[] }[] = [
       { label: 'Auto-responder', vals: ['—', 'Comments', 'Comments + DMs', 'Full', 'Full'] },
       { label: 'Outbound webhooks (Zapier/Make/n8n)', vals: ['—', '—', '✓', '✓', '✓'] },
       { label: 'API access', vals: ['—', '—', '—', '✓', '✓'] },
+      { label: 'Website lead capture (forms to CRM)', vals: ['—', '—', '✓', '✓', '✓'] },
     ],
   },
   {
@@ -247,7 +248,7 @@ export default function PricingPage() {
       <footer style={{ padding: '40px 0', textAlign: 'center' }}>
         <div className="wrap">
           <p style={{ color: '#4A6080', fontSize: 13 }}>
-            Questions? <a href="mailto:hello@eworksocial.com" style={{ color: '#8BA0BC' }}>hello@eworksocial.com</a> · <Link href="/" style={{ color: '#8BA0BC' }}>Back to home</Link>
+            Questions? <a href="mailto:hello@eworksocial.com" style={{ color: '#8BA0BC' }}>hello@eworksocial.com</a> · <Link href="/integrations/automation" style={{ color: '#8BA0BC' }}>Automation guide</Link> · <Link href="/" style={{ color: '#8BA0BC' }}>Back to home</Link>
           </p>
         </div>
       </footer>
