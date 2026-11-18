@@ -29,6 +29,7 @@ import { AssetsModule } from './assets/assets.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { LeadsModule } from './leads/leads.module';
 import { MobileModule } from './mobile/mobile.module';
+import { PublicApiModule } from './public-api/public-api.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { MobileModule } from './mobile/mobile.module';
     WebhooksModule,
     LeadsModule,
     MobileModule,
+    PublicApiModule,
   ],
   providers: [
     {
