@@ -1,0 +1,128 @@
+{
+  "name": "eWork Social - deal moved to Active, create onboarding tasks",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ework-stage-changed",
+        "options": {}
+      },
+      "id": "ework-stage",
+      "name": "eWork event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ework-stage"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nif (body.event !== 'client.stage_changed' || d.to !== 'ACTIVE') return [];\nreturn [{ json: { clientId: d.clientId, name: d.name } }];"
+      },
+      "id": "only-active",
+      "name": "Only when moved to ACTIVE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.eworksocial.com/api/public/v1/clients/{{ $json.clientId }}/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer PASTE_YOUR_EWORK_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"title\": \"Send welcome pack to {{ $json.name }}\" }",
+        "options": {}
+      },
+      "id": "add-task",
+      "name": "Add welcome task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.eworksocial.com/api/public/v1/clients/{{ $json.clientId }}/notes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer PASTE_YOUR_EWORK_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"content\": \"Moved to Active. Onboarding started automatically.\" }",
+        "options": {}
+      },
+      "id": "add-note",
+      "name": "Add onboarding note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "eWork event": {
+      "main": [
+        [
+          {
+            "node": "Only when moved to ACTIVE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only when moved to ACTIVE": {
+      "main": [
+        [
+          {
+            "node": "Add welcome task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Add onboarding note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
