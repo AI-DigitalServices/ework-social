@@ -813,6 +813,15 @@ export class WebhookService {
           },
         });
 
+        this.webhooks.dispatch(workspaceId, 'lead.created', {
+          clientId: newClient.id,
+          name: newClient.name,
+          email: newClient.email,
+          company: newClient.company,
+          stage: newClient.stage,
+          source: newClient.source,
+        }).catch(() => {});
+
         // Log creation activity
         await this.prisma.activity.create({
           data: {
