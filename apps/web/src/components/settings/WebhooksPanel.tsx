@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { Webhook, Loader2, Plus, Trash2, AlertTriangle, CheckCircle2, Send, Copy } from 'lucide-react';
+import HelpTip from '@/components/settings/HelpTip';
 
 type Hook = {
   id: string;
@@ -114,6 +115,24 @@ export default function WebhooksPanel() {
         <div>
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Webhook className="w-5 h-5 text-blue-600" /> Webhooks
+            <HelpTip title="How do webhooks work?">
+              <p>
+                A webhook sends a message to a web address the moment something happens in eWork Social, so Make,
+                n8n, Zapier or your own code can react straight away.
+              </p>
+              <p>
+                To set one up: in your tool add a Custom webhook trigger and copy the address it gives you. Paste it
+                here, tick the events you want, save, then press Send test. The test should appear in your tool.
+              </p>
+              <p>
+                Events you can choose: post published, post failed, new lead, client updated, pipeline stage
+                changed, client deleted, note added, task created, task completed, and new inbox message.
+              </p>
+              <p>
+                Every message carries a unique id, a timestamp and a signature (X-EWork-Signature) made with your
+                signing secret, so you can check it really came from us. The secret is shown only once.
+              </p>
+            </HelpTip>
           </h3>
           <p className="text-sm text-slate-500 mt-1">
             Send events to Zapier, Make, n8n, or any HTTPS endpoint. Each delivery is signed

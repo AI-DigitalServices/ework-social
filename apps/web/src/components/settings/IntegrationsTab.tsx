@@ -5,6 +5,8 @@ import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { Plug, Loader2, CheckCircle2, AlertTriangle, Trash2, KeyRound } from 'lucide-react';
 import WebhooksPanel from '@/components/settings/WebhooksPanel';
+import ApiKeysPanel from '@/components/settings/ApiKeysPanel';
+import LeadCapturePanel from '@/components/settings/LeadCapturePanel';
 import AgentKeyPanel from '@/components/settings/AgentKeyPanel';
 
 type Status = {
@@ -161,6 +163,12 @@ export default function IntegrationsTab() {
 
       {/* Outbound webhooks (Zapier / Make / n8n) */}
       <WebhooksPanel />
+
+      {/* API keys: let Make / n8n / Zapier write back into eWork Social */}
+      <ApiKeysPanel />
+
+      {/* Website forms into the CRM */}
+      <LeadCapturePanel />
     </div>
   );
 }
