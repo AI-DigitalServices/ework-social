@@ -1,0 +1,88 @@
+{
+  "name": "eWork Social - Typeform response into the CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "typeform-to-ework",
+        "options": {}
+      },
+      "id": "typeform-in",
+      "name": "Typeform webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "typeform-in"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst fr = body.form_response || {};\nconst fields = (fr.definition && fr.definition.fields) || [];\nconst title = {};\nfields.forEach(f => { title[f.id] = (f.title || '').toLowerCase(); });\nconst lead = { message: '' };\n(fr.answers || []).forEach(a => {\n  const t = title[a.field && a.field.id] || '';\n  if (a.type === 'email') lead.email = a.email;\n  else if (a.type === 'phone_number') lead.phone = a.phone_number;\n  else if (a.type === 'text' || a.type === 'long_text') {\n    if (!lead.name && t.includes('name')) lead.name = a.text;\n    else if (!lead.company && t.includes('company')) lead.company = a.text;\n    else lead.message += (lead.message ? '\\n' : '') + (t ? t + ': ' : '') + a.text;\n  }\n});\nif (!lead.name && lead.email) lead.name = lead.email.split('@')[0];\nreturn [{ json: lead }];"
+      },
+      "id": "map-answers",
+      "name": "Map answers to lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "PASTE_YOUR_FORM_ADDRESS",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "post-lead",
+      "name": "Send to eWork Social",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Typeform webhook": {
+      "main": [
+        [
+          {
+            "node": "Map answers to lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map answers to lead": {
+      "main": [
+        [
+          {
+            "node": "Send to eWork Social",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

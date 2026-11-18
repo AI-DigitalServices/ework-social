@@ -1,0 +1,88 @@
+{
+  "name": "eWork Social - new lead to Google Sheet and Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ework-new-lead",
+        "options": {}
+      },
+      "id": "ework-new-lead",
+      "name": "eWork event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ework-new-lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nif (body.event !== 'lead.created') return [];\nconst d = body.data || {};\nreturn [{ json: {\n  name: d.name, email: d.email, phone: d.phone || '', company: d.company || '',\n  source: d.source, message: d.message || '', receivedAt: body.createdAt\n} }];"
+      },
+      "id": "pick-lead",
+      "name": "Pick lead fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "add-sheet",
+      "name": "ADD HERE - Google Sheets Append Row",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "add-slack",
+      "name": "ADD HERE - Slack Send Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "eWork event": {
+      "main": [
+        [
+          {
+            "node": "Pick lead fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick lead fields": {
+      "main": [
+        [
+          {
+            "node": "ADD HERE - Google Sheets Append Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ADD HERE - Slack Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
