@@ -67,6 +67,8 @@ model Workspace {
   memories     WorkspaceMemory[]
   assets       Asset[]
   webhooks     WorkspaceWebhook[]
+  apiKeys         ApiKey[]
+  leadCaptureLinks LeadCaptureLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -650,4 +652,42 @@ model MobileDevice {
   updatedAt  DateTime @updatedAt
 
   @@index([userId])
+}
+
+// Workspace API keys for the public REST API (/api/public/v1). Only a SHA-256
+// hash of the key is stored; the full key is shown once at creation.
+// Added via raw SQL (prisma/migrations/20261118120000_add_api_keys_lead_capture).
+model ApiKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  prefix      String
+  keyHash     String    @unique
+  scopes      String[]
+  createdById String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+}
+
+// Private URL a website form posts to; creates or annotates CRM contacts.
+model LeadCaptureLink {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name            String
+  token           String    @unique
+  enabled         Boolean   @default(true)
+  defaultTags     String[]
+  redirectUrl     String?
+  lastUsedAt      DateTime?
+  submissionCount Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([workspaceId])
 }
