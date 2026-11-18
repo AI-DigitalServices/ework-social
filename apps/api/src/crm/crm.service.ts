@@ -6,6 +6,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { PostHogService } from '../analytics/posthog.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import type { WebhookEvent } from '../webhooks/webhook-events';
 
 @Injectable()
 export class CrmService {
@@ -15,6 +16,15 @@ export class CrmService {
     private posthog: PostHogService,
     private webhooks: WebhooksService,
   ) {}
+
+  /** Fire-and-forget outbound webhook. Never blocks or breaks the CRM action. */
+  private emit(workspaceId: string, event: WebhookEvent, data: Record<string, any>) {
+    try {
+      this.webhooks.dispatch(workspaceId, event, data).catch(() => {});
+    } catch {
+      /* a webhook problem must never touch the CRM path */
+    }
+  }
 
   async getClients(
     workspaceId: string,
@@ -219,6 +229,22 @@ export class CrmService {
       });
     }
 
+    const changedFields = Object.keys(data);
+    if (changedFields.length > 0) {
+      this.emit(updated.workspaceId, 'client.updated', {
+        clientId: id,
+        name: updated.name,
+        email: updated.email,
+        company: updated.company,
+        stage: updated.stage,
+        dealValue: updated.dealValue,
+        tags: updated.tags,
+        assignedToId: updated.assignedToId,
+        changedFields,
+        previous: { dealValue: existing.dealValue, assignedToId: existing.assignedToId },
+      });
+    }
+
     return updated;
   }
 
@@ -242,6 +268,18 @@ export class CrmService {
       },
     });
 
+    if (existing.stage !== stage) {
+      this.emit(client.workspaceId, 'client.stage_changed', {
+        clientId: id,
+        name: client.name,
+        email: client.email,
+        company: client.company,
+        dealValue: client.dealValue,
+        from: existing.stage,
+        to: stage,
+      });
+    }
+
     try {
       await this.automation.triggerStageAutomation(client.workspaceId, id, stage);
     } catch (err) {
@@ -252,7 +290,18 @@ export class CrmService {
 
   async deleteClient(id: string, userId: string) {
     await this.assertClientAccess(id, userId);
-    return this.prisma.client.delete({ where: { id } });
+    const existing = await this.prisma.client.findUnique({ where: { id } });
+    const deleted = await this.prisma.client.delete({ where: { id } });
+    if (existing) {
+      this.emit(existing.workspaceId, 'client.deleted', {
+        clientId: id,
+        name: existing.name,
+        email: existing.email,
+        company: existing.company,
+        stage: existing.stage,
+      });
+    }
+    return deleted;
   }
 
   async addNote(dto: CreateNoteDto & { userId: string }) {
@@ -269,6 +318,19 @@ export class CrmService {
         description: `Note: "${dto.content.substring(0, 80)}${dto.content.length > 80 ? '…' : ''}"`,
       },
     });
+
+    const owner = await this.prisma.client.findUnique({
+      where: { id: dto.clientId },
+      select: { workspaceId: true, name: true },
+    });
+    if (owner) {
+      this.emit(owner.workspaceId, 'note.added', {
+        clientId: dto.clientId,
+        clientName: owner.name,
+        noteId: note.id,
+        content: note.content,
+      });
+    }
 
     return note;
   }
@@ -293,6 +355,20 @@ export class CrmService {
       },
     });
 
+    const owner = await this.prisma.client.findUnique({
+      where: { id: dto.clientId },
+      select: { workspaceId: true, name: true },
+    });
+    if (owner) {
+      this.emit(owner.workspaceId, 'task.created', {
+        clientId: dto.clientId,
+        clientName: owner.name,
+        taskId: task.id,
+        title: task.title,
+        dueDate: task.dueDate,
+      });
+    }
+
     return task;
   }
 
@@ -314,6 +390,21 @@ export class CrmService {
           description: `Task completed: "${task.title}"`,
         },
       });
+    }
+
+    if (updated.isDone) {
+      const owner = await this.prisma.client.findUnique({
+        where: { id: task.clientId },
+        select: { workspaceId: true, name: true },
+      });
+      if (owner) {
+        this.emit(owner.workspaceId, 'task.completed', {
+          clientId: task.clientId,
+          clientName: owner.name,
+          taskId: task.id,
+          title: task.title,
+        });
+      }
     }
 
     return updated;
