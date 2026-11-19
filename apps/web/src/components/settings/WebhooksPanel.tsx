@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 import api from '@/lib/api';
 import { Webhook, Loader2, Plus, Trash2, AlertTriangle, CheckCircle2, Send, Copy } from 'lucide-react';
 import HelpTip from '@/components/settings/HelpTip';
+import WebhookDeliveries from '@/components/settings/WebhookDeliveries';
 
 type Hook = {
   id: string;
@@ -42,6 +43,7 @@ export default function WebhooksPanel() {
   const [error, setError] = useState('');
   const [newSecret, setNewSecret] = useState('');
   const [testingId, setTestingId] = useState('');
+  const [logId, setLogId] = useState('');
   const [testResult, setTestResult] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   const load = useCallback(() => {
@@ -132,6 +134,11 @@ export default function WebhooksPanel() {
                 Every message carries a unique id, a timestamp and a signature (X-EWork-Signature) made with your
                 signing secret, so you can check it really came from us. The secret is shown only once.
               </p>
+              <p>
+                If your tool is down or answers with an error, we try again automatically: after 1 minute, 5
+                minutes, 30 minutes, 2 hours and 6 hours. Every retry keeps the same id, so you can ignore
+                duplicates. Press Deliveries on a webhook to see what was sent and to resend a failed one.
+              </p>
             </HelpTip>
           </h3>
           <p className="text-sm text-slate-500 mt-1">
@@ -198,7 +205,8 @@ export default function WebhooksPanel() {
       ) : (
         <div className="space-y-2">
           {hooks.map(h => (
-            <div key={h.id} className="rounded-lg border border-slate-200 p-3 flex items-start justify-between gap-3">
+            <div key={h.id} className="rounded-lg border border-slate-200 p-3">
+              <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-mono text-slate-700 truncate">{h.url}</p>
                 <div className="flex gap-1.5 mt-1 flex-wrap">
@@ -230,9 +238,17 @@ export default function WebhooksPanel() {
                   {testingId === h.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   {testingId === h.id ? 'Sending…' : 'Send test'}
                 </button>
+                <button
+                  onClick={() => setLogId(logId === h.id ? '' : h.id)}
+                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2"
+                >
+                  {logId === h.id ? 'Hide deliveries' : 'Deliveries'}
+                </button>
                 <button onClick={() => handleToggle(h)} className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2">{h.enabled ? 'Disable' : 'Enable'}</button>
                 <button onClick={() => handleDelete(h.id)} title="Delete" className="p-1.5 text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
               </div>
+              </div>
+              {logId === h.id && workspaceId && <WebhookDeliveries workspaceId={workspaceId} hookId={h.id} />}
             </div>
           ))}
         </div>

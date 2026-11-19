@@ -89,8 +89,32 @@ model WorkspaceWebhook {
   lastFiredAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deliveries  WebhookDelivery[]
 
   @@index([workspaceId])
+}
+
+// One row per event sent to one webhook: the delivery log and the retry queue.
+// state: SUCCESS | RETRYING | FAILED. Added via raw SQL (see migration folder).
+model WebhookDelivery {
+  id          String           @id
+  webhookId   String
+  webhook     WorkspaceWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  workspaceId String
+  event       String
+  body        String
+  status      Int              @default(0)
+  state       String
+  attempts    Int              @default(1)
+  error       String?
+  durationMs  Int              @default(0)
+  nextRetryAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([webhookId, createdAt])
+  @@index([state, nextRetryAt])
+  @@index([createdAt])
 }
 
 model WorkspaceMember {

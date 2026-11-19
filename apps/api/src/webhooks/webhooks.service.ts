@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { createHmac, randomBytes } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,9 +15,37 @@ export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
 const MAX_HOOKS_PER_WORKSPACE = 10;
 
+/** Wait before retry 1, 2, 3 ... (first attempt is immediate). 6 attempts in total. */
+export const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 3_600_000, 6 * 3_600_000];
+export const MAX_ATTEMPTS = RETRY_DELAYS_MS.length + 1;
+const CLAIM_LOCK_MS = 5 * 60_000;
+const RETENTION_DAYS = 14;
+
+export type DeliveryState = 'SUCCESS' | 'RETRYING' | 'FAILED';
+type AttemptResult = { status: number; error: string | null; durationMs: number; permanent?: boolean };
+
+/** Network error, timeout, 408, 429 and 5xx are worth retrying; other 4xx mean the receiver said no. */
+export function isRetryable(status: number): boolean {
+  return status === 0 || status === 408 || status === 429 || status >= 500;
+}
+
+export function decideNext(
+  attempts: number,
+  res: { status: number; permanent?: boolean },
+  canRetry: boolean,
+  now: number = Date.now(),
+): { state: DeliveryState; nextRetryAt: Date | null } {
+  if (res.status >= 200 && res.status < 300) return { state: 'SUCCESS', nextRetryAt: null };
+  if (!canRetry || res.permanent || !isRetryable(res.status) || attempts >= MAX_ATTEMPTS) {
+    return { state: 'FAILED', nextRetryAt: null };
+  }
+  return { state: 'RETRYING', nextRetryAt: new Date(now + RETRY_DELAYS_MS[attempts - 1]) };
+}
+
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
+  private processing = false;
 
   constructor(
     private prisma: PrismaService,
@@ -90,12 +119,67 @@ export class WebhooksService {
     };
   }
 
-  /** Send a test ping to one webhook so the user can confirm wiring. */
+  /** Send a test ping to one webhook so the user can confirm wiring. Tests are logged but never retried. */
   async sendTest(workspaceId: string, id: string) {
     const hook = await this.prisma.workspaceWebhook.findUnique({ where: { id } });
     if (!hook || hook.workspaceId !== workspaceId) throw new NotFoundException('Webhook not found.');
     const status = await this.deliver(hook, 'webhook.test', { message: 'This is a test event from eWork Social.' });
     return { delivered: status >= 200 && status < 300, status };
+  }
+
+  /** Recent deliveries for one webhook (newest first). The stored body is never returned. */
+  async listDeliveries(workspaceId: string, hookId: string, limit?: number | string) {
+    const hook = await this.prisma.workspaceWebhook.findUnique({ where: { id: hookId } });
+    if (!hook || hook.workspaceId !== workspaceId) throw new NotFoundException('Webhook not found.');
+    const take = Math.min(Math.max(Number(limit) || 25, 1), 100);
+    return this.prisma.webhookDelivery.findMany({
+      where: { webhookId: hookId, workspaceId },
+      orderBy: { createdAt: 'desc' },
+      take,
+      select: {
+        id: true,
+        event: true,
+        status: true,
+        state: true,
+        attempts: true,
+        error: true,
+        durationMs: true,
+        nextRetryAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /** Send a past delivery again, with the same id and body, so receivers can de-duplicate. */
+  async redeliver(workspaceId: string, hookId: string, deliveryId: string) {
+    const hook = await this.prisma.workspaceWebhook.findUnique({ where: { id: hookId } });
+    if (!hook || hook.workspaceId !== workspaceId) throw new NotFoundException('Webhook not found.');
+    const row = await this.prisma.webhookDelivery.findFirst({
+      where: { id: deliveryId, webhookId: hookId, workspaceId },
+    });
+    if (!row) throw new NotFoundException('Delivery not found.');
+    if (row.state === 'RETRYING') {
+      throw new BadRequestException('This delivery is still being retried automatically.');
+    }
+    const attempts = row.attempts + 1;
+    const res = await this.attempt(hook, row.id, row.event, row.body, attempts);
+    const ok = res.status >= 200 && res.status < 300;
+    await this.safe(() =>
+      this.prisma.webhookDelivery.update({
+        where: { id: row.id },
+        data: {
+          status: res.status,
+          state: ok ? 'SUCCESS' : 'FAILED',
+          attempts,
+          error: res.error,
+          durationMs: res.durationMs,
+          nextRetryAt: null,
+        },
+      }),
+    );
+    await this.touchHook(hook.id, res.status);
+    return { delivered: ok, status: res.status };
   }
 
   /**
@@ -118,10 +202,79 @@ export class WebhooksService {
     }
   }
 
+  // ── Retry worker ─────────────────────────────────────────────────────────
+
+  /** Every minute: resend deliveries whose retry time has come. DB-backed, so a restart loses nothing. */
+  @Cron('* * * * *')
+  async processRetries() {
+    if (this.processing) return;
+    this.processing = true;
+    try {
+      let due: any[];
+      try {
+        due = await this.prisma.webhookDelivery.findMany({
+          where: { state: 'RETRYING', nextRetryAt: { lte: new Date() } },
+          orderBy: { nextRetryAt: 'asc' },
+          take: 25,
+        });
+      } catch {
+        return; // table not migrated yet
+      }
+      await Promise.all(due.map((row) => this.retryOne(row).catch((e) => this.logger.warn(`Retry failed: ${e?.message}`))));
+    } finally {
+      this.processing = false;
+    }
+  }
+
+  /** Daily: drop delivery logs older than the retention window. */
+  @Cron('17 3 * * *')
+  async purgeOldDeliveries() {
+    const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000);
+    await this.safe(() => this.prisma.webhookDelivery.deleteMany({ where: { createdAt: { lt: cutoff } } }));
+  }
+
+  async retryOne(row: any) {
+    // Claim the row. A second instance (or an overlapping run) loses this race and skips it.
+    // If we crash mid-send the lock simply expires and the row comes due again.
+    const claim = await this.prisma.webhookDelivery.updateMany({
+      where: { id: row.id, state: 'RETRYING', nextRetryAt: row.nextRetryAt },
+      data: { nextRetryAt: new Date(Date.now() + CLAIM_LOCK_MS) },
+    });
+    if (claim.count !== 1) return;
+
+    const hook = await this.prisma.workspaceWebhook.findUnique({ where: { id: row.webhookId } });
+    if (!hook || !hook.enabled) {
+      await this.prisma.webhookDelivery.update({
+        where: { id: row.id },
+        data: { state: 'FAILED', nextRetryAt: null, error: 'Webhook was removed or disabled before this retry.' },
+      });
+      return;
+    }
+
+    const attempts = row.attempts + 1;
+    const res = await this.attempt(hook, row.id, row.event, row.body, attempts);
+    const next = decideNext(attempts, res, true);
+    await this.prisma.webhookDelivery.update({
+      where: { id: row.id },
+      data: {
+        status: res.status,
+        state: next.state,
+        attempts,
+        error: res.error,
+        durationMs: res.durationMs,
+        nextRetryAt: next.nextRetryAt,
+      },
+    });
+    await this.touchHook(hook.id, res.status);
+  }
+
+  // ── Delivery ─────────────────────────────────────────────────────────────
+
   /**
    * Envelope: { id, event, workspaceId, createdAt, firedAt, data }.
-   * `id` is unique per delivery (use it to ignore duplicates); the signature is
-   * HMAC-SHA256 of the raw body. `firedAt` is kept for older receivers.
+   * `id` is unique per delivery and stays the same across retries (use it to
+   * ignore duplicates); the signature is HMAC-SHA256 of the raw body.
+   * `firedAt` is kept for older receivers.
    */
   private async deliver(
     hook: { id: string; url: string; secret: string; workspaceId?: string },
@@ -138,17 +291,71 @@ export class WebhooksService {
       firedAt: now,
       data: payload,
     });
+
+    const res = await this.attempt(hook, deliveryId, event, body, 1);
+    const next = decideNext(1, res, event !== 'webhook.test');
+
+    // Log it. Never let logging break delivery (or the caller).
+    await this.safe(() =>
+      this.prisma.webhookDelivery.create({
+        data: {
+          id: deliveryId,
+          webhookId: hook.id,
+          workspaceId: hook.workspaceId as string,
+          event,
+          body,
+          status: res.status,
+          state: next.state,
+          attempts: 1,
+          error: res.error,
+          durationMs: res.durationMs,
+          nextRetryAt: next.nextRetryAt,
+        },
+      }),
+    );
+    await this.touchHook(hook.id, res.status);
+    return res.status;
+  }
+
+  /** One HTTP attempt. Never throws. */
+  private async attempt(
+    hook: { id: string; url: string; secret: string },
+    deliveryId: string,
+    event: string,
+    body: string,
+    attemptNo: number,
+  ): Promise<AttemptResult> {
+    const started = Date.now();
+    let createdAt = new Date().toISOString();
+    try {
+      createdAt = JSON.parse(body).createdAt || createdAt;
+    } catch {
+      /* keep fallback */
+    }
     const signature = createHmac('sha256', hook.secret).update(body).digest('hex');
-    let status = 0;
+
     try {
       await assertPublicHost(new URL(hook.url).hostname);
+    } catch (err: any) {
+      const message = String(err?.message || 'Blocked');
+      this.logger.warn(`Webhook ${hook.id} delivery failed: ${message}`);
+      return {
+        status: 0,
+        error: message.slice(0, 300),
+        durationMs: Date.now() - started,
+        permanent: /block/i.test(message),
+      };
+    }
+
+    try {
       const res = await axios.post(hook.url, body, {
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'eWorkSocial-Webhooks/1.0',
           'X-EWork-Event': event,
           'X-EWork-Delivery': deliveryId,
-          'X-EWork-Timestamp': now,
+          'X-EWork-Attempt': String(attemptNo),
+          'X-EWork-Timestamp': createdAt,
           'X-EWork-Signature': `sha256=${signature}`,
         },
         timeout: 10000,
@@ -156,19 +363,30 @@ export class WebhooksService {
         maxContentLength: 1_000_000,
         validateStatus: () => true,
       });
-      status = res.status;
+      const ok = res.status >= 200 && res.status < 300;
+      return {
+        status: res.status,
+        error: ok ? null : `Receiver answered HTTP ${res.status}`,
+        durationMs: Date.now() - started,
+      };
     } catch (err: any) {
-      this.logger.warn(`Webhook ${hook.id} delivery failed: ${err.message}`);
-      status = 0;
+      const message = String(err?.message || 'Request failed');
+      this.logger.warn(`Webhook ${hook.id} delivery failed: ${message}`);
+      return { status: 0, error: message.slice(0, 300), durationMs: Date.now() - started };
     }
+  }
+
+  private async touchHook(id: string, status: number) {
+    await this.safe(() =>
+      this.prisma.workspaceWebhook.update({ where: { id }, data: { lastStatus: status, lastFiredAt: new Date() } }),
+    );
+  }
+
+  private async safe<T>(fn: () => Promise<T>): Promise<T | undefined> {
     try {
-      await this.prisma.workspaceWebhook.update({
-        where: { id: hook.id },
-        data: { lastStatus: status, lastFiredAt: new Date() },
-      });
+      return await fn();
     } catch {
-      /* non-critical */
+      return undefined; // non-critical
     }
-    return status;
   }
 }
