@@ -9,4 +9,4 @@ dist
 build
 *.log
 .DS_Store
-migration.sql
+/migration.sql
