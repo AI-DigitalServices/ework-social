@@ -5,6 +5,7 @@ import { SignUploadDto } from './dto/sign-upload.dto';
 import { MediaUploadService } from './media-upload.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { WriterRoleGuard } from '../common/role.guards';
 
 /**
  * Creative Hub (AI OS v2, section 13.1). File bytes never pass through this
@@ -23,17 +24,20 @@ export class AssetsController {
   // Signed, deduplicated upload: returns the URL of an identical stored file,
   // or a one-time token the client uses to upload straight to the bucket.
   @Post(':workspaceId/upload-url')
+  @UseGuards(WriterRoleGuard)
   uploadUrl(@Param('workspaceId') workspaceId: string, @Body() dto: SignUploadDto) {
     return this.mediaUpload.createUpload(workspaceId, dto);
   }
 
   @Post(':workspaceId')
+  @UseGuards(WriterRoleGuard)
   record(@Param('workspaceId') workspaceId: string, @Body() dto: RecordAssetDto) {
     return this.assetsService.recordUpload(workspaceId, dto);
   }
 
   // AI image generation → returns base64 for the frontend to store in the bucket.
   @Post(':workspaceId/generate')
+  @UseGuards(WriterRoleGuard)
   generate(
     @Param('workspaceId') workspaceId: string,
     @Body() body: { prompt: string; size?: string; provider?: string },
@@ -58,6 +62,7 @@ export class AssetsController {
   }
 
   @Delete(':workspaceId/:id')
+  @UseGuards(WriterRoleGuard)
   remove(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
     return this.assetsService.remove(workspaceId, id);
   }

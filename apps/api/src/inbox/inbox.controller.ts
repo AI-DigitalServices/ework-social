@@ -3,6 +3,7 @@ import { InboxService } from './inbox.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { WriterRoleGuard } from '../common/role.guards';
 
 @Controller('inbox')
 @UseGuards(JwtGuard, WorkspaceMemberGuard)
@@ -57,6 +58,7 @@ export class InboxController {
   }
 
   @Patch(':id/resolve')
+  @UseGuards(WriterRoleGuard)
   markResolved(
     @Param('id') id: string,
     @Query('workspaceId') workspaceId: string,
@@ -68,6 +70,7 @@ export class InboxController {
   }
 
   @Patch(':id/tags')
+  @UseGuards(WriterRoleGuard)
   async tagMessage(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; tags: string[] },
@@ -78,6 +81,7 @@ export class InboxController {
   }
 
   @Patch(':id/crm-link')
+  @UseGuards(WriterRoleGuard)
   async linkToCrm(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; clientId: string | null },
@@ -88,16 +92,19 @@ export class InboxController {
   }
 
   @Post(':id/create-crm-contact')
+  @UseGuards(WriterRoleGuard)
   async createCrmContact(
     @Param('id') id: string,
     @Body() body: { workspaceId: string },
   ) {
     // 🔒 Starter+ required (same gate as CRM link)
     await this.planGuard.checkInboxCrmLinkAccess(body.workspaceId);
+    await this.planGuard.checkClientLimit(body.workspaceId);
     return this.inboxService.createCrmContactFromMessage(id, body.workspaceId);
   }
 
   @Patch(':id/assign')
+  @UseGuards(WriterRoleGuard)
   async assignMessage(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; userId: string | null },
@@ -108,15 +115,18 @@ export class InboxController {
   }
 
   @Post(':id/reply')
-  reply(
+  @UseGuards(WriterRoleGuard)
+  async reply(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; content: string },
     @Request() req: any,
   ) {
+    await this.planGuard.assertCanWrite(body.workspaceId);
     return this.inboxService.reply(id, body.workspaceId, body.content, req.user.sub);
   }
 
   @Patch(':id/hide')
+  @UseGuards(WriterRoleGuard)
   hideComment(
     @Param('id') id: string,
     @Body() body: { workspaceId: string; hidden: boolean },
@@ -125,6 +135,7 @@ export class InboxController {
   }
 
   @Delete(':id')
+  @UseGuards(WriterRoleGuard)
   deleteComment(
     @Param('id') id: string,
     @Query('workspaceId') workspaceId: string,
@@ -138,13 +149,16 @@ export class InboxController {
   }
 
   @Post('post-comment')
+  @UseGuards(WriterRoleGuard)
   async postComment(@Body() body: { workspaceId: string; mediaId: string; content: string }) {
+    await this.planGuard.assertCanWrite(body.workspaceId);
     if (!body.mediaId?.trim()) throw new BadRequestException('mediaId is required');
     if (!body.content?.trim()) throw new BadRequestException('Comment text is required');
     return this.inboxService.postComment(body.workspaceId, body.mediaId.trim(), body.content.trim());
   }
 
   @Post(':id/suggest')
+  @UseGuards(WriterRoleGuard)
   async suggestReply(
     @Param('id') id: string,
     @Query('workspaceId') workspaceId: string,
