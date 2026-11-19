@@ -7,6 +7,7 @@ import { TwitterPollerService } from './twitter-poller.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { ManagerRoleGuard, WriterRoleGuard } from '../common/role.guards';
 import { PlanGuardService } from '../common/plan-guard.service';
 
 @Controller('twitter')
@@ -43,7 +44,7 @@ export class TwitterController {
    * then redirects back to /twitter/callback.
    */
   @Get('auth-url')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   getAuthUrl(
     @Query('workspaceId') workspaceId: string,
     @Request() req: any,
@@ -91,7 +92,7 @@ export class TwitterController {
    * The new OAuth flow via /auth-url + /callback supersedes this.
    */
   @Post('connect')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async connect(
     @Body() body: { workspaceId: string; handle: string },
     @Request() req: any,
@@ -148,7 +149,7 @@ export class TwitterController {
    * Body: { workspaceId, accountId }
    */
   @Delete('disconnect')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, ManagerRoleGuard)
   async disconnect(@Body() body: { workspaceId: string; accountId: string }) {
     await this.prisma.socialAccount.updateMany({
       where: {
@@ -166,7 +167,7 @@ export class TwitterController {
    * Manually trigger a poll for a workspace (for testing / on-demand refresh).
    */
   @Post('poll')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, WriterRoleGuard)
   async manualPoll(@Body() body: { workspaceId: string }) {
     await this.poller.triggerPollForWorkspace(body.workspaceId);
     return { success: true, message: 'Poll triggered' };
