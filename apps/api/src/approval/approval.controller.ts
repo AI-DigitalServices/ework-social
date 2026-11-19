@@ -4,6 +4,7 @@ import {
 import { ApprovalService } from './approval.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { WriterRoleGuard } from '../common/role.guards';
 
 @Controller('approvals')
 export class ApprovalController {
@@ -11,7 +12,7 @@ export class ApprovalController {
 
   // Agency: send post for approval
   @Post('send')
-  @UseGuards(JwtGuard, WorkspaceMemberGuard)
+  @UseGuards(JwtGuard, WorkspaceMemberGuard, WriterRoleGuard)
   sendForApproval(@Body() body: {
     postId: string;
     workspaceId: string;
