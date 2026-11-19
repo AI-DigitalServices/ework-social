@@ -1,0 +1,42 @@
+import { IsDateString, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+export class SuggestIdeaDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(600)
+  idea: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  platform?: string;
+}
+
+export class SaveIdeaDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(600)
+  idea: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(3000)
+  content: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  platform?: string;
+}
+
+export class IdeaToPostDto {
+  @IsString()
+  socialAccountId: string;
+
+  @IsIn(['DRAFT', 'SCHEDULED'])
+  status: 'DRAFT' | 'SCHEDULED';
+
+  @IsOptional()
+  @IsDateString()
+  scheduledAt?: string;
+}

@@ -1,3 +1,5 @@
+import { buildIdeaPrompt, parseIdeaOptions } from './idea-prompt';
+import type { IdeaBusiness } from './idea-prompt';
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -76,6 +78,36 @@ Return ONLY the 3 captions, nothing else.`;
       return { captions };
     } catch (err: any) {
       throw new BadRequestException('AI caption generation failed: ' + err.message);
+    }
+  }
+
+  /**
+   * Mobile "Give us an idea": three post options from one sentence, written in the business's saved voice.
+   * Metered as IDEA_POST (generous on the free trial, then by plan).
+   */
+  async generateFromIdea(
+    workspaceId: string,
+    input: { idea: string; platform: string; business: IdeaBusiness },
+  ): Promise<{ options: string[] }> {
+    await this.aiUsage.checkAndIncrement(workspaceId, 'IDEA_POST');
+
+    const prompt = buildIdeaPrompt(input);
+
+    try {
+      const message = await this.anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const text = message.content[0].type === 'text' ? message.content[0].text : '';
+      const options = parseIdeaOptions(text, input.platform);
+      if (options.length === 0) {
+        throw new BadRequestException('We could not write that one. Try describing your idea a little differently.');
+      }
+      return { options };
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException('Writing your post failed. Please try again.');
     }
   }
 
