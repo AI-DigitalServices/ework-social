@@ -68,7 +68,8 @@ export default function CreateSheet({ visible, onClose }: { visible: boolean; on
 
   const go = (path: string) => {
     onClose();
-    router.push(path as Href);
+    // Let the sheet finish closing first; a route pushed mid-dismissal is dropped by the native modal.
+    setTimeout(() => router.push(path as Href), 350);
   };
 
   return (
