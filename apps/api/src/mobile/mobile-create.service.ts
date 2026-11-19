@@ -88,6 +88,20 @@ export class MobileCreateService {
     return { items: rows.map((r: any) => this.shape(r)) };
   }
 
+  /** Change the text of an idea that is still on the shelf. */
+  async updateIdea(workspaceId: string, id: string, content: string) {
+    const text = String(content ?? '').trim();
+    if (!text) throw new BadRequestException('There is no text to save.');
+    const r = await this.prisma.postIdea.updateMany({
+      where: { id, workspaceId, usedPostId: null },
+      data: { content: text },
+    });
+    if (r.count === 0) throw new NotFoundException('That idea no longer exists.');
+    const row = await this.prisma.postIdea.findFirst({ where: { id, workspaceId } });
+    if (!row) throw new NotFoundException('That idea no longer exists.');
+    return this.shape(row);
+  }
+
   async removeIdea(workspaceId: string, id: string) {
     const r = await this.prisma.postIdea.deleteMany({ where: { id, workspaceId, usedPostId: null } });
     if (r.count === 0) throw new NotFoundException('That idea no longer exists.');

@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import { WriterRoleGuard } from '../common/role.guards';
 import { MobileCreateService } from './mobile-create.service';
-import { IdeaToPostDto, SaveIdeaDto, SuggestIdeaDto } from './dto/create.dto';
+import { IdeaToPostDto, SaveIdeaDto, SuggestIdeaDto, UpdateIdeaDto } from './dto/create.dto';
 
 /**
  * "Give us an idea" for the mobile app, served at /api/mobile/v1.
@@ -30,6 +30,11 @@ export class MobileCreateController {
   @Post('ideas')
   save(@Param('workspaceId') workspaceId: string, @Req() req: any, @Body() dto: SaveIdeaDto) {
     return this.create.saveIdea(workspaceId, req.user.sub, dto);
+  }
+
+  @Patch('ideas/:id')
+  update(@Param('workspaceId') workspaceId: string, @Param('id') id: string, @Body() dto: UpdateIdeaDto) {
+    return this.create.updateIdea(workspaceId, id, dto.content);
   }
 
   @Delete('ideas/:id')

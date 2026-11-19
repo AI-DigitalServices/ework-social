@@ -181,6 +181,17 @@ export default function Home() {
           </FadeIn>
         ) : null}
 
+        {!onb?.shouldOnboard && canSetUp(workspace?.role) ? (
+          <FadeIn delay={120}>
+            <Card tone="accent" onPress={() => router.push('/idea' as Href)}>
+              <Pill label="New" color={colors.accent} soft={colors.accentSoft} />
+              <Text style={[styles.cardTitle, { marginTop: 10, fontSize: 18 }]}>Give us an idea</Text>
+              <Text style={styles.muted}>One sentence, and we write three posts in your voice.</Text>
+              <Text style={[styles.cta, { color: colors.accent }]}>Write a post  →</Text>
+            </Card>
+          </FadeIn>
+        ) : null}
+
         {loading ? (
           <ActivityIndicator color={colors.primaryBright} style={{ marginTop: 48 }} />
         ) : error ? (
