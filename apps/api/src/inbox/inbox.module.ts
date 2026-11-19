@@ -6,9 +6,10 @@ import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
 import { PostHogModule } from '../analytics/posthog.module';
 import { CommonModule } from '../common/common.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AiModule, CommonModule, PostHogModule],
+  imports: [PrismaModule, AuthModule, AiModule, CommonModule, PostHogModule, WebhooksModule],
   controllers: [InboxController],
   providers: [InboxService],
   exports: [InboxService],
