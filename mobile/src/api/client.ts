@@ -37,7 +37,7 @@ async function raw(path: string, method: string, body: unknown, token: string | 
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timer = setTimeout(() => controller.abort(), 45000);
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {

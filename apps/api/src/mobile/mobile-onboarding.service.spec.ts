@@ -26,6 +26,8 @@ const modelAnswer = (o: any) => ({ content: [{ type: 'text', text: typeof o === 
 function build(existing: any = null) {
   const prisma: any = {
     workspace: { findUnique: jest.fn().mockResolvedValue({ id: 'w1', name: 'Ada Bakery' }), update: jest.fn().mockResolvedValue({}) },
+    socialAccount: { count: jest.fn().mockResolvedValue(0) },
+    post: { count: jest.fn().mockResolvedValue(0) },
     workspaceProfile: {
       findUnique: jest.fn().mockResolvedValue(existing),
       upsert: jest.fn().mockImplementation(async ({ update, create }: any) => ({ ...(existing ? update : create) })),
@@ -197,5 +199,26 @@ describe('getState', () => {
       expect(c.contentTypes.length).toBeGreaterThan(0);
       expect(Object.keys(c.toneSamples).sort()).toEqual(['BOLD', 'FRIENDLY', 'PLAYFUL', 'PROFESSIONAL']);
     }
+  });
+});
+
+describe('getState shouldOnboard', () => {
+  it('is true for a brand-new workspace with nothing connected or posted', async () => {
+    const { svc } = build();
+    expect((await svc.getState('w1')).shouldOnboard).toBe(true);
+  });
+
+  it('is false for an existing customer who already has an account or posts', async () => {
+    const a = build();
+    a.prisma.socialAccount.count.mockResolvedValue(2);
+    expect((await a.svc.getState('w1')).shouldOnboard).toBe(false);
+    const b = build();
+    b.prisma.post.count.mockResolvedValue(5);
+    expect((await b.svc.getState('w1')).shouldOnboard).toBe(false);
+  });
+
+  it('is false once the preferences step is done or onboarding is completed', async () => {
+    expect((await build({ onboardingStep: 2 }).svc.getState('w1')).shouldOnboard).toBe(false);
+    expect((await build({ onboardingStep: 1, onboardingCompletedAt: new Date() }).svc.getState('w1')).shouldOnboard).toBe(false);
   });
 });

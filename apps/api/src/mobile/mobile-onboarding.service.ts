@@ -104,15 +104,22 @@ export class MobileOnboardingService {
   }
 
   async getState(workspaceId: string) {
-    const [workspace, profile] = await Promise.all([
+    const [workspace, profile, accounts, posts] = await Promise.all([
       this.prisma.workspace.findUnique({ where: { id: workspaceId }, select: { id: true, name: true } }),
       this.prisma.workspaceProfile.findUnique({ where: { workspaceId } }),
+      this.prisma.socialAccount.count({ where: { workspaceId, isActive: true } }),
+      this.prisma.post.count({ where: { workspaceId } }),
     ]);
+    const step = profile?.onboardingStep ?? 0;
+    const completed = !!profile?.onboardingCompletedAt;
     return {
       workspaceId,
       businessName: workspace?.name ?? null,
-      step: profile?.onboardingStep ?? 0,
-      completed: !!profile?.onboardingCompletedAt,
+      step,
+      completed,
+      // Only genuinely new businesses are guided through setup: nothing connected, nothing posted yet.
+      // Existing customers are never pushed into it.
+      shouldOnboard: !completed && step < 2 && accounts === 0 && posts === 0,
       profile: profile ? this.shape(profile) : null,
     };
   }
