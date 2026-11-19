@@ -84,7 +84,7 @@ Rules:
 - Make the three posts clearly different: for example one short and punchy, one that tells a small story, one that asks a question.
 - Use at most 2 emojis per post and end with a simple call to action.
 - Instagram and TikTok: add 3 to 5 relevant hashtags at the end. LinkedIn: at most 2 hashtags. Other platforms: no hashtags.
-- Do not invent prices, discounts, dates, phone numbers, addresses or claims that are not in the idea or the business details. If something is missing, keep it general.
+- Do not invent prices, discounts, dates, phone numbers, addresses or claims that are not in the idea or the business details. If something is missing, keep it general. Do not add promises or guarantees the owner did not state, such as "no hidden fees" or "best in town".
 - Output only the three posts, separated by a line that contains only ---. No numbering, labels or commentary.`;
 }
 

@@ -74,7 +74,6 @@ export default function More() {
           <SectionTitle>Coming soon</SectionTitle>
           <Card>
             <Soon label="Inbox" text="Reply to messages and comments." />
-            <Soon label="Create a post" text="Give us a photo or one sentence." />
             <Soon label="Connect accounts" text="Link your social accounts." last />
           </Card>
         </FadeIn>

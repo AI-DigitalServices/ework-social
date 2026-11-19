@@ -155,3 +155,23 @@ describe('ideaToPost', () => {
     expect(prisma.postIdea.updateMany).toHaveBeenLastCalledWith({ where: { id: 'i1', usedPostId: 'pending' }, data: { usedPostId: null } });
   });
 });
+
+describe('updateIdea', () => {
+  it('changes the text of an idea on the shelf, only inside the workspace and only while unused', async () => {
+    const { svc, prisma } = build();
+    prisma.postIdea.findFirst.mockResolvedValue({ id: 'i1', idea: 'x', content: 'New text', platform: null, createdAt: new Date() });
+    const r = await svc.updateIdea('w1', 'i1', '  New text  ');
+    expect(r.content).toBe('New text');
+    expect(prisma.postIdea.updateMany.mock.calls[0][0]).toEqual({
+      where: { id: 'i1', workspaceId: 'w1', usedPostId: null },
+      data: { content: 'New text' },
+    });
+  });
+
+  it('refuses empty text and answers 404 when nothing matched', async () => {
+    const { svc, prisma } = build();
+    await expect(svc.updateIdea('w1', 'i1', '   ')).rejects.toBeInstanceOf(BadRequestException);
+    prisma.postIdea.updateMany.mockResolvedValue({ count: 0 });
+    await expect(svc.updateIdea('w1', 'zzz', 'text')).rejects.toBeInstanceOf(NotFoundException);
+  });
+});

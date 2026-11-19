@@ -40,3 +40,10 @@ export class IdeaToPostDto {
   @IsDateString()
   scheduledAt?: string;
 }
+
+export class UpdateIdeaDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(3000)
+  content: string;
+}
