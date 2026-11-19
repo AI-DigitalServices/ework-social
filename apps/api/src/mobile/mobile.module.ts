@@ -11,13 +11,15 @@ import { MobileNotificationsService } from './mobile-notifications.service';
 import { MobilePostsService } from './mobile-posts.service';
 import { MobileOnboardingController } from './mobile-onboarding.controller';
 import { MobileOnboardingService } from './mobile-onboarding.service';
+import { MobileCreateController } from './mobile-create.controller';
+import { MobileCreateService } from './mobile-create.service';
 
 // PrismaService, PlanGuardService and WorkspaceMemberGuard come from the global
 // Prisma/Common modules. AuthModule supplies AuthService, JwtGuard and JwtModule;
 // SchedulerModule exports SchedulerService, used to publish with the same code as the web.
 @Module({
   imports: [AuthModule, SchedulerModule, AiModule],
-  controllers: [MobileController, MobileOnboardingController],
+  controllers: [MobileController, MobileOnboardingController, MobileCreateController],
   providers: [
     MobileAuthService,
     MobileConfigService,
@@ -26,6 +28,7 @@ import { MobileOnboardingService } from './mobile-onboarding.service';
     MobileNotificationsService,
     MobilePostsService,
     MobileOnboardingService,
+    MobileCreateService,
   ],
 })
 export class MobileModule {}
