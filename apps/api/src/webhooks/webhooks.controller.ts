@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { WebhooksService, WEBHOOK_EVENTS } from './webhooks.service';
 import { WEBHOOK_EVENT_CATALOG } from './webhook-events';
 import { JwtGuard } from '../auth/jwt.guard';
@@ -44,6 +44,26 @@ export class WebhooksController {
   @UseGuards(ManagerRoleGuard)
   test(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
     return this.webhooks.sendTest(workspaceId, id);
+  }
+
+  @Get(':workspaceId/:id/deliveries')
+  @UseGuards(ManagerRoleGuard)
+  deliveries(
+    @Param('workspaceId') workspaceId: string,
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.webhooks.listDeliveries(workspaceId, id, limit);
+  }
+
+  @Post(':workspaceId/:id/deliveries/:deliveryId/resend')
+  @UseGuards(ManagerRoleGuard)
+  resend(
+    @Param('workspaceId') workspaceId: string,
+    @Param('id') id: string,
+    @Param('deliveryId') deliveryId: string,
+  ) {
+    return this.webhooks.redeliver(workspaceId, id, deliveryId);
   }
 
   @Delete(':workspaceId/:id')
