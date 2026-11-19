@@ -5,6 +5,7 @@ import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
 import { AiUsageService } from '../ai/ai-usage.service';
 import { PostHogService } from '../analytics/posthog.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 const INBOX_TAGS = ['Lead', 'VIP Client', 'Support', 'Opportunity', 'Spam', 'Follow Up'];
 
@@ -17,6 +18,7 @@ export class InboxService {
     private prisma: PrismaService,
     private aiUsage: AiUsageService,
     private posthog: PostHogService,
+    private webhooks: WebhooksService,
   ) {}
 
   async getMessages(workspaceId: string, filters: {
@@ -207,6 +209,18 @@ export class InboxService {
         metadata: { inboxMessageId: id, platform: msg.platform },
       },
     });
+
+    // Tell Make / n8n / Zapier. Fire-and-forget: a slow endpoint must never block the inbox.
+    this.webhooks.dispatch(workspaceId, 'lead.created', {
+      clientId: client.id,
+      name: client.name,
+      email: client.email,
+      company: client.company,
+      stage: client.stage,
+      source: client.source,
+      platform: msg.platform,
+      inboxMessageId: id,
+    }).catch(() => {});
 
     return client;
   }
