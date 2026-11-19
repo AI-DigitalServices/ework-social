@@ -53,7 +53,7 @@ function greeting(): string {
 }
 
 export default function Home() {
-  const { config, workspace, setActiveWorkspace, signOut } = useAuth();
+  const { config, workspace, setActiveWorkspace } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,7 +119,7 @@ export default function Home() {
     : [];
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
       <View pointerEvents="none" style={styles.glow} />
       <ScrollView
         contentContainerStyle={styles.content}
@@ -263,9 +263,6 @@ export default function Home() {
           </>
         )}
 
-        <View style={{ marginTop: space.lg }}>
-          <Button title="Log out" variant="link" onPress={() => void signOut()} />
-        </View>
       </ScrollView>
 
       <Modal visible={picker} transparent animationType="fade" onRequestClose={() => setPicker(false)}>
