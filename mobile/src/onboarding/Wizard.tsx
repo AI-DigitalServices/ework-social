@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { Body, Button, Card, ErrorText, Field, Screen, Title } from '../ui';
-import { colors } from '../theme';
-import { Chip, Choice, Progress } from './components';
+import { Body, Button, Card, ErrorText, FadeIn, Field, Screen, Title } from '../ui';
+import { colors, platformColors, radius, space } from '../theme';
+import { Chip, Choice } from './components';
+import { Celebration, Momentum, NextStep, PlatformCard, StepHero, VoiceCard } from './delight';
 import { markSkipped } from './session';
 import { platformLabel } from './api';
 import type { AnalyzeResponse, OnboardingState, Options } from './api';
@@ -142,6 +143,7 @@ export default function Wizard() {
   };
 
   const category = options?.categories.find((c) => c.id === form.category) ?? null;
+  const shortName = form.businessName.trim() || 'your business';
 
   const toggle = (key: 'platforms' | 'contentTypes', value: string) =>
     setForm((f) => ({
@@ -255,10 +257,10 @@ export default function Wizard() {
 
   const header = (
     <View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         {step !== 'name' && step !== 'done' ? (
           <Pressable onPress={back} hitSlop={12}>
-            <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>Back</Text>
+            <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>‹ Back</Text>
           </Pressable>
         ) : (
           <View />
@@ -269,7 +271,7 @@ export default function Wizard() {
           </Pressable>
         ) : null}
       </View>
-      <Progress step={PROGRESS[step]} total={9} />
+      <Momentum step={PROGRESS[step]} total={9} />
     </View>
   );
 
@@ -284,8 +286,12 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>Let us set up your social media</Title>
-        <Body>A few quick questions so everything we write sounds like you. It takes about 2 minutes.</Body>
+        <StepHero
+          icon="✦"
+          kicker="Welcome"
+          title="Let us set up your social media"
+          sub="About 2 minutes, and everything we write will sound like you."
+        />
         <Field
           label="What is your business called?"
           value={form.businessName}
@@ -302,8 +308,12 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>What kind of business is it?</Title>
-        <Body>Pick the closest one. We use it to suggest the right things to post.</Body>
+        <StepHero
+          icon="◈"
+          kicker="Your business"
+          title={`Nice to meet you, ${shortName}`}
+          sub="What kind of business is it? We use this to suggest the right things to post."
+        />
         {options.categories.map((c) => (
           <Choice key={c.id} label={c.label} selected={form.category === c.id} onPress={() => set('category', c.id)} />
         ))}
@@ -316,8 +326,12 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>Do you have a website?</Title>
-        <Body>We can read it and fill in the rest for you, so you do not have to type it all. You will check it before anything is saved.</Body>
+        <StepHero
+          icon="◎"
+          kicker="Save time"
+          title="Do you have a website?"
+          sub="We will read it and fill in the rest, so you do not have to type it all. You check everything before it is saved."
+        />
         <Field
           label="Website (optional)"
           value={form.website}
@@ -348,14 +362,22 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>Here is what we found</Title>
-        <Body>Does this sound like your business?</Body>
-        <Card>
-          <Text style={{ color: colors.text, fontSize: 16, lineHeight: 23 }}>{form.description || 'No description found.'}</Text>
-        </Card>
+        <StepHero
+          icon="✓"
+          kicker="We did the typing"
+          title="Here is what we found"
+          sub="Does this sound like your business?"
+          tint={colors.ok}
+          soft={colors.okSoft}
+        />
+        <FadeIn>
+          <Card tone="primary">
+            <Text style={{ color: colors.text, fontSize: 16, lineHeight: 24 }}>{form.description || 'No description found.'}</Text>
+          </Card>
+        </FadeIn>
         {form.offerings.length > 0 ? (
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 }}>What you offer</Text>
+            <Text style={styles.cap}>What you offer</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {form.offerings.map((o) => (
                 <Chip key={o} label={o} />
@@ -365,7 +387,7 @@ export default function Wizard() {
         ) : null}
         {form.audience ? (
           <Card>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Your customers</Text>
+            <Text style={styles.cap}>Your customers</Text>
             <Text style={{ color: colors.text, fontSize: 15, lineHeight: 22 }}>{form.audience}</Text>
           </Card>
         ) : null}
@@ -380,8 +402,7 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>What does your business do?</Title>
-        <Body>One or two sentences is plenty.</Body>
+        <StepHero icon="✎" kicker="In your words" title="What does your business do?" sub="One or two sentences is plenty." />
         <Field
           label="About your business"
           value={form.description}
@@ -401,8 +422,7 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>Who are your customers?</Title>
-        <Body>Tap an example to start, or write your own.</Body>
+        <StepHero icon="☺" kicker="Your people" title="Who are your customers?" sub="Tap an example to start, or write your own." />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
           {examples.map((e) => (
             <Chip key={e} label={e} selected={form.audience === e} onPress={() => set('audience', e)} />
@@ -426,8 +446,14 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>How often do you want to post?</Title>
-        <Body>You can change this any time.</Body>
+        <StepHero
+          icon="◷"
+          kicker="Your rhythm"
+          title="How often do you want to post?"
+          sub="Steady beats busy. You can change this any time."
+          tint={colors.accent}
+          soft={colors.accentSoft}
+        />
         {options.frequencies.map((f) => (
           <Choice key={f.id} label={f.label} hint={f.hint} selected={form.frequency === f.id} onPress={() => set('frequency', f.id)} />
         ))}
@@ -440,14 +466,16 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>Where do you want to post?</Title>
-        <Body>Pick all that you use. You will connect them in a moment, or later.</Body>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
-          {options.platforms.map((p) => (
-            <Chip key={p} label={platformLabel(p)} selected={form.platforms.includes(p)} onPress={() => toggle('platforms', p)} />
-          ))}
-        </View>
-        {nextButton('Continue', () => go('voice'))}
+        <StepHero
+          icon="◉"
+          kicker="Your channels"
+          title="Where do you want to post?"
+          sub="Pick all that you use. You will connect them in a moment, or later."
+        />
+        {options.platforms.map((p) => (
+          <PlatformCard key={p} platform={p} selected={form.platforms.includes(p)} onPress={() => toggle('platforms', p)} />
+        ))}
+        {nextButton(form.platforms.length ? `Continue with ${form.platforms.length}` : 'Continue', () => go('voice'))}
       </Screen>
     );
   }
@@ -456,13 +484,19 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>How should your posts sound?</Title>
-        <Body>Here is the same message in each style, written for your business.</Body>
+        <StepHero
+          icon="♪"
+          kicker="Your voice"
+          title="How should your posts sound?"
+          sub={`The same message in each style, written for ${shortName}.`}
+          tint={colors.accent}
+          soft={colors.accentSoft}
+        />
         {options.tones.map((t) => (
-          <Choice
+          <VoiceCard
             key={t.id}
             label={t.label}
-            hint={category?.toneSamples[t.id] ?? ''}
+            sample={category?.toneSamples[t.id] ?? ''}
             selected={form.tone === t.id}
             onPress={() => set('tone', t.id)}
           />
@@ -477,35 +511,101 @@ export default function Wizard() {
     return (
       <Screen>
         {header}
-        <Title>What would you like to post about?</Title>
-        <Body>Pick a few. We will suggest ideas around these.</Body>
+        <StepHero
+          icon="✧"
+          kicker="Last step"
+          title="What would you like to post about?"
+          sub="Pick a few. We will suggest ideas around these."
+        />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
           {types.map((t) => (
             <Chip key={t} label={t} selected={form.contentTypes.includes(t)} onPress={() => toggle('contentTypes', t)} />
           ))}
         </View>
+        {form.contentTypes.length > 0 ? <Text style={styles.cap}>{form.contentTypes.length} selected</Text> : null}
         {nextButton('Finish setup', () => void finish(), form.contentTypes.length === 0)}
       </Screen>
     );
   }
 
   // done
+  const toneLabel = options.tones.find((t) => t.id === form.tone)?.label ?? 'Friendly';
+  const freq = options.frequencies.find((f) => f.id === form.frequency);
+  const ent = workspace?.entitlements ?? null;
   return (
-    <Screen scroll={false}>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        {header}
-        <Title>You are all set</Title>
-        <Body>
-          Thank you. We now know {form.businessName || 'your business'}, who your customers are and how you like to sound.
-        </Body>
+    <Screen>
+      {header}
+      <Celebration />
+      <FadeIn delay={150}>
+        <Text style={styles.doneTitle}>You are all set, {shortName}</Text>
+        <Text style={styles.doneSub}>Here is what we know. This is what makes every post sound like you.</Text>
+      </FadeIn>
+
+      <FadeIn delay={300}>
         <Card>
-          <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 6 }}>Coming next</Text>
-          <Text style={{ color: colors.text, fontSize: 15, lineHeight: 22 }}>
-            In the next update you will give us a photo or one sentence and we will write your first post for you to approve.
-          </Text>
+          <Row label="Business" value={category?.label ?? '—'} />
+          <Row label="Voice" value={toneLabel} />
+          <Row label="Posting" value={freq?.label ?? '—'} />
+          {form.platforms.length > 0 ? (
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.cap}>Channels</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {form.platforms.map((p) => (
+                  <View key={p} style={styles.platformChip}>
+                    <View style={[styles.platformDot, { backgroundColor: platformColors[p] ?? colors.primaryBright }]} />
+                    <Text style={styles.platformChipText}>{platformLabel(p)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </Card>
+      </FadeIn>
+
+      <FadeIn delay={450}>
+        <Card tone="primary">
+          <Text style={[styles.cap, { color: colors.primaryBright }]}>Up next</Text>
+          <NextStep when="First" text="Give us a photo or one sentence and we write your first post for you to approve." />
+          <NextStep when="Then" text="Connect your accounts so approved posts go out on time." />
+          <NextStep when="Soon" text={`Weekly post ideas for ${shortName}, ready when you are.`} last />
+        </Card>
+        {ent?.isTrialing ? (
+          <Text style={styles.trialNote}>
+            Your free trial is running: {ent.trialDaysLeft ?? 0} {ent.trialDaysLeft === 1 ? 'day' : 'days'} left. Let us make them count.
+          </Text>
+        ) : null}
         <Button title="Go to my home screen" onPress={() => router.replace('/home' as Href)} />
-      </View>
+      </FadeIn>
     </Screen>
   );
 }
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  cap: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  doneTitle: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center', marginBottom: 8 },
+  doneSub: { color: colors.muted, fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: space.lg },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  rowLabel: { color: colors.muted, fontSize: 14 },
+  rowValue: { color: colors.text, fontSize: 14, fontWeight: '700', flexShrink: 1, textAlign: 'right', marginLeft: 16 },
+  platformChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.cardAlt,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  platformDot: { width: 8, height: 8, borderRadius: 4 },
+  platformChipText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  trialNote: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginBottom: space.md },
+});
