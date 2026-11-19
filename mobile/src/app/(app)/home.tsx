@@ -5,6 +5,11 @@ import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { Button, Card } from '../../ui';
 import { colors, radius, space } from '../../theme';
+import { useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
+import { canSetUp } from '../../onboarding/api';
+import type { OnboardingState } from '../../onboarding/api';
+import { wasSkipped } from '../../onboarding/session';
 
 type HomePost = {
   id: string;
@@ -47,6 +52,8 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picker, setPicker] = useState(false);
+  const router = useRouter();
+  const [onb, setOnb] = useState<OnboardingState | null>(null);
 
   const workspaceId = workspace?.id;
 
@@ -75,6 +82,22 @@ export default function Home() {
     setData(null);
     void load('initial');
   }, [load]);
+
+  // New businesses are guided through setup once. Existing customers never see it.
+  useEffect(() => {
+    if (!workspaceId || !canSetUp(workspace?.role)) return;
+    let cancelled = false;
+    request<OnboardingState>(`/mobile/v1/workspaces/${workspaceId}/onboarding`)
+      .then((s) => {
+        if (cancelled) return;
+        setOnb(s);
+        if (s.shouldOnboard && !wasSkipped()) router.replace('/onboarding' as Href);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId, workspace?.role, router]);
 
   const firstName = (config?.user.name || '').split(' ')[0] || 'there';
   const ent = workspace?.entitlements ?? null;
@@ -135,6 +158,14 @@ export default function Home() {
           </Card>
         ) : !data ? null : (
           <>
+            {onb?.shouldOnboard ? (
+              <Pressable onPress={() => router.push('/onboarding' as Href)}>
+                <View style={[styles.banner, { borderColor: colors.primaryBright }]}>
+                  <Text style={styles.bannerText}>Finish setting up your business</Text>
+                  <Text style={styles.muted}>A few quick questions so your posts sound like you.</Text>
+                </View>
+              </Pressable>
+            ) : null}
             <Text style={styles.section}>Needs your attention</Text>
             <Card>
               {attention.length === 0 ? (
