@@ -2,9 +2,23 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
-import { getPlanLimits } from '../common/plan-limits';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { writeChecksEnabled } from '../common/roles';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../analytics/posthog.service';
+
+const NOT_SENDABLE = ['PUBLISHED', 'PUBLISHING'];
+const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+
+/** Escape text before putting it in an HTML email. */
+export function escapeHtml(v: unknown): string {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 @Injectable()
 export class ApprovalService {
@@ -14,6 +28,7 @@ export class ApprovalService {
     private config: ConfigService,
     private notifications: NotificationsService,
     private posthog: PostHogService,
+    private planGuard: PlanGuardService,
   ) {}
 
   // Agency sends post for client approval
@@ -24,14 +39,14 @@ export class ApprovalService {
     clientName: string,
     clientId?: string,
   ) {
-    // Check plan limits
-    const subscription = await this.prisma.subscription.findUnique({ where: { workspaceId } });
-    const limits = getPlanLimits(subscription?.plan || 'FREE');
-    // Allow all plans to test approval portal during trial
-    // In production, gate this to Agency Pro only after trial
-    if (!limits.clientApprovalEnabled) {
-      throw new ForbiddenException('Client Approval Portal is available on Agency Pro plan. Start your trial to test this feature.');
-    }
+    // Plan: trial-aware feature check, and no new work on a read-only workspace
+    await this.planGuard.checkClientApprovalAccess(workspaceId);
+    if (writeChecksEnabled()) await this.planGuard.assertCanWrite(workspaceId);
+
+    const email = String(clientEmail || '').trim();
+    const name = String(clientName || '').trim().slice(0, 120);
+    if (!EMAIL_RE.test(email) || email.length > 254) throw new BadRequestException('A valid client email is required');
+    if (!name) throw new BadRequestException('Client name is required');
 
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
@@ -39,7 +54,14 @@ export class ApprovalService {
     });
 
     if (!post) throw new NotFoundException('Post not found');
-    if (post.workspaceId !== workspaceId) throw new BadRequestException('Unauthorized');
+    if (post.workspaceId !== workspaceId) throw new NotFoundException('Post not found');
+    if (NOT_SENDABLE.includes(String(post.status))) {
+      throw new BadRequestException('This post is already published and cannot be sent for approval');
+    }
+    if (clientId) {
+      const client = await this.prisma.client.findFirst({ where: { id: clientId, workspaceId }, select: { id: true } });
+      if (!client) throw new NotFoundException('Client not found');
+    }
 
     // Delete existing approval if any
     await this.prisma.postApproval.deleteMany({ where: { postId } });
@@ -50,8 +72,8 @@ export class ApprovalService {
         postId,
         workspaceId,
         clientId: clientId || null,
-        clientEmail,
-        clientName,
+        clientEmail: email,
+        clientName: name,
         status: 'PENDING',
         emailSentAt: new Date(),
       },
@@ -65,9 +87,9 @@ export class ApprovalService {
 
     // Send email to client
     const approvalUrl = `${this.config.get('FRONTEND_URL')}/approve/${approval.token}`;
-    await this.sendApprovalEmail(clientEmail, clientName, post, approvalUrl);
+    await this.sendApprovalEmail(email, name, post, approvalUrl);
 
-    this.posthog.capture(workspaceId, 'approval_sent', { platform: post.socialAccount?.platform, clientName });
+    this.posthog.capture(workspaceId, 'approval_sent', { platform: post.socialAccount?.platform, clientName: name });
 
     return { success: true, token: approval.token, approvalUrl };
   }
@@ -115,17 +137,20 @@ export class ApprovalService {
       throw new BadRequestException('This post has already been reviewed');
     }
 
-    await this.prisma.postApproval.update({
-      where: { token },
+    // Atomic: only one response can win, even if two clicks arrive together
+    const won = await this.prisma.postApproval.updateMany({
+      where: { token, status: 'PENDING' },
       data: {
         status: 'APPROVED',
         approvedAt: new Date(),
         respondedAt: new Date(),
       },
     });
+    if (won.count === 0) throw new BadRequestException('This post has already been reviewed');
 
-    await this.prisma.post.update({
-      where: { id: approval.postId },
+    // Only move the post if it is still waiting on this approval
+    await this.prisma.post.updateMany({
+      where: { id: approval.postId, status: 'PENDING_APPROVAL' as any },
       data: { status: 'DRAFT' },
     });
 
@@ -156,17 +181,19 @@ export class ApprovalService {
       throw new BadRequestException('This post has already been reviewed');
     }
 
-    await this.prisma.postApproval.update({
-      where: { token },
+    const note = String(revisionNote ?? '').trim().slice(0, 2000);
+    const won = await this.prisma.postApproval.updateMany({
+      where: { token, status: 'PENDING' },
       data: {
         status: 'REVISION_REQUESTED',
-        revisionNote,
+        revisionNote: note,
         respondedAt: new Date(),
       },
     });
+    if (won.count === 0) throw new BadRequestException('This post has already been reviewed');
 
-    await this.prisma.post.update({
-      where: { id: approval.postId },
+    await this.prisma.post.updateMany({
+      where: { id: approval.postId, status: 'PENDING_APPROVAL' as any },
       data: { status: 'DRAFT' },
     });
 
@@ -180,7 +207,7 @@ export class ApprovalService {
         workspace.ownerId,
         'approval',
         '✏️ Revision Requested',
-        `${approval.clientName} requested changes: "${revisionNote?.slice(0, 80)}..."`,
+        `${approval.clientName} requested changes: "${note.slice(0, 80)}..."`,
       );
     }
 
@@ -229,16 +256,16 @@ export class ApprovalService {
           </div>
 
           <div style="padding: 36px 40px;">
-            <h2 style="color: #fff; font-size: 20px; margin: 0 0 8px;">Hi ${clientName},</h2>
+            <h2 style="color: #fff; font-size: 20px; margin: 0 0 8px;">Hi ${escapeHtml(clientName)},</h2>
             <p style="color: #7A8FA6; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-              Your agency has prepared a post for <strong style="color: #C8D8E8;">${platformName}</strong> 
+              Your agency has prepared a post for <strong style="color: #C8D8E8;">${escapeHtml(platformName)}</strong> 
               scheduled for <strong style="color: #C8D8E8;">${scheduledDate}</strong>. 
               Please review and approve before it goes live.
             </p>
 
             <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #378ADD; border-radius: 8px; padding: 20px 24px; margin-bottom: 28px;">
               <p style="color: #9BB0C5; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 10px;">POST CONTENT</p>
-              <p style="color: #C8D8E8; font-size: 14px; line-height: 1.7; margin: 0; white-space: pre-wrap;">${post.content?.slice(0, 300)}${post.content?.length > 300 ? '...' : ''}</p>
+              <p style="color: #C8D8E8; font-size: 14px; line-height: 1.7; margin: 0; white-space: pre-wrap;">${escapeHtml(String(post.content ?? '').slice(0, 300))}${String(post.content ?? '').length > 300 ? '...' : ''}</p>
             </div>
 
             <div style="text-align: center; margin-bottom: 28px;">
