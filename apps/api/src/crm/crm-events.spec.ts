@@ -1,6 +1,7 @@
 jest.mock('./automation.service', () => ({ AutomationService: class {} }));
 jest.mock('../analytics/posthog.service', () => ({ PostHogService: class {} }));
 jest.mock('../webhooks/webhooks.service', () => ({ WebhooksService: class {} }));
+jest.mock('../common/plan-guard.service', () => ({ PlanGuardService: class {} }));
 
 import { CrmService } from './crm.service';
 
@@ -34,8 +35,10 @@ function build() {
   const automation: any = { triggerStageAutomation: jest.fn().mockResolvedValue(undefined) };
   const posthog: any = { capture: jest.fn() };
   const webhooks: any = { dispatch: jest.fn().mockResolvedValue(undefined) };
-  const svc = new CrmService(prisma, automation, posthog, webhooks);
-  jest.spyOn(svc as any, 'assertClientAccess').mockResolvedValue(undefined);
+  const planGuard: any = { assertCanWrite: jest.fn().mockResolvedValue({}) };
+  const svc = new CrmService(prisma, automation, posthog, webhooks, planGuard);
+  jest.spyOn(svc as any, 'assertClientAccess').mockResolvedValue({ workspaceId: 'w1', role: 'OWNER' });
+  jest.spyOn(svc as any, 'assertClientWriteAccess').mockResolvedValue({ workspaceId: 'w1', role: 'OWNER' });
   return { svc, prisma, webhooks };
 }
 

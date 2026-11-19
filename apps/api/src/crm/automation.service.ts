@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 
@@ -25,6 +25,15 @@ export class AutomationService {
     body: string;
     replyTo?: string;
   }) {
+    const stages = ['LEAD', 'CONTACTED', 'PROPOSAL', 'ACTIVE', 'DORMANT'];
+    const text = (v: unknown, max: number) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
+    if (!workspaceId) throw new BadRequestException('workspaceId is required.');
+    if (!text(data?.name, 120) || !text(data?.subject, 200) || !text(data?.body, 10000)) {
+      throw new BadRequestException('Name, subject and body are required.');
+    }
+    if (!stages.includes(data.triggerStage)) {
+      throw new BadRequestException(`triggerStage must be one of: ${stages.join(', ')}.`);
+    }
     return this.prisma.automationRule.create({
       data: {
         workspaceId,
@@ -44,9 +53,23 @@ export class AutomationService {
     replyTo: string;
     isActive: boolean;
   }>) {
+    // Whitelist: never write fields the caller merely included in the request
+    // (workspaceId, triggerStage, id, ...).
+    const clean: Record<string, any> = {};
+    const fields: Array<[string, number]> = [['name', 120], ['subject', 200], ['body', 10000], ['replyTo', 320]];
+    for (const [key, max] of fields) {
+      const v = (data as any)?.[key];
+      if (v === undefined) continue;
+      if (typeof v !== 'string' || v.length > max || (key !== 'replyTo' && !v.trim())) {
+        throw new BadRequestException(`${key} is invalid.`);
+      }
+      clean[key] = key === 'replyTo' && v === '' ? null : v;
+    }
+    if ((data as any)?.isActive !== undefined) clean.isActive = !!(data as any).isActive;
+    if (Object.keys(clean).length === 0) throw new BadRequestException('Nothing to update.');
     return this.prisma.automationRule.update({
       where: { id },
-      data,
+      data: clean,
     });
   }
 
