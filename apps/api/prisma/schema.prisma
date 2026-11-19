@@ -69,6 +69,7 @@ model Workspace {
   webhooks     WorkspaceWebhook[]
   apiKeys         ApiKey[]
   leadCaptureLinks LeadCaptureLink[]
+  profile          WorkspaceProfile?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -476,6 +477,7 @@ enum AiUsageType {
   AGENT_ACTION
   ASSET_UPLOAD
   IMAGE_GEN
+  ONBOARDING_AI
 }
 
 //  AI Operating System (Phase 1 - additive, shadow-mode) 
@@ -714,4 +716,29 @@ model LeadCaptureLink {
   updatedAt       DateTime  @updatedAt
 
   @@index([workspaceId])
+}
+
+// One row per workspace: what the business is and how it wants to post. Filled by the
+// mobile onboarding. Added via raw SQL (see migration folder).
+model WorkspaceProfile {
+  id                    String    @id @default(cuid())
+  workspaceId           String    @unique
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category              String?
+  website               String?
+  description           String?
+  audience              String?
+  offerings             String[]  @default([])
+  tone                  String?
+  brandColors           String[]  @default([])
+  language              String?
+  country               String?
+  postingFrequency      String?
+  platforms             String[]  @default([])
+  contentTypes          String[]  @default([])
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
+  websiteAnalyzedAt     DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
