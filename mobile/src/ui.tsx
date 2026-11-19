@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,9 +12,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { TextInputProps } from 'react-native';
+import type { StyleProp, TextInputProps, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, space } from './theme';
+import { colors, radius, shadow, space, type } from './theme';
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const body = scroll ? (
@@ -28,6 +30,8 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   );
   return (
     <SafeAreaView style={styles.screen}>
+      <View pointerEvents="none" style={styles.glow} />
+      <View pointerEvents="none" style={styles.glow2} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {body}
       </KeyboardAvoidingView>
@@ -35,11 +39,42 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   );
 }
 
-export function Logo() {
+/** Softly fades and slides its content in when it first appears. */
+export function FadeIn({
+  children,
+  delay = 0,
+  style,
+}: {
+  children: ReactNode;
+  delay?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: 380, delay, useNativeDriver: true }).start();
+  }, [v, delay]);
   return (
-    <Text style={styles.logo}>
-      eWork<Text style={{ color: colors.primaryBright }}>/</Text>Social
-    </Text>
+    <Animated.View
+      style={[
+        style,
+        { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+export function Logo({ size = 28 }: { size?: number }) {
+  return (
+    <View style={styles.logoRow}>
+      <View style={[styles.logoMark, { width: size + 8, height: size + 8, borderRadius: (size + 8) * 0.3 }]}>
+        <Text style={[styles.logoMarkText, { fontSize: size * 0.72 }]}>e</Text>
+      </View>
+      <Text style={[styles.logo, { fontSize: size }]}>
+        eWork<Text style={{ color: colors.primaryBright }}>/</Text>Social
+      </Text>
+    </View>
   );
 }
 
@@ -52,15 +87,25 @@ export function Body({ children, center }: { children: ReactNode; center?: boole
 }
 
 export function Field(props: TextInputProps & { label: string }) {
-  const { label, style, ...rest } = props;
+  const { label, style, onFocus, onBlur, ...rest } = props;
+  const [focused, setFocused] = useState(false);
   return (
     <View style={{ marginBottom: space.md }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        placeholderTextColor={colors.muted}
+        placeholderTextColor="#5E7089"
         autoCapitalize="none"
         autoCorrect={false}
-        style={[styles.input, style]}
+        selectionColor={colors.primaryBright}
+        style={[styles.input, focused && styles.inputFocused, style]}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
         {...rest}
       />
     </View>
@@ -81,68 +126,168 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'link';
 }) {
   const off = disabled || loading;
+  const scale = useRef(new Animated.Value(1)).current;
+  const to = (value: number) =>
+    Animated.spring(scale, { toValue: value, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={off}
-      style={({ pressed }) => [
-        styles.btn,
-        variant === 'primary' && styles.btnPrimary,
-        variant === 'secondary' && styles.btnSecondary,
-        variant === 'link' && styles.btnLink,
-        off && { opacity: 0.55 },
-        pressed && { opacity: 0.8 },
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color="#fff" />
-      ) : (
-        <Text style={[styles.btnText, variant === 'link' && { color: colors.primaryBright }]}>{title}</Text>
-      )}
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }], opacity: off ? 0.5 : 1, marginBottom: space.sm }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => to(0.97)}
+        onPressOut={() => to(1)}
+        disabled={off}
+        style={[
+          styles.btn,
+          variant === 'primary' && styles.btnPrimary,
+          variant === 'secondary' && styles.btnSecondary,
+          variant === 'link' && styles.btnLink,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={[styles.btnText, variant === 'link' && { color: colors.primaryBright }]}>{title}</Text>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 export function ErrorText({ children }: { children?: string | null }) {
   if (!children) return null;
-  return <Text style={styles.error}>{children}</Text>;
+  return (
+    <View style={styles.errorBox}>
+      <Text style={styles.error}>{children}</Text>
+    </View>
+  );
 }
 
-export function Card({ children }: { children: ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+export function Card({
+  children,
+  tone,
+  onPress,
+}: {
+  children: ReactNode;
+  tone?: 'primary' | 'accent' | 'warn' | 'danger' | 'ok';
+  onPress?: () => void;
+}) {
+  const toneColor =
+    tone === 'primary'
+      ? colors.primaryBright
+      : tone === 'accent'
+        ? colors.accent
+        : tone === 'warn'
+          ? colors.warn
+          : tone === 'danger'
+            ? colors.danger
+            : tone === 'ok'
+              ? colors.ok
+              : null;
+  const style = [styles.card, toneColor ? { borderColor: toneColor } : null];
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [...style, pressed && { opacity: 0.85 }]}>
+        {children}
+      </Pressable>
+    );
+  }
+  return <View style={style}>{children}</View>;
+}
+
+export function Pill({ label, color = colors.primaryBright, soft }: { label: string; color?: string; soft?: string }) {
+  return (
+    <View style={[styles.pill, { backgroundColor: soft ?? colors.primarySoft }]}>
+      <Text style={[styles.pillText, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
+export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase())
+      .join('') || 'e';
+  return (
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
+      <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{initials}</Text>
+    </View>
+  );
+}
+
+export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <View style={styles.sectionRow}>
+      <Text style={styles.section}>{children}</Text>
+      {action}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.bg },
   scrollContent: { flexGrow: 1, padding: space.lg },
-  logo: { color: colors.text, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
-  title: { color: colors.text, fontSize: 26, fontWeight: '800', marginBottom: space.sm },
-  body: { color: colors.muted, fontSize: 15, lineHeight: 22, marginBottom: space.md },
-  label: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  glow: {
+    position: 'absolute',
+    top: -170,
+    right: -130,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: colors.primary,
+    opacity: 0.18,
+  },
+  glow2: {
+    position: 'absolute',
+    bottom: -200,
+    left: -160,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: colors.accent,
+    opacity: 0.08,
+  },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoMark: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow },
+  logoMarkText: { color: '#fff', fontWeight: '900', marginTop: -2 },
+  logo: { color: colors.text, fontWeight: '900', letterSpacing: -0.6 },
+  title: { color: colors.text, ...type.title, marginBottom: space.sm },
+  body: { color: colors.muted, ...type.body, fontSize: 16, lineHeight: 24, marginBottom: space.md },
+  label: { color: colors.muted, ...type.small, fontWeight: '600', marginBottom: 7 },
   input: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.md,
     color: colors.text,
     fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
   },
+  inputFocused: { borderColor: colors.primaryBright, backgroundColor: colors.cardAlt },
   btn: {
     borderRadius: radius.md,
-    paddingVertical: 15,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: space.sm,
+    minHeight: 52,
   },
-  btnPrimary: { backgroundColor: colors.primary },
-  btnSecondary: { backgroundColor: colors.cardAlt, borderWidth: 1, borderColor: colors.border },
+  btnPrimary: { backgroundColor: colors.primary, ...shadow, shadowColor: colors.primary, shadowOpacity: 0.45 },
+  btnSecondary: { backgroundColor: colors.cardAlt, borderWidth: 1.5, borderColor: colors.border },
   btnLink: { backgroundColor: 'transparent' },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  error: { color: colors.danger, fontSize: 14, marginBottom: space.md, lineHeight: 20 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.1 },
+  errorBox: {
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: space.md,
+  },
+  error: { color: colors.danger, fontSize: 14, lineHeight: 20 },
   card: {
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -151,4 +296,10 @@ const styles = StyleSheet.create({
     padding: space.md,
     marginBottom: space.md,
   },
+  pill: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  pillText: { ...type.label, textTransform: 'uppercase' },
+  avatar: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontWeight: '800' },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.md, marginBottom: space.sm },
+  section: { color: colors.text, ...type.heading },
 });
