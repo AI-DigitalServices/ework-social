@@ -12,6 +12,9 @@ import { AutomationService } from './automation.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlanGuardService } from '../common/plan-guard.service';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { WriterRoleGuard } from '../common/role.guards';
+import { PrismaService } from '../prisma/prisma.service';
+import { assertRecordWriteAccess } from '../common/record-access.util';
 
 @Controller('crm')
 @UseGuards(JwtGuard, WorkspaceMemberGuard)
@@ -20,6 +23,7 @@ export class CrmController {
     private crmService: CrmService,
     private automationService: AutomationService,
     private planGuard: PlanGuardService,
+    private prisma: PrismaService,
   ) {}
 
   @Get('clients')
@@ -62,7 +66,10 @@ export class CrmController {
   }
 
   @Post('clients')
-  createClient(@Body() dto: CreateClientDto) {
+  @UseGuards(WriterRoleGuard)
+  async createClient(@Body() dto: CreateClientDto) {
+    // Enforces the plan's contact limit and refuses read-only workspaces.
+    await this.planGuard.checkClientLimit(dto.workspaceId);
     return this.crmService.createClient(dto);
   }
 
@@ -115,17 +122,25 @@ export class CrmController {
   }
 
   @Post('automations')
-  createAutomation(@Body() body: any) {
+  @UseGuards(WriterRoleGuard)
+  async createAutomation(@Body() body: any) {
+    await this.planGuard.assertCanWrite(body.workspaceId);
     return this.automationService.createRule(body.workspaceId, body);
   }
 
   @Patch('automations/:id')
-  updateAutomation(@Param('id') id: string, @Body() body: any) {
+  async updateAutomation(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    await assertRecordWriteAccess(this.prisma, this.planGuard, {
+      model: 'automationRule', id, userId: req.user.sub, label: 'Rule',
+    });
     return this.automationService.updateRule(id, body);
   }
 
   @Delete('automations/:id')
-  deleteAutomation(@Param('id') id: string) {
+  async deleteAutomation(@Param('id') id: string, @Req() req: any) {
+    await assertRecordWriteAccess(this.prisma, this.planGuard, {
+      model: 'automationRule', id, userId: req.user.sub, label: 'Rule',
+    });
     return this.automationService.deleteRule(id);
   }
 }

@@ -6,6 +6,9 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { PostHogService } from '../analytics/posthog.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { PlanGuardService } from '../common/plan-guard.service';
+import { assertWriterRole, writeChecksEnabled } from '../common/roles';
+import { resolveWorkspaceRole } from '../common/workspace-role.util';
 import type { WebhookEvent } from '../webhooks/webhook-events';
 
 @Injectable()
@@ -15,6 +18,7 @@ export class CrmService {
     private automation: AutomationService,
     private posthog: PostHogService,
     private webhooks: WebhooksService,
+    private planGuard: PlanGuardService,
   ) {}
 
   /** Fire-and-forget outbound webhook. Never blocks or breaks the CRM action. */
@@ -61,9 +65,9 @@ export class CrmService {
 
     const member = await this.prisma.workspaceMember.findFirst({
       where: { workspaceId: client.workspaceId, userId },
-      select: { id: true },
+      select: { id: true, role: true },
     });
-    if (member) return;
+    if (member) return { workspaceId: client.workspaceId, role: member.role as string };
 
     // Owner fallback — legacy workspaces may have no membership row, and the
     // owner must never be locked out of their own CRM records.
@@ -71,9 +75,23 @@ export class CrmService {
       where: { id: client.workspaceId },
       select: { ownerId: true },
     });
-    if (workspace?.ownerId === userId) return;
+    if (workspace?.ownerId === userId) return { workspaceId: client.workspaceId, role: 'OWNER' };
 
     throw new NotFoundException('Client not found');
+  }
+
+  /**
+   * assertClientAccess + write rules: the caller must be a writer (owner, admin or
+   * editor) in the CONTACT's workspace, and that workspace must not be read-only.
+   * The role comes from the contact's workspace, never from the request body.
+   */
+  private async assertClientWriteAccess(clientId: string, userId: string) {
+    const access = await this.assertClientAccess(clientId, userId);
+    if (writeChecksEnabled()) {
+      assertWriterRole(access.role);
+      await this.planGuard.assertCanWrite(access.workspaceId);
+    }
+    return access;
   }
 
   async getClient(id: string, userId: string) {
@@ -186,7 +204,7 @@ export class CrmService {
       userId: string;
     },
   ) {
-    await this.assertClientAccess(id, updates.userId);
+    await this.assertClientWriteAccess(id, updates.userId);
     const existing = await this.prisma.client.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Client not found');
 
@@ -249,7 +267,7 @@ export class CrmService {
   }
 
   async updateStage(id: string, stage: string, userId: string) {
-    await this.assertClientAccess(id, userId);
+    await this.assertClientWriteAccess(id, userId);
     const existing = await this.prisma.client.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Client not found');
 
@@ -289,7 +307,7 @@ export class CrmService {
   }
 
   async deleteClient(id: string, userId: string) {
-    await this.assertClientAccess(id, userId);
+    await this.assertClientWriteAccess(id, userId);
     const existing = await this.prisma.client.findUnique({ where: { id } });
     const deleted = await this.prisma.client.delete({ where: { id } });
     if (existing) {
@@ -305,7 +323,7 @@ export class CrmService {
   }
 
   async addNote(dto: CreateNoteDto & { userId: string }) {
-    await this.assertClientAccess(dto.clientId, dto.userId);
+    await this.assertClientWriteAccess(dto.clientId, dto.userId);
     const note = await this.prisma.note.create({
       data: { content: dto.content, clientId: dto.clientId },
     });
@@ -336,7 +354,7 @@ export class CrmService {
   }
 
   async addTask(dto: CreateTaskDto & { userId: string }) {
-    await this.assertClientAccess(dto.clientId, dto.userId);
+    await this.assertClientWriteAccess(dto.clientId, dto.userId);
     const task = await this.prisma.task.create({
       data: {
         title: dto.title,
@@ -375,7 +393,7 @@ export class CrmService {
   async toggleTask(id: string, userId: string) {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.assertClientAccess(task.clientId, userId);
+    await this.assertClientWriteAccess(task.clientId, userId);
     const updated = await this.prisma.task.update({
       where: { id },
       data: { isDone: !task.isDone },
