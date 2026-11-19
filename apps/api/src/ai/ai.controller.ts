@@ -3,6 +3,7 @@ import { AiService } from './ai.service';
 import { AiUsageService } from './ai-usage.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
+import { WriterRoleGuard } from '../common/role.guards';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('ai')
@@ -11,6 +12,7 @@ export class AiController {
   constructor(private aiService: AiService, private aiUsage: AiUsageService) {}
 
   @Post('captions')
+  @UseGuards(WriterRoleGuard)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   generateCaptions(@Body() body: {
     workspaceId: string;
@@ -29,6 +31,7 @@ export class AiController {
   }
 
   @Post('hashtags')
+  @UseGuards(WriterRoleGuard)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   generateHashtags(@Body() body: {
     workspaceId: string;
@@ -43,6 +46,7 @@ export class AiController {
   }
 
   @Post('rewrite')
+  @UseGuards(WriterRoleGuard)
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   rewritePost(@Body() body: {
     workspaceId: string;
@@ -59,6 +63,7 @@ export class AiController {
   }
 
   @Post('crm-insights')
+  @UseGuards(WriterRoleGuard)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   getCrmInsights(@Body() body: { workspaceId: string }) {
     return this.aiService.getCrmInsights(body.workspaceId);
