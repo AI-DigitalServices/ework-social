@@ -1,35 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Text } from '../ui';
 import PlatformIcon, { platformColor } from '../platform';
 import { colors, radius } from '../theme';
+import WhenPicker, { DRAFT_WHEN } from './WhenPicker';
+import type { When } from './WhenPicker';
 
 export type Account = { id: string; platform: string; accountName: string };
 
 // Video platforms: the app writes text posts for now, so they are not offered as post targets yet.
 const VIDEO_ONLY = ['YOUTUBE', 'TIKTOK'];
 
-type Preset = { id: string; label: string; at: Date | null };
-
 function platformName(p: string): string {
   if (p === 'TWITTER') return 'X';
   return p.charAt(0) + p.slice(1).toLowerCase();
-}
-
-/** Quick time choices, so nobody needs a date picker for their first post. */
-export function presets(now = new Date()): Preset[] {
-  const tomorrowAt = (h: number) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() + 1);
-    d.setHours(h, 0, 0, 0);
-    return d;
-  };
-  return [
-    { id: 'DRAFT', label: 'Save as draft', at: null },
-    { id: '1h', label: 'In 1 hour', at: new Date(now.getTime() + 3600_000) },
-    { id: 't9', label: 'Tomorrow 9:00', at: tomorrowAt(9) },
-    { id: 't18', label: 'Tomorrow 18:00', at: tomorrowAt(18) },
-  ];
 }
 
 /**
@@ -47,16 +31,14 @@ export default function PublishPanel({
 }) {
   const accounts = allAccounts.filter((a) => !VIDEO_ONLY.includes(a.platform));
   const hiddenVideo = allAccounts.length - accounts.length;
-  const options = useMemo(() => presets(), []);
   const [selected, setSelected] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
-  const [when, setWhen] = useState('DRAFT');
-  const chosen = options.find((o) => o.id === when) ?? options[0];
+  const [when, setWhen] = useState<When>(DRAFT_WHEN);
   const n = selected.length;
   const all = accounts.length > 1 && n === accounts.length;
 
   const toggle = (id: string) => setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
-  const title = chosen.at
+  const title = when.at
     ? n > 1
       ? `Schedule to ${n} accounts`
       : 'Schedule this post'
@@ -103,27 +85,13 @@ export default function PublishPanel({
         })}
       </View>
 
-      <Text style={styles.cap}>When</Text>
-      <View style={styles.wrap}>
-        {options.map((o) => {
-          const on = o.id === when;
-          return (
-            <Pressable
-              key={o.id}
-              onPress={() => setWhen(o.id)}
-              style={({ pressed }) => [styles.chip, on && { backgroundColor: colors.primary, borderColor: colors.primaryBright }, pressed && { opacity: 0.85 }]}
-            >
-              <Text style={[styles.chipText, on && { fontWeight: '700' }]}>{o.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <WhenPicker value={when} onChange={(w) => w && setWhen(w)} />
 
       <Button
         title={title}
         loading={busy}
         disabled={n === 0}
-        onPress={() => onConfirm(selected, chosen.at ? 'SCHEDULED' : 'DRAFT', chosen.at ? chosen.at.toISOString() : undefined)}
+        onPress={() => onConfirm(selected, when.at ? 'SCHEDULED' : 'DRAFT', when.at ? when.at.toISOString() : undefined)}
       />
     </View>
   );

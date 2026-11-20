@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
-import { presets } from '../../create/PublishPanel';
+import WhenPicker from '../../create/WhenPicker';
+import type { When } from '../../create/WhenPicker';
 import PlatformIcon, { platformColor } from '../../platform';
 import { platformName, statusMeta, when } from '../../posts/components';
 import { Button, Card, ErrorText, Field, Pill, Screen, Text } from '../../ui';
@@ -48,8 +49,7 @@ export default function PostDetail() {
   // edit mode
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const [whenId, setWhenId] = useState('KEEP');
-  const options = useMemo(() => presets(), []);
+  const [whenSel, setWhenSel] = useState<When | null>(null); // null = keep as it is
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -96,7 +96,7 @@ export default function PostDetail() {
   const startEdit = () => {
     if (!post) return;
     setDraft(post.content);
-    setWhenId('KEEP');
+    setWhenSel(null);
     setError(null);
     setNote(null);
     setEditing(true);
@@ -107,11 +107,10 @@ export default function PostDetail() {
     const body: Record<string, unknown> = { expectedUpdatedAt: post.updatedAt };
     const text = draft.trim();
     if (text !== post.content) body.content = text;
-    if (whenId !== 'KEEP') {
-      const o = options.find((x) => x.id === whenId);
-      if (o?.at) {
+    if (whenSel) {
+      if (whenSel.at) {
         body.status = 'SCHEDULED';
-        body.scheduledAt = o.at.toISOString();
+        body.scheduledAt = whenSel.at.toISOString();
       } else {
         body.status = 'DRAFT';
       }
@@ -220,8 +219,6 @@ export default function PostDetail() {
         ? 'Draft, not scheduled'
         : when(post.scheduledAt);
 
-  const timeChoices = [{ id: 'KEEP', label: post?.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is' }, ...options.map((o) => ({ id: o.id, label: o.label }))];
-
   return (
     <Screen>
       <Pressable hitSlop={12} onPress={() => (editing && !busy ? setEditing(false) : router.back())} style={{ paddingTop: space.md }}>
@@ -262,24 +259,21 @@ export default function PostDetail() {
                 multiline
                 style={{ minHeight: 160, textAlignVertical: 'top' }}
               />
-              <Text style={styles.cap}>When</Text>
-              <View style={styles.wrap}>
-                {timeChoices.map((o) => {
-                  const on = o.id === whenId;
-                  return (
-                    <Pressable
-                      key={o.id}
-                      onPress={() => setWhenId(o.id)}
-                      style={({ pressed }) => [styles.chip, on && { backgroundColor: colors.primary, borderColor: colors.primaryBright }, pressed && { opacity: 0.85 }]}
-                    >
-                      <Text style={[styles.chipText, on && { fontWeight: '700' }]}>{o.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <WhenPicker value={whenSel} onChange={setWhenSel} keepLabel={post.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is'} />
               <ErrorText>{error}</ErrorText>
               <Button title="Save changes" loading={busy} disabled={tooLong || draft.trim().length === 0} onPress={() => void saveEdit()} />
               {tooLong ? <Text style={styles.warn}>This is too long for {platformName(post.platform)}. Shorten it to save.</Text> : null}
+              <View style={{ marginTop: space.lg }}>
+                <ActionRow>
+                  <ActionTile
+                    label="Delete this post"
+                    tone="danger"
+                    disabled={busy}
+                    icon={(c) => <Feather name="trash-2" size={22} color={c} />}
+                    onPress={confirmDelete}
+                  />
+                </ActionRow>
+              </View>
             </View>
           ) : (
             <View>
@@ -329,9 +323,6 @@ export default function PostDetail() {
                     icon={(c) => <Feather name="share-2" size={22} color={c} />}
                     onPress={() => void shareAnywhere()}
                   />
-                  {changeable ? (
-                    <ActionTile label="Delete" tone="danger" disabled={busy} icon={(c) => <Feather name="trash-2" size={22} color={c} />} onPress={confirmDelete} />
-                  ) : null}
                 </ActionRow>
               </View>
               <Text style={styles.hint}>
