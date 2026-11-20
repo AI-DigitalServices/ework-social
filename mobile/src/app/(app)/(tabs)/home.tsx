@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router as appRouter, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
@@ -63,6 +63,7 @@ export default function Home() {
   const [picker, setPicker] = useState(false);
   const router = useRouter();
   const [onb, setOnb] = useState<OnboardingState | null>(null);
+  const open = (path: string) => router.navigate(path as Href);
 
   const workspaceId = workspace?.id;
 
@@ -114,9 +115,9 @@ export default function Home() {
   const multi = !!config && config.workspaces.length > 1;
   const attention = data
     ? [
-        { n: data.needsAttention.failedPosts, text: 'posts failed to publish', color: colors.danger, soft: colors.dangerSoft },
-        { n: data.needsAttention.awaitingClientApproval, text: 'waiting for client approval', color: colors.warn, soft: colors.warnSoft },
-        { n: data.needsAttention.unreadInbox, text: 'unread messages', color: colors.primaryBright, soft: colors.primarySoft },
+        { n: data.needsAttention.failedPosts, text: 'posts failed to publish', color: colors.danger, soft: colors.dangerSoft, path: `/posts?status=FAILED&t=${Date.now()}` },
+        { n: data.needsAttention.awaitingClientApproval, text: 'waiting for a reply', color: colors.warn, soft: colors.warnSoft, path: `/approvals?status=PENDING&t=${Date.now()}` },
+        { n: data.needsAttention.unreadInbox, text: 'unread messages', color: colors.primaryBright, soft: colors.primarySoft, path: '' },
       ].filter((a) => a.n > 0)
     : [];
 
@@ -205,10 +206,10 @@ export default function Home() {
           <>
             <FadeIn delay={140}>
               <View style={styles.grid}>
-                <Stat label="Scheduled" value={data.posts.scheduled} color={colors.primaryBright} soft={colors.primarySoft} />
-                <Stat label="Drafts" value={data.posts.drafts} color={colors.accent} soft={colors.accentSoft} />
-                <Stat label="Published, 7 days" value={data.posts.publishedLast7Days} color={colors.ok} soft={colors.okSoft} />
-                <Stat label="Awaiting approval" value={data.posts.pendingApproval} color={colors.warn} soft={colors.warnSoft} />
+                <Stat label="Scheduled" value={data.posts.scheduled} color={colors.primaryBright} soft={colors.primarySoft} onPress={() => open(`/posts?status=SCHEDULED&t=${Date.now()}`)} />
+                <Stat label="Drafts" value={data.posts.drafts} color={colors.accent} soft={colors.accentSoft} onPress={() => open(`/posts?status=DRAFT&t=${Date.now()}`)} />
+                <Stat label="Published, 7 days" value={data.posts.publishedLast7Days} color={colors.ok} soft={colors.okSoft} onPress={() => open(`/posts?status=PUBLISHED&t=${Date.now()}`)} />
+                <Stat label="Awaiting approval" value={data.posts.pendingApproval} color={colors.warn} soft={colors.warnSoft} onPress={() => open(`/posts?status=PENDING_APPROVAL&t=${Date.now()}`)} />
               </View>
             </FadeIn>
 
@@ -224,12 +225,18 @@ export default function Home() {
                   </View>
                 ) : (
                   attention.map((a) => (
-                    <View key={a.text} style={styles.row}>
+                    <Pressable
+                      key={a.text}
+                      disabled={!a.path}
+                      onPress={() => open(a.path)}
+                      style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+                    >
                       <View style={[styles.dot, { backgroundColor: a.soft }]}>
                         <Text style={[styles.count, { color: a.color }]}>{a.n}</Text>
                       </View>
-                      <Text style={styles.rowText}>{a.text}</Text>
-                    </View>
+                      <Text style={[styles.rowText, { flex: 1 }]}>{a.text}</Text>
+                      {a.path ? <Text style={{ color: colors.muted, fontSize: 22 }}>›</Text> : null}
+                    </Pressable>
                   ))
                 )}
               </Card>
@@ -307,22 +314,37 @@ export default function Home() {
   );
 }
 
-function Stat({ label, value, color, soft }: { label: string; value: number; color: string; soft: string }) {
+function Stat({
+  label,
+  value,
+  color,
+  soft,
+  onPress,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  soft: string;
+  onPress?: () => void;
+}) {
   return (
-    <View style={styles.stat}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [styles.stat, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
       <View style={[styles.statBar, { backgroundColor: soft }]}>
         <View style={[styles.statBarFill, { backgroundColor: color }]} />
       </View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
 function PostRow({ post, failed }: { post: HomePost; failed?: boolean }) {
   const color = platformColors[post.platform ?? ''] ?? colors.primaryBright;
   return (
-    <View style={[styles.post, failed && { borderColor: colors.danger }]}>
+    <Pressable
+      onPress={() => appRouter.navigate(`/post?id=${post.id}` as never)}
+      style={({ pressed }) => [styles.post, failed && { borderColor: colors.danger }, pressed && { opacity: 0.88 }]}
+    >
       <View style={[styles.postStripe, { backgroundColor: failed ? colors.danger : color }]} />
       <View style={{ flex: 1, padding: space.md }}>
         <Text style={styles.postMeta}>
@@ -336,7 +358,7 @@ function PostRow({ post, failed }: { post: HomePost; failed?: boolean }) {
         </Text>
         {failed && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

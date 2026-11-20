@@ -126,4 +126,12 @@ export class MobileController {
   deletePost(@Request() req: any, @Param('postId') postId: string, @Body() dto: PostActionDto) {
     return this.posts.deletePost(postId, req.user.sub, dto.expectedUpdatedAt);
   }
+
+  @Post('posts/:postId/review-link')
+  @HttpCode(200)
+  @UseGuards(JwtGuard)
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  reviewLink(@Request() req: any, @Param('postId') postId: string, @Body() dto: PostActionDto) {
+    return this.posts.reviewLink(postId, req.user.sub, dto.expectedUpdatedAt);
+  }
 }

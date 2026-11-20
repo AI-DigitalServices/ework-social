@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
-import { presets } from '../../create/PublishPanel';
+import WhenPicker, { formatShort } from '../../create/WhenPicker';
+import type { When, WhenPickerHandle } from '../../create/WhenPicker';
 import PlatformIcon, { platformColor } from '../../platform';
 import { platformName, statusMeta, when } from '../../posts/components';
 import { Button, Card, ErrorText, Field, Pill, Screen, Text } from '../../ui';
@@ -26,9 +27,9 @@ type Detail = {
 };
 
 const APPROVAL_LABEL: Record<string, string> = {
-  PENDING: 'Waiting for the client',
-  APPROVED: 'Approved by the client',
-  REVISION_REQUESTED: 'The client asked for changes',
+  PENDING: 'Waiting for a reply',
+  APPROVED: 'Approved',
+  REVISION_REQUESTED: 'Changes requested',
 };
 
 const LIMITS: Record<string, number> = { TWITTER: 280, BLUESKY: 300, THREADS: 500, INSTAGRAM: 2200, LINKEDIN: 3000, TIKTOK: 2200, YOUTUBE: 5000, FACEBOOK: 5000 };
@@ -48,8 +49,8 @@ export default function PostDetail() {
   // edit mode
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const [whenId, setWhenId] = useState('KEEP');
-  const options = useMemo(() => presets(), []);
+  const [whenSel, setWhenSel] = useState<When | null>(null); // null = keep as it is
+  const whenRef = useRef<WhenPickerHandle>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -96,7 +97,7 @@ export default function PostDetail() {
   const startEdit = () => {
     if (!post) return;
     setDraft(post.content);
-    setWhenId('KEEP');
+    setWhenSel(null);
     setError(null);
     setNote(null);
     setEditing(true);
@@ -107,11 +108,10 @@ export default function PostDetail() {
     const body: Record<string, unknown> = { expectedUpdatedAt: post.updatedAt };
     const text = draft.trim();
     if (text !== post.content) body.content = text;
-    if (whenId !== 'KEEP') {
-      const o = options.find((x) => x.id === whenId);
-      if (o?.at) {
+    if (whenSel) {
+      if (whenSel.at) {
         body.status = 'SCHEDULED';
-        body.scheduledAt = o.at.toISOString();
+        body.scheduledAt = whenSel.at.toISOString();
       } else {
         body.status = 'DRAFT';
       }
@@ -158,14 +158,51 @@ export default function PostDetail() {
     ]);
   };
 
-  /** Hand-off: eWork Social prepares the message, WhatsApp opens so you choose who gets it. Nothing is published. */
+  /**
+   * Hand-off: eWork Social prepares the message, WhatsApp opens so you choose who gets it. Nothing is published.
+   * A draft gets a review link (the reviewer can approve or ask for changes); anything else shares its text.
+   */
+  const prepareShare = async (): Promise<string | null> => {
+    if (!post) return null;
+    let msg = `Please have a look at this ${platformName(post.platform)} post:\n\n${post.content}`;
+    if (post.canEdit && post.status === 'DRAFT') {
+      setBusy(true);
+      setError(null);
+      try {
+        const r = await request<{ url: string }>(`/mobile/v1/posts/${post.id}/review-link`, {
+          method: 'POST',
+          body: { expectedUpdatedAt: post.updatedAt },
+        });
+        msg = `Hi, could you review this ${platformName(post.platform)} post before I publish it? You can approve it or ask for changes here:\n${r.url}`;
+        void load();
+      } catch (err: any) {
+        // Still let the person share the words; show why there is no review link.
+        setError(err?.message || 'Could not make a review link, so the text is shared instead.');
+      } finally {
+        setBusy(false);
+      }
+    }
+    return msg;
+  };
+
   const shareToWhatsApp = async () => {
-    if (!post) return;
-    const msg = `Please have a look at this ${platformName(post.platform)} post:\n\n${post.content}`;
+    const msg = await prepareShare();
+    if (!msg) return;
     try {
       await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(msg)}`);
     } catch {
       Alert.alert('Could not open WhatsApp', 'Make sure WhatsApp is installed on this phone.');
+    }
+  };
+
+  /** The phone's own share menu: WhatsApp, Telegram, Messages, email, copy, and more. */
+  const shareAnywhere = async () => {
+    const msg = await prepareShare();
+    if (!msg) return;
+    try {
+      await Share.share({ message: msg });
+    } catch {
+      // closed without sharing
     }
   };
 
@@ -182,8 +219,6 @@ export default function PostDetail() {
       : post.status === 'DRAFT'
         ? 'Draft, not scheduled'
         : when(post.scheduledAt);
-
-  const timeChoices = [{ id: 'KEEP', label: post?.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is' }, ...options.map((o) => ({ id: o.id, label: o.label }))];
 
   return (
     <Screen>
@@ -225,24 +260,40 @@ export default function PostDetail() {
                 multiline
                 style={{ minHeight: 160, textAlignVertical: 'top' }}
               />
-              <Text style={styles.cap}>When</Text>
-              <View style={styles.wrap}>
-                {timeChoices.map((o) => {
-                  const on = o.id === whenId;
-                  return (
-                    <Pressable
-                      key={o.id}
-                      onPress={() => setWhenId(o.id)}
-                      style={({ pressed }) => [styles.chip, on && { backgroundColor: colors.primary, borderColor: colors.primaryBright }, pressed && { opacity: 0.85 }]}
-                    >
-                      <Text style={[styles.chipText, on && { fontWeight: '700' }]}>{o.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <WhenPicker
+                ref={whenRef}
+                value={whenSel}
+                onChange={setWhenSel}
+                pickChip={false}
+                keepLabel={post.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is'}
+              />
               <ErrorText>{error}</ErrorText>
-              <Button title="Save changes" loading={busy} disabled={tooLong || draft.trim().length === 0} onPress={() => void saveEdit()} />
               {tooLong ? <Text style={styles.warn}>This is too long for {platformName(post.platform)}. Shorten it to save.</Text> : null}
+              <ActionRow>
+                <ActionTile
+                  compact
+                  label="Save changes"
+                  loading={busy}
+                  disabled={tooLong || draft.trim().length === 0}
+                  icon={(c) => <Feather name="check" size={20} color={c} />}
+                  onPress={() => void saveEdit()}
+                />
+                <ActionTile
+                  compact
+                  label={whenSel?.id === 'custom' && whenSel.at ? formatShort(whenSel.at) : 'Pick date & time'}
+                  disabled={busy}
+                  icon={(c) => <Feather name="calendar" size={20} color={c} />}
+                  onPress={() => whenRef.current?.open()}
+                />
+                <ActionTile
+                  compact
+                  tone="danger"
+                  label="Delete"
+                  disabled={busy}
+                  icon={(c) => <Feather name="trash-2" size={20} color={c} />}
+                  onPress={confirmDelete}
+                />
+              </ActionRow>
             </View>
           ) : (
             <View>
@@ -286,12 +337,19 @@ export default function PostDetail() {
                     icon={(c) => <FontAwesome6 name="whatsapp" size={22} color={c} />}
                     onPress={() => void shareToWhatsApp()}
                   />
-                  {changeable ? (
-                    <ActionTile label="Delete" tone="danger" disabled={busy} icon={(c) => <Feather name="trash-2" size={22} color={c} />} onPress={confirmDelete} />
-                  ) : null}
+                  <ActionTile
+                    label="Share"
+                    disabled={busy}
+                    icon={(c) => <Feather name="share-2" size={22} color={c} />}
+                    onPress={() => void shareAnywhere()}
+                  />
                 </ActionRow>
               </View>
-              <Text style={styles.hint}>WhatsApp opens with the text ready and you choose who gets it. Nothing is published from WhatsApp.</Text>
+              <Text style={styles.hint}>
+                {post.canEdit && post.status === 'DRAFT'
+                  ? 'WhatsApp and Share send a review link. Whoever has it can approve the post or ask for changes. It never publishes anything.'
+                  : 'WhatsApp and Share send the text. You choose who gets it, and nothing is published from them.'}
+              </Text>
             </View>
           )}
         </View>
