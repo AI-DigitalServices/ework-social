@@ -21,12 +21,15 @@ export function ActionTile({
   icon,
   onPress,
   tone = 'default',
+  accent,
   disabled,
 }: {
   label: string;
   icon: (color: string) => ReactNode;
   onPress: () => void;
   tone?: 'default' | 'danger' | 'ok';
+  /** Brand colour for the icon, for example a platform colour. The label keeps the tone colour. */
+  accent?: string;
   disabled?: boolean;
 }) {
   const color = tone === 'danger' ? colors.danger : tone === 'ok' ? colors.ok : colors.text;
@@ -38,7 +41,7 @@ export function ActionTile({
       accessibilityLabel={label}
       style={({ pressed }) => [styles.tile, disabled && { opacity: 0.5 }, pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }]}
     >
-      {icon(color)}
+      {icon(accent ?? color)}
       <Text style={[styles.label, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
         {label}
       </Text>

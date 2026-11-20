@@ -281,6 +281,7 @@ export default function PostDetail() {
                   ) : null}
                   <ActionTile
                     label="WhatsApp"
+                    accent={platformColor('WHATSAPP')}
                     disabled={busy}
                     icon={(c) => <FontAwesome6 name="whatsapp" size={22} color={c} />}
                     onPress={() => void shareToWhatsApp()}
