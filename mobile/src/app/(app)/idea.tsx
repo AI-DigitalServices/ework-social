@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../ui';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
@@ -25,6 +25,16 @@ export default function Idea() {
   const router = useRouter();
   const { workspace } = useAuth();
   const wid = workspace?.id;
+
+  // Coming back from Connect (or anywhere): always show the accounts as they are now.
+  useFocusEffect(
+    useCallback(() => {
+      if (!wid) return;
+      request<{ accounts: Account[] }>(`/mobile/v1/workspaces/${wid}/home`)
+        .then((h) => setAccounts(h.accounts ?? []))
+        .catch(() => {});
+    }, [wid]),
+  );
 
   const [stage, setStage] = useState<Stage>('write');
   const [idea, setIdea] = useState('');

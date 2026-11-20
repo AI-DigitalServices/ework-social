@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
@@ -58,9 +58,11 @@ export default function Ideas() {
     [wid],
   );
 
-  useEffect(() => {
-    void load('initial');
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load('refresh');
+    }, [load]),
+  );
 
   const openIdea = (i: Idea) => {
     setOpen(i);
