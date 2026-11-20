@@ -75,13 +75,17 @@ export function FilterChips({
   );
 }
 
-export function PostCard({ post }: { post: PostItem }) {
+export function PostCard({ post, onPress }: { post: PostItem; onPress?: () => void }) {
   const meta = statusMeta(post.status);
   const stripe = post.status === 'FAILED' ? colors.danger : (platformColors[post.platform ?? ''] ?? colors.primaryBright);
   const time =
     post.status === 'PUBLISHED' ? when(post.publishedAt, 'Published') : post.status === 'DRAFT' ? 'Draft' : when(post.scheduledAt);
   return (
-    <View style={[styles.post, post.status === 'FAILED' && { borderColor: colors.danger }]}>
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.post, post.status === 'FAILED' && { borderColor: colors.danger }, pressed && { opacity: 0.88 }]}
+    >
       <View style={[styles.stripe, { backgroundColor: stripe }]} />
       <View style={{ flex: 1, padding: space.md }}>
         <View style={styles.postTop}>
@@ -103,7 +107,7 @@ export function PostCard({ post }: { post: PostItem }) {
         </Text>
         {post.status === 'FAILED' && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
