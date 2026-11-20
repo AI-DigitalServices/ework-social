@@ -263,7 +263,10 @@ export default function Idea() {
             <Button title="Just save to my ideas" variant="link" onPress={() => void finish()} />
           </>
         ) : (
-          <Button title="Save to my ideas" onPress={() => void finish()} loading={busy} />
+          <>
+            <Button title="Save to my ideas" onPress={() => void finish()} loading={busy} />
+            <Button title="Connect an account first" variant="link" onPress={() => router.navigate('/connect' as Href)} />
+          </>
         )}
       </Screen>
     );
