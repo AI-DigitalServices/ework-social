@@ -5,19 +5,23 @@ import { useRouter } from 'expo-router';
 import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { StepHero } from '../../onboarding/delight';
+import PlatformIcon from '../../platform';
 import { Button, Card, FadeIn, Pill, Screen, Text } from '../../ui';
-import { colors, platformColors, radius, space } from '../../theme';
+import { colors, radius, space } from '../../theme';
 
 // The API sends the user here when the provider is done (MOBILE_OAUTH_RETURN_URL on the server).
 const RETURN_URL = 'eworksocial://oauth-return';
 
 type Account = { id: string; platform: string; accountName: string };
 
-const LATER: { platform: string; label: string }[] = [
-  { platform: 'LINKEDIN', label: 'LinkedIn' },
-  { platform: 'TIKTOK', label: 'TikTok' },
-  { platform: 'YOUTUBE', label: 'YouTube' },
-  { platform: 'THREADS', label: 'Threads' },
+// Everything the web dashboard can connect. These go live one by one.
+const LATER: { platform: string; label: string; hint: string }[] = [
+  { platform: 'LINKEDIN', label: 'LinkedIn', hint: 'Profiles and company pages' },
+  { platform: 'TWITTER', label: 'X', hint: 'Short updates' },
+  { platform: 'TIKTOK', label: 'TikTok', hint: 'Short videos' },
+  { platform: 'YOUTUBE', label: 'YouTube', hint: 'Videos and Shorts' },
+  { platform: 'THREADS', label: 'Threads', hint: 'Casual text posts' },
+  { platform: 'BLUESKY', label: 'Bluesky', hint: 'Short posts' },
 ];
 
 function platformName(p: string): string {
@@ -121,17 +125,15 @@ export default function Connect() {
         <FadeIn>
           <Text style={styles.cap}>Connected</Text>
           {accounts.map((a) => (
-            <View key={a.id} style={styles.account}>
-              <View style={[styles.stripe, { backgroundColor: platformColors[a.platform] ?? colors.primaryBright }]} />
-              <View style={{ flex: 1, padding: 14 }}>
-                <Text style={styles.accountName} numberOfLines={1}>
+            <View key={a.id} style={styles.row}>
+              <PlatformIcon platform={a.platform} size={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name} numberOfLines={1}>
                   {a.accountName}
                 </Text>
                 <Text style={styles.sub}>{platformName(a.platform)}</Text>
               </View>
-              <View style={{ paddingRight: 14 }}>
-                <Pill label="Connected" color={colors.ok} soft={colors.okSoft} />
-              </View>
+              <Pill label="Connected" color={colors.ok} soft={colors.okSoft} />
             </View>
           ))}
         </FadeIn>
@@ -140,6 +142,10 @@ export default function Connect() {
       <FadeIn delay={80}>
         <Text style={[styles.cap, { marginTop: 8 }]}>Add an account</Text>
         <Card tone="primary">
+          <View style={styles.pair}>
+            <PlatformIcon platform="FACEBOOK" size={44} />
+            <PlatformIcon platform="INSTAGRAM" size={44} />
+          </View>
           <Text style={styles.cardTitle}>Facebook and Instagram</Text>
           <Text style={styles.sub}>
             Connects the Facebook Pages you manage, and the Instagram business accounts linked to them.
@@ -153,15 +159,13 @@ export default function Connect() {
         </Card>
 
         {LATER.map((l) => (
-          <View key={l.platform} style={[styles.account, { opacity: 0.65 }]}>
-            <View style={[styles.stripe, { backgroundColor: platformColors[l.platform] ?? colors.border }]} />
-            <View style={{ flex: 1, padding: 14 }}>
-              <Text style={styles.accountName}>{l.label}</Text>
-              <Text style={styles.sub}>Connect from the web dashboard for now</Text>
+          <View key={l.platform} style={[styles.row, { opacity: 0.7 }]}>
+            <PlatformIcon platform={l.platform} size={44} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{l.label}</Text>
+              <Text style={styles.sub}>{l.hint}. Connect from the web dashboard for now.</Text>
             </View>
-            <View style={{ paddingRight: 14 }}>
-              <Pill label="Soon" color={colors.accent} soft={colors.accentSoft} />
-            </View>
+            <Pill label="Soon" color={colors.accent} soft={colors.accentSoft} />
           </View>
         ))}
       </FadeIn>
@@ -175,16 +179,17 @@ const styles = StyleSheet.create({
   noteText: { color: colors.text, fontSize: 15, lineHeight: 22 },
   cardTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginBottom: 6 },
   sub: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  account: {
+  name: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  pair: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 14,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
+    padding: 14,
     marginBottom: space.sm + 4,
-    overflow: 'hidden',
   },
-  stripe: { width: 4, alignSelf: 'stretch' },
-  accountName: { color: colors.text, fontSize: 16, fontWeight: '700' },
 });
