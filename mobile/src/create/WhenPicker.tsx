@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useImperativeHandle, useState } from 'react';
+import type { Ref } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -7,6 +8,9 @@ import { colors, radius } from '../theme';
 
 /** When a post goes out. at = null means "keep it as a draft". */
 export type When = { id: string; label: string; at: Date | null };
+
+/** Lets a screen open the date and time picker from its own button. */
+export type WhenPickerHandle = { open: () => void };
 
 export const DRAFT_WHEN: When = { id: 'DRAFT', label: 'Save as draft', at: null };
 
@@ -33,18 +37,29 @@ export function formatWhen(d: Date): string {
   return d.toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+/** Short form for small buttons, for example "21 Nov, 14:30". */
+export function formatShort(d: Date): string {
+  return d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
 /**
  * Quick time chips plus "Pick date & time" (the phone's own picker).
  * value null means "keep as it is", shown only when keepLabel is given (editing an existing post).
+ * pickChip={false} hides the "Pick date & time" chip when the screen has its own button, which opens the picker
+ * through the ref: ref.current.open().
  */
 export default function WhenPicker({
   value,
   onChange,
   keepLabel,
+  pickChip = true,
+  ref,
 }: {
   value: When | null;
   onChange: (w: When | null) => void;
   keepLabel?: string;
+  pickChip?: boolean;
+  ref?: Ref<WhenPickerHandle>;
 }) {
   const [iosOpen, setIosOpen] = useState(false);
   const [iosDate, setIosDate] = useState(() => new Date(Date.now() + HOUR));
@@ -89,6 +104,8 @@ export default function WhenPicker({
     }
   };
 
+  useImperativeHandle(ref, () => ({ open: openPicker }));
+
   const customOn = value?.id === 'custom';
 
   return (
@@ -110,12 +127,9 @@ export default function WhenPicker({
             }}
           />
         ))}
-        <Chip
-          label={customOn && value ? value.label : 'Pick date & time'}
-          on={customOn || iosOpen}
-          icon
-          onPress={openPicker}
-        />
+        {pickChip ? (
+          <Chip label={customOn && value ? value.label : 'Pick date & time'} on={customOn || iosOpen} icon onPress={openPicker} />
+        ) : null}
       </View>
 
       {iosOpen ? (
