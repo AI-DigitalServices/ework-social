@@ -266,6 +266,40 @@ export class MobilePostsService {
     return { ok: true };
   }
 
+  /**
+   * A link where someone can look at a draft and approve it or ask for changes, to share on WhatsApp or anywhere.
+   * Does not email anyone and does not change the post. Approving never publishes.
+   */
+  async reviewLink(postId: string, userId: string, expectedUpdatedAt: string) {
+    const { post, role } = await this.loadPost(postId, userId);
+    this.assertMayWrite(role);
+    await this.planGuard.assertCanWrite(post.workspaceId);
+    await this.planGuard.checkClientApprovalAccess(post.workspaceId);
+    this.assertFresh(post, expectedUpdatedAt);
+
+    if (post.status !== 'DRAFT') {
+      throw new BadRequestException('Save the post as a draft first, then share it for review.');
+    }
+
+    const existing = await this.prisma.postApproval.findUnique({ where: { postId: post.id }, select: { token: true, status: true } });
+    let token: string;
+    if (existing && existing.status === 'PENDING') {
+      token = existing.token;
+    } else {
+      const [, created] = await this.prisma.$transaction([
+        this.prisma.postApproval.deleteMany({ where: { postId: post.id } }),
+        this.prisma.postApproval.create({
+          data: { postId: post.id, workspaceId: post.workspaceId, clientEmail: '', clientName: 'Reviewer', status: 'PENDING' },
+          select: { token: true },
+        }),
+      ]);
+      token = created.token;
+    }
+
+    const base = (process.env.FRONTEND_URL || 'https://app.eworksocial.com').replace(/\/+$/, '');
+    return { url: `${base}/approve/${token}`, status: 'PENDING' };
+  }
+
   // ── Internals ─────────────────────────────────────────────────────────────
 
   /** Loads the post and the caller's role in its workspace; unknown or foreign posts look identical (404). */
