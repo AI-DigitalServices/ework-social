@@ -26,9 +26,9 @@ type Detail = {
 };
 
 const APPROVAL_LABEL: Record<string, string> = {
-  PENDING: 'Waiting for the client',
-  APPROVED: 'Approved by the client',
-  REVISION_REQUESTED: 'The client asked for changes',
+  PENDING: 'Waiting for a reply',
+  APPROVED: 'Approved',
+  REVISION_REQUESTED: 'Changes requested',
 };
 
 const LIMITS: Record<string, number> = { TWITTER: 280, BLUESKY: 300, THREADS: 500, INSTAGRAM: 2200, LINKEDIN: 3000, TIKTOK: 2200, YOUTUBE: 5000, FACEBOOK: 5000 };
@@ -158,10 +158,30 @@ export default function PostDetail() {
     ]);
   };
 
-  /** Hand-off: eWork Social prepares the message, WhatsApp opens so you choose who gets it. Nothing is published. */
+  /**
+   * Hand-off: eWork Social prepares the message, WhatsApp opens so you choose who gets it. Nothing is published.
+   * A draft gets a review link (the reviewer can approve or ask for changes); anything else shares its text.
+   */
   const shareToWhatsApp = async () => {
     if (!post) return;
-    const msg = `Please have a look at this ${platformName(post.platform)} post:\n\n${post.content}`;
+    let msg = `Please have a look at this ${platformName(post.platform)} post:\n\n${post.content}`;
+    if (post.canEdit && post.status === 'DRAFT') {
+      setBusy(true);
+      setError(null);
+      try {
+        const r = await request<{ url: string }>(`/mobile/v1/posts/${post.id}/review-link`, {
+          method: 'POST',
+          body: { expectedUpdatedAt: post.updatedAt },
+        });
+        msg = `Hi, could you review this ${platformName(post.platform)} post before I publish it? You can approve it or ask for changes here:\n${r.url}`;
+        void load();
+      } catch (err: any) {
+        // Still let the person share the words; show why there is no review link.
+        setError(err?.message || 'Could not make a review link, so the text is shared instead.');
+      } finally {
+        setBusy(false);
+      }
+    }
     try {
       await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(msg)}`);
     } catch {
@@ -291,7 +311,11 @@ export default function PostDetail() {
                   ) : null}
                 </ActionRow>
               </View>
-              <Text style={styles.hint}>WhatsApp opens with the text ready and you choose who gets it. Nothing is published from WhatsApp.</Text>
+              <Text style={styles.hint}>
+                {post.canEdit && post.status === 'DRAFT'
+                  ? 'WhatsApp opens with a review link. Whoever has it can approve the post or ask for changes. It never publishes anything.'
+                  : 'WhatsApp opens with the text ready and you choose who gets it. Nothing is published from WhatsApp.'}
+              </Text>
             </View>
           )}
         </View>
