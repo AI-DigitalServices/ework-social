@@ -1,11 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { request } from '../../api/client';
+import { presets } from '../../create/PublishPanel';
 import PlatformIcon, { platformColor } from '../../platform';
 import { platformName, statusMeta, when } from '../../posts/components';
-import { Button, Card, ErrorText, Pill, Screen, Text } from '../../ui';
-import { colors, space } from '../../theme';
+import { Button, Card, ErrorText, Field, Pill, Screen, Text } from '../../ui';
+import { colors, radius, space } from '../../theme';
 
 type Detail = {
   id: string;
@@ -28,6 +29,11 @@ const APPROVAL_LABEL: Record<string, string> = {
   REVISION_REQUESTED: 'The client asked for changes',
 };
 
+const LIMITS: Record<string, number> = { TWITTER: 280, BLUESKY: 300, THREADS: 500, INSTAGRAM: 2200, LINKEDIN: 3000, TIKTOK: 2200, YOUTUBE: 5000, FACEBOOK: 5000 };
+
+/** Drafts, scheduled posts and failed posts can still be changed. */
+const CHANGEABLE = ['DRAFT', 'SCHEDULED', 'FAILED'];
+
 export default function PostDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,9 +43,14 @@ export default function PostDetail() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
+  // edit mode
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [whenId, setWhenId] = useState('KEEP');
+  const options = useMemo(() => presets(), []);
+
   const load = useCallback(async () => {
     if (!id) return;
-    setError(null);
     try {
       setPost(await request<Detail>(`/mobile/v1/posts/${id}`));
     } catch (err: any) {
@@ -66,6 +77,7 @@ export default function PostDetail() {
       await load();
     } catch (err: any) {
       setError(err?.message || 'That did not work. Please try again.');
+      void load();
     } finally {
       setBusy(false);
     }
@@ -76,6 +88,71 @@ export default function PostDetail() {
     Alert.alert('Publish now?', `This posts to ${platformName(post.platform)}${post.accountName ? ` (${post.accountName})` : ''} right away.`, [
       { text: 'Not yet', style: 'cancel' },
       { text: 'Publish', onPress: () => void act('publish-now') },
+    ]);
+  };
+
+  const startEdit = () => {
+    if (!post) return;
+    setDraft(post.content);
+    setWhenId('KEEP');
+    setError(null);
+    setNote(null);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!post) return;
+    const body: Record<string, unknown> = { expectedUpdatedAt: post.updatedAt };
+    const text = draft.trim();
+    if (text !== post.content) body.content = text;
+    if (whenId !== 'KEEP') {
+      const o = options.find((x) => x.id === whenId);
+      if (o?.at) {
+        body.status = 'SCHEDULED';
+        body.scheduledAt = o.at.toISOString();
+      } else {
+        body.status = 'DRAFT';
+      }
+    }
+    if (Object.keys(body).length === 1) {
+      setEditing(false);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await request(`/mobile/v1/posts/${post.id}`, { method: 'PATCH', body });
+      setEditing(false);
+      setNote('Saved.');
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Could not save your changes.');
+      void load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!post) return;
+    Alert.alert('Delete this post?', 'It will be removed. This cannot be undone.', [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await request(`/mobile/v1/posts/${post.id}/delete`, { method: 'POST', body: { expectedUpdatedAt: post.updatedAt } });
+            router.back();
+          } catch (err: any) {
+            setError(err?.message || 'Could not delete this post.');
+            void load();
+            setBusy(false);
+          }
+        },
+      },
     ]);
   };
 
@@ -90,9 +167,12 @@ export default function PostDetail() {
     }
   };
 
+  const changeable = !!post && post.canEdit && CHANGEABLE.includes(post.status);
   const canPublish = !!post && post.canEdit && (post.status === 'DRAFT' || post.status === 'SCHEDULED');
   const canRetry = !!post && post.canEdit && post.status === 'FAILED';
   const meta = post ? statusMeta(post.status) : null;
+  const limit = LIMITS[post?.platform ?? ''] ?? 2200;
+  const tooLong = draft.length > limit;
   const time = !post
     ? ''
     : post.status === 'PUBLISHED'
@@ -101,10 +181,12 @@ export default function PostDetail() {
         ? 'Draft, not scheduled'
         : when(post.scheduledAt);
 
+  const timeChoices = [{ id: 'KEEP', label: post?.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is' }, ...options.map((o) => ({ id: o.id, label: o.label }))];
+
   return (
     <Screen>
-      <Pressable hitSlop={12} onPress={() => router.back()} style={{ paddingTop: space.md }}>
-        <Text style={styles.back}>‹  Back</Text>
+      <Pressable hitSlop={12} onPress={() => (editing && !busy ? setEditing(false) : router.back())} style={{ paddingTop: space.md }}>
+        <Text style={styles.back}>{editing ? '‹  Cancel' : '‹  Back'}</Text>
       </Pressable>
 
       {loading ? (
@@ -131,40 +213,75 @@ export default function PostDetail() {
             {meta ? <Pill label={meta.label} color={meta.color} soft={meta.soft} /> : null}
           </View>
 
-          <Text style={[styles.time, { color: platformColor(post.platform) }]}>{time}</Text>
+          {editing ? (
+            <View>
+              <Field
+                label={`Your post (${draft.length}/${limit})`}
+                value={draft}
+                onChangeText={setDraft}
+                autoCapitalize="sentences"
+                multiline
+                style={{ minHeight: 160, textAlignVertical: 'top' }}
+              />
+              <Text style={styles.cap}>When</Text>
+              <View style={styles.wrap}>
+                {timeChoices.map((o) => {
+                  const on = o.id === whenId;
+                  return (
+                    <Pressable
+                      key={o.id}
+                      onPress={() => setWhenId(o.id)}
+                      style={({ pressed }) => [styles.chip, on && { backgroundColor: colors.primary, borderColor: colors.primaryBright }, pressed && { opacity: 0.85 }]}
+                    >
+                      <Text style={[styles.chipText, on && { fontWeight: '700' }]}>{o.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <ErrorText>{error}</ErrorText>
+              <Button title="Save changes" loading={busy} disabled={tooLong || draft.trim().length === 0} onPress={() => void saveEdit()} />
+              {tooLong ? <Text style={styles.warn}>This is too long for {platformName(post.platform)}. Shorten it to save.</Text> : null}
+            </View>
+          ) : (
+            <View>
+              <Text style={[styles.time, { color: platformColor(post.platform) }]}>{time}</Text>
 
-          <Card>
-            <Text style={styles.content} selectable>
-              {post.content || '(no text)'}
-            </Text>
-            {post.mediaUrls && post.mediaUrls.length > 0 ? (
-              <Text style={styles.media}>
-                {post.mediaUrls.length} {post.mediaUrls.length === 1 ? 'photo' : 'photos'} attached
+              <Card>
+                <Text style={styles.content} selectable>
+                  {post.content || '(no text)'}
+                </Text>
+                {post.mediaUrls && post.mediaUrls.length > 0 ? (
+                  <Text style={styles.media}>
+                    {post.mediaUrls.length} {post.mediaUrls.length === 1 ? 'photo' : 'photos'} attached
+                  </Text>
+                ) : null}
+              </Card>
+
+              {post.status === 'FAILED' && post.errorMessage ? <ErrorText>{post.errorMessage}</ErrorText> : null}
+
+              {post.approval ? (
+                <Card tone={post.approval.status === 'APPROVED' ? 'ok' : post.approval.status === 'REVISION_REQUESTED' ? 'warn' : 'primary'}>
+                  <Text style={styles.approvalTitle}>{APPROVAL_LABEL[post.approval.status] ?? 'Client review'}</Text>
+                  {post.approval.clientName ? <Text style={styles.approvalText}>{post.approval.clientName}</Text> : null}
+                  {post.approval.revisionNote ? <Text style={styles.approvalText}>“{post.approval.revisionNote}”</Text> : null}
+                </Card>
+              ) : null}
+
+              <ErrorText>{error}</ErrorText>
+              {note ? <Text style={styles.ok}>{note}</Text> : null}
+
+              <View style={{ gap: space.sm, marginTop: space.md }}>
+                {canPublish ? <Button title="Publish now" loading={busy} onPress={confirmPublish} /> : null}
+                {canRetry ? <Button title="Try again" loading={busy} onPress={() => void act('retry')} /> : null}
+                {changeable ? <Button title="Edit text or time" variant="secondary" onPress={startEdit} /> : null}
+                <Button title="Send to WhatsApp for a look" variant="secondary" onPress={() => void shareToWhatsApp()} />
+                {changeable ? <Button title="Delete this post" variant="link" onPress={confirmDelete} /> : null}
+              </View>
+              <Text style={styles.hint}>
+                WhatsApp opens with the text ready, and you pick who gets it. It only shares the words. Nothing is published from WhatsApp.
               </Text>
-            ) : null}
-          </Card>
-
-          {post.status === 'FAILED' && post.errorMessage ? <ErrorText>{post.errorMessage}</ErrorText> : null}
-
-          {post.approval ? (
-            <Card tone={post.approval.status === 'APPROVED' ? 'ok' : post.approval.status === 'REVISION_REQUESTED' ? 'warn' : 'primary'}>
-              <Text style={styles.approvalTitle}>{APPROVAL_LABEL[post.approval.status] ?? 'Client review'}</Text>
-              {post.approval.clientName ? <Text style={styles.approvalText}>{post.approval.clientName}</Text> : null}
-              {post.approval.revisionNote ? <Text style={styles.approvalText}>“{post.approval.revisionNote}”</Text> : null}
-            </Card>
-          ) : null}
-
-          <ErrorText>{error}</ErrorText>
-          {note ? <Text style={styles.ok}>{note}</Text> : null}
-
-          <View style={{ gap: space.sm, marginTop: space.md }}>
-            {canPublish ? <Button title="Publish now" loading={busy} onPress={confirmPublish} /> : null}
-            {canRetry ? <Button title="Try again" loading={busy} onPress={() => void act('retry')} /> : null}
-            <Button title="Send to WhatsApp for a look" variant="secondary" onPress={() => void shareToWhatsApp()} />
-          </View>
-          <Text style={styles.hint}>
-            WhatsApp opens with the text ready, and you pick who gets it. It only shares the words. Nothing is published from WhatsApp.
-          </Text>
+            </View>
+          )}
         </View>
       )}
     </Screen>
@@ -183,5 +300,17 @@ const styles = StyleSheet.create({
   approvalTitle: { color: colors.text, fontSize: 15, fontWeight: '800' },
   approvalText: { color: colors.muted, fontSize: 14, marginTop: 4 },
   ok: { color: colors.ok, fontSize: 14, fontWeight: '600', marginTop: space.sm },
+  warn: { color: colors.danger, fontSize: 13, marginTop: space.sm, textAlign: 'center' },
   hint: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: space.sm, textAlign: 'center' },
+  cap: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  chip: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  chipText: { color: colors.text, fontSize: 14 },
 });
