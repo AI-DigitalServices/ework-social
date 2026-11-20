@@ -137,8 +137,21 @@ export function buildOAuthReturnUrl(
   query: string,
   appReturnUrl: string | undefined = process.env.MOBILE_OAUTH_RETURN_URL,
 ): string {
+  return buildClientReturnUrl(readOAuthClient(state), frontendUrl, query, appReturnUrl);
+}
+
+/**
+ * Same as buildOAuthReturnUrl, for providers that already know which client started the sign-in
+ * (X keeps its state in memory, so the flag is read from there instead of from a signed state).
+ */
+export function buildClientReturnUrl(
+  client: 'app' | 'web',
+  frontendUrl: string,
+  query: string,
+  appReturnUrl: string | undefined = process.env.MOBILE_OAUTH_RETURN_URL,
+): string {
   const web = `${frontendUrl}/dashboard/settings?tab=social&${query}`;
-  if (readOAuthClient(state) !== 'app') return web;
+  if (client !== 'app') return web;
   const base = (appReturnUrl || '').trim();
   if (!isSafeAppReturnUrl(base)) return web;
   return `${base}${base.includes('?') ? '&' : '?'}${query}`;
