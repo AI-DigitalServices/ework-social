@@ -6,7 +6,7 @@ import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { StepHero } from '../../onboarding/delight';
 import PlatformIcon from '../../platform';
-import { Button, Card, FadeIn, Pill, Screen, Text } from '../../ui';
+import { Button, Card, ErrorText, FadeIn, Field, Pill, Screen, Text } from '../../ui';
 import { colors, radius, space } from '../../theme';
 
 // The API sends the user here when the provider is done (MOBILE_OAUTH_RETURN_URL on the server).
@@ -14,19 +14,66 @@ const RETURN_URL = 'eworksocial://oauth-return';
 
 type Account = { id: string; platform: string; accountName: string };
 
-// Everything the web dashboard can connect. These go live one by one.
+type Provider = {
+  id: string;
+  platforms: string[];
+  title: string;
+  text: string;
+  path: string;
+  noPages?: string;
+};
+
+// Providers that sign in through the browser. Each route already supports "started from the app".
+const PROVIDERS: Provider[] = [
+  {
+    id: 'meta',
+    platforms: ['FACEBOOK', 'INSTAGRAM'],
+    title: 'Facebook and Instagram',
+    text: 'Connects the Facebook Pages you manage, and the Instagram business accounts linked to them.',
+    path: '/social/facebook/auth-url',
+    noPages: 'We could not find a Facebook Page you manage. Instagram connects through a Facebook Page, so link yours first and try again.',
+  },
+  {
+    id: 'linkedin',
+    platforms: ['LINKEDIN'],
+    title: 'LinkedIn profile',
+    text: 'Post to your personal LinkedIn profile.',
+    path: '/social/linkedin/auth-url',
+  },
+  {
+    id: 'linkedin-org',
+    platforms: ['LINKEDIN'],
+    title: 'LinkedIn Company Page',
+    text: 'Post to a company page you manage.',
+    path: '/social/linkedin-org/auth-url',
+    noPages: 'We could not find a LinkedIn Company Page you manage.',
+  },
+  {
+    id: 'threads',
+    platforms: ['THREADS'],
+    title: 'Threads',
+    text: 'Post to your Threads profile.',
+    path: '/social/threads/auth-url',
+  },
+];
+
+// Still to come in the app. The web dashboard connects these today.
 const LATER: { platform: string; label: string; hint: string }[] = [
-  { platform: 'LINKEDIN', label: 'LinkedIn', hint: 'Profiles and company pages' },
   { platform: 'TWITTER', label: 'X', hint: 'Short updates' },
   { platform: 'TIKTOK', label: 'TikTok', hint: 'Short videos' },
   { platform: 'YOUTUBE', label: 'YouTube', hint: 'Videos and Shorts' },
-  { platform: 'THREADS', label: 'Threads', hint: 'Casual text posts' },
-  { platform: 'BLUESKY', label: 'Bluesky', hint: 'Short posts' },
 ];
 
 function platformName(p: string): string {
   if (p === 'TWITTER') return 'X';
   return p.charAt(0) + p.slice(1).toLowerCase();
+}
+
+/** Server setup messages are for us, not for customers. */
+function friendly(err: any, fallback: string): string {
+  const m = String(err?.message || '');
+  if (/not configured/i.test(m)) return 'This connection is not available yet. We are still setting it up.';
+  return m || fallback;
 }
 
 /** Reads success= / error= off the return address, if the browser handed it back. */
@@ -42,7 +89,6 @@ function readOutcome(url: string | undefined): { ok?: boolean; error?: string } 
 
 const ERRORS: Record<string, string> = {
   cancelled: 'Connection cancelled. Nothing was changed.',
-  no_pages: 'We could not find a Facebook Page you manage. Instagram connects through a Facebook Page, so link yours first and try again.',
   failed: 'Something went wrong while connecting. Please try again.',
 };
 
@@ -54,8 +100,13 @@ export default function Connect() {
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const [bsky, setBsky] = useState(false);
+  const [handle, setHandle] = useState('');
+  const [appPassword, setAppPassword] = useState('');
+  const [bskyError, setBskyError] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<Account[]> => {
     if (!wid) return [];
@@ -71,15 +122,13 @@ export default function Connect() {
       .finally(() => setLoading(false));
   }, [refresh]);
 
-  const connectMeta = async () => {
+  const connect = async (p: Provider) => {
     if (!wid) return;
-    setBusy(true);
+    setBusy(p.id);
     setNote(null);
     const before = accounts.length;
     try {
-      const r = await request<{ url?: string; authUrl?: string }>(
-        `/social/facebook/auth-url?workspaceId=${encodeURIComponent(wid)}&client=app`,
-      );
+      const r = await request<{ url?: string; authUrl?: string }>(`${p.path}?workspaceId=${encodeURIComponent(wid)}&client=app`);
       const url = r.url ?? r.authUrl;
       if (!url) throw new Error('We could not start the connection. Please try again.');
 
@@ -89,14 +138,39 @@ export default function Connect() {
       // Whatever the browser says, trust the server: look at what is actually connected now.
       const list = await refresh().catch(() => accounts);
       if (outcome.error) {
-        setNote({ ok: false, text: ERRORS[outcome.error] ?? ERRORS.failed });
+        const text = outcome.error === 'no_pages' && p.noPages ? p.noPages : (ERRORS[outcome.error] ?? ERRORS.failed);
+        setNote({ ok: false, text });
       } else if (list.length > before || outcome.ok) {
         setNote({ ok: true, text: 'Connected. You can now schedule posts to it.' });
       }
     } catch (err: any) {
-      setNote({ ok: false, text: err?.message || 'Could not connect. Please try again.' });
+      setNote({ ok: false, text: friendly(err, 'Could not connect. Please try again.') });
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  };
+
+  const connectBluesky = async () => {
+    if (!wid) return;
+    setBusy('bluesky');
+    setBskyError(null);
+    setNote(null);
+    try {
+      await request(`/social/bluesky/connect`, {
+        method: 'POST',
+        body: { workspaceId: wid, identifier: handle.trim().replace(/^@/, ''), appPassword: appPassword.trim() },
+      });
+      await refresh().catch(() => []);
+      setBsky(false);
+      setHandle('');
+      setAppPassword('');
+      setNote({ ok: true, text: 'Bluesky connected. You can now schedule posts to it.' });
+    } catch {
+      setBskyError(
+        'Bluesky did not accept that handle and app password. Use an app password, not your normal password. You can create one in Bluesky under Settings, Privacy and security, App passwords.',
+      );
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -141,20 +215,68 @@ export default function Connect() {
 
       <FadeIn delay={80}>
         <Text style={[styles.cap, { marginTop: 8 }]}>Add an account</Text>
-        <Card tone="primary">
+
+        {PROVIDERS.map((p, i) => (
+          <Card key={p.id} tone={i === 0 ? 'primary' : undefined}>
+            <View style={styles.pair}>
+              {p.platforms.map((pl) => (
+                <PlatformIcon key={pl} platform={pl} size={44} />
+              ))}
+            </View>
+            <Text style={styles.cardTitle}>{p.title}</Text>
+            <Text style={styles.sub}>{p.text}</Text>
+            <View style={{ height: 14 }} />
+            {canConnect ? (
+              <Button
+                title={busy === p.id ? 'Opening...' : 'Connect'}
+                variant={i === 0 ? 'primary' : 'secondary'}
+                onPress={() => void connect(p)}
+                loading={busy === p.id}
+                disabled={busy !== null && busy !== p.id}
+              />
+            ) : (
+              <Text style={styles.sub}>Only the owner or an admin of this workspace can connect accounts.</Text>
+            )}
+          </Card>
+        ))}
+
+        <Card>
           <View style={styles.pair}>
-            <PlatformIcon platform="FACEBOOK" size={44} />
-            <PlatformIcon platform="INSTAGRAM" size={44} />
+            <PlatformIcon platform="BLUESKY" size={44} />
           </View>
-          <Text style={styles.cardTitle}>Facebook and Instagram</Text>
-          <Text style={styles.sub}>
-            Connects the Facebook Pages you manage, and the Instagram business accounts linked to them.
-          </Text>
+          <Text style={styles.cardTitle}>Bluesky</Text>
+          <Text style={styles.sub}>Sign in with your handle and an app password.</Text>
           <View style={{ height: 14 }} />
-          {canConnect ? (
-            <Button title={busy ? 'Opening Facebook...' : 'Connect'} onPress={() => void connectMeta()} loading={busy} />
-          ) : (
+          {!canConnect ? (
             <Text style={styles.sub}>Only the owner or an admin of this workspace can connect accounts.</Text>
+          ) : bsky ? (
+            <>
+              <Field
+                label="Your handle"
+                value={handle}
+                onChangeText={setHandle}
+                placeholder="name.bsky.social"
+                autoCapitalize="none"
+              />
+              <Field
+                label="App password"
+                value={appPassword}
+                onChangeText={setAppPassword}
+                placeholder="xxxx-xxxx-xxxx-xxxx"
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <ErrorText>{bskyError}</ErrorText>
+              <Button
+                title="Connect Bluesky"
+                onPress={() => void connectBluesky()}
+                loading={busy === 'bluesky'}
+                disabled={!handle.trim() || !appPassword.trim()}
+              />
+              <Button title="Cancel" variant="link" onPress={() => setBsky(false)} />
+            </>
+          ) : (
+            <Button title="Connect" variant="secondary" onPress={() => setBsky(true)} disabled={busy !== null} />
           )}
         </Card>
 
