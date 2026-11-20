@@ -11,6 +11,7 @@ import type { OnboardingState } from '../../../onboarding/api';
 import { wasSkipped } from '../../../onboarding/session';
 import { Avatar, Button, Card, ErrorText, FadeIn, Pill, SectionTitle } from '../../../ui';
 import { colors, platformColors, radius, shadow, space } from '../../../theme';
+import PlatformIcon from '../../../platform';
 
 type HomePost = {
   id: string;
@@ -267,7 +268,7 @@ export default function Home() {
                 <View style={styles.chips}>
                   {data.accounts.map((a) => (
                     <View key={a.id} style={styles.chip}>
-                      <View style={[styles.chipDot, { backgroundColor: platformColors[a.platform] ?? colors.primaryBright }]} />
+                      <PlatformIcon platform={a.platform} size={22} />
                       <Text style={styles.chipText}>
                         {platformName(a.platform)} · {a.accountName}
                       </Text>

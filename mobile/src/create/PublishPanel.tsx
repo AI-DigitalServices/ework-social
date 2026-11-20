@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
 import { Button } from '../ui';
+import PlatformIcon from '../platform';
 import { colors, platformColors, radius } from '../theme';
 
 export type Account = { id: string; platform: string; accountName: string };
@@ -57,7 +58,7 @@ export default function PublishPanel({
               onPress={() => setAccountId(a.id)}
               style={({ pressed }) => [styles.chip, on && { borderColor: c, backgroundColor: colors.cardAlt }, pressed && { opacity: 0.85 }]}
             >
-              <View style={[styles.dot, { backgroundColor: c }]} />
+              <PlatformIcon platform={a.platform} size={22} />
               <Text style={styles.chipText} numberOfLines={1}>
                 {platformName(a.platform)} · {a.accountName}
               </Text>

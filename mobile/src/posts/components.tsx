@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
 import { Pill } from '../ui';
+import PlatformIcon from '../platform';
 import { colors, platformColors, radius, space } from '../theme';
 
 export type PostItem = {
@@ -84,10 +85,13 @@ export function PostCard({ post }: { post: PostItem }) {
       <View style={[styles.stripe, { backgroundColor: stripe }]} />
       <View style={{ flex: 1, padding: space.md }}>
         <View style={styles.postTop}>
-          <Text style={styles.meta} numberOfLines={1}>
-            {platformName(post.platform)}
-            {post.accountName ? ` · ${post.accountName}` : ''}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+            <PlatformIcon platform={post.platform} size={22} />
+            <Text style={styles.meta} numberOfLines={1}>
+              {platformName(post.platform)}
+              {post.accountName ? ` · ${post.accountName}` : ''}
+            </Text>
+          </View>
           <Pill label={meta.label} color={meta.color} soft={meta.soft} />
         </View>
         <Text style={styles.text} numberOfLines={3}>
