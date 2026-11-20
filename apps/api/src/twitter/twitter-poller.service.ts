@@ -9,6 +9,7 @@ interface OAuthState {
   workspaceId: string;
   userId: string;
   codeVerifier: string;
+  client?: 'app';
 }
 
 @Injectable()
@@ -62,7 +63,7 @@ export class TwitterPollerService {
 
   // ─── OAuth 2.0 PKCE — Step 1: Generate auth URL ──────────────────────────
 
-  getOAuthUrl(workspaceId: string, userId: string): string {
+  getOAuthUrl(workspaceId: string, userId: string, client?: 'app'): string {
     const clientId = this.config.get<string>('TWITTER_CLIENT_ID');
     const redirectUri = this.config.get<string>('TWITTER_REDIRECT_URI');
 
@@ -76,7 +77,7 @@ export class TwitterPollerService {
     const { codeVerifier, codeChallenge } = this.generatePKCE();
 
     // Store state — auto-expire after 10 min so stale states never linger
-    this.oauthStateStore.set(state, { workspaceId, userId, codeVerifier });
+    this.oauthStateStore.set(state, { workspaceId, userId, codeVerifier, ...(client === 'app' ? { client: 'app' as const } : {}) });
     setTimeout(() => this.oauthStateStore.delete(state), 10 * 60 * 1000);
 
     const url = new URL('https://twitter.com/i/oauth2/authorize');
@@ -90,6 +91,14 @@ export class TwitterPollerService {
 
     this.logger.debug(`Generated Twitter OAuth URL for workspace ${workspaceId}`);
     return url.toString();
+  }
+
+  /**
+   * Which client started this sign-in? Read before handleOAuthCallback, which uses the state up.
+   * Unknown or missing state counts as web.
+   */
+  peekClient(state: string | undefined): 'app' | 'web' {
+    return (state && this.oauthStateStore.get(state)?.client) === 'app' ? 'app' : 'web';
   }
 
   // ─── OAuth 2.0 PKCE — Step 2: Exchange code for tokens ───────────────────
