@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
 import { Button, ErrorText } from '../../../ui';
+import { router } from 'expo-router';
 import { EmptyState, FilterChips, PostCard } from '../../../posts/components';
 import type { PostItem } from '../../../posts/components';
 import { colors, space } from '../../../theme';
@@ -96,7 +97,7 @@ export default function Posts() {
       <FlatList
         data={loading ? [] : items}
         keyExtractor={(p) => p.id}
-        renderItem={({ item }) => <PostCard post={item} />}
+        renderItem={({ item }) => <PostCard post={item} onPress={() => router.navigate(`/post?id=${item.id}` as never)} />}
         ListHeaderComponent={header}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
