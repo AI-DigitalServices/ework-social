@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../ui';
 import { colors, radius, space } from '../theme';
 
 export function Progress({ step, total }: { step: number; total: number }) {
