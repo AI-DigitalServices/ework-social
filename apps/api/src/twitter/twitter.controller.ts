@@ -10,6 +10,8 @@ import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
 import { ManagerRoleGuard, WriterRoleGuard } from '../common/role.guards';
 import { PlanGuardService } from '../common/plan-guard.service';
 
+import { buildClientReturnUrl } from '../social/oauth-state.util';
+
 @Controller('twitter')
 export class TwitterController {
   constructor(
@@ -48,8 +50,9 @@ export class TwitterController {
   getAuthUrl(
     @Query('workspaceId') workspaceId: string,
     @Request() req: any,
+    @Query('client') client?: string,
   ) {
-    const url = this.poller.getOAuthUrl(workspaceId, req.user.sub);
+    const url = this.poller.getOAuthUrl(workspaceId, req.user.sub, client === 'app' ? 'app' : undefined);
     return { url };
   }
 
@@ -66,23 +69,19 @@ export class TwitterController {
     @Res() res: Response,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || 'https://app.eworksocial.com';
+    // Read before the callback uses the state up.
+    const client = this.poller.peekClient(state);
 
     if (error || !code || !state) {
-      return res.redirect(
-        `${frontendUrl}/dashboard/settings?tab=social&error=cancelled`,
-      );
+      return res.redirect(buildClientReturnUrl(client, frontendUrl, 'error=cancelled'));
     }
 
     try {
       await this.poller.handleOAuthCallback(code, state);
-      return res.redirect(
-        `${frontendUrl}/dashboard/settings?tab=social&success=connected`,
-      );
+      return res.redirect(buildClientReturnUrl(client, frontendUrl, 'success=connected'));
     } catch (err: any) {
       console.error('Twitter OAuth callback error:', err.message);
-      return res.redirect(
-        `${frontendUrl}/dashboard/settings?tab=social&error=failed`,
-      );
+      return res.redirect(buildClientReturnUrl(client, frontendUrl, 'error=failed'));
     }
   }
 

@@ -69,11 +69,17 @@ const PROVIDERS: Provider[] = [
     text: 'Connect your TikTok account. Posting videos from the app is coming soon.',
     path: '/social/tiktok/auth-url',
   },
+  {
+    id: 'x',
+    platforms: ['TWITTER'],
+    title: 'X',
+    text: 'Connect your X account to post short updates.',
+    path: '/twitter/auth-url',
+  },
 ];
 
 // Still to come in the app. The web dashboard connects these today.
 const LATER: { platform: string; label: string; hint: string }[] = [
-  { platform: 'TWITTER', label: 'X', hint: 'Short updates' },
 ];
 
 function platformName(p: string): string {
