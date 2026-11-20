@@ -83,14 +83,12 @@ export default function WhenPicker({
         value: start,
         mode: 'date',
         minimumDate: new Date(),
-        onChange: (e, day) => {
-          if (e.type !== 'set' || !day) return;
+        onValueChange: (_e, day) => {
           DateTimePickerAndroid.open({
             value: day,
             mode: 'time',
             is24Hour: true,
-            onChange: (e2, time) => {
-              if (e2.type !== 'set' || !time) return;
+            onValueChange: (_e2, time) => {
               const at = new Date(day);
               at.setHours(time.getHours(), time.getMinutes(), 0, 0);
               choose(at);
@@ -141,9 +139,7 @@ export default function WhenPicker({
             themeVariant="dark"
             minimumDate={new Date()}
             minuteInterval={5}
-            onChange={(_e, d) => {
-              if (d) setIosDate(d);
-            }}
+            onValueChange={(_e, d) => setIosDate(d)}
           />
           <Button
             title="Use this time"
