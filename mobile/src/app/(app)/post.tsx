@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Feather, FontAwesome6 } from '@expo/vector-icons';
+import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
 import { presets } from '../../create/PublishPanel';
 import PlatformIcon, { platformColor } from '../../platform';
@@ -270,16 +272,25 @@ export default function PostDetail() {
               <ErrorText>{error}</ErrorText>
               {note ? <Text style={styles.ok}>{note}</Text> : null}
 
-              <View style={{ gap: space.sm, marginTop: space.md }}>
+              <View style={{ gap: space.md, marginTop: space.md }}>
                 {canPublish ? <Button title="Publish now" loading={busy} onPress={confirmPublish} /> : null}
                 {canRetry ? <Button title="Try again" loading={busy} onPress={() => void act('retry')} /> : null}
-                {changeable ? <Button title="Edit text or time" variant="secondary" onPress={startEdit} /> : null}
-                <Button title="Send to WhatsApp for a look" variant="secondary" onPress={() => void shareToWhatsApp()} />
-                {changeable ? <Button title="Delete this post" variant="link" onPress={confirmDelete} /> : null}
+                <ActionRow>
+                  {changeable ? (
+                    <ActionTile label="Edit" disabled={busy} icon={(c) => <Feather name="edit-2" size={22} color={c} />} onPress={startEdit} />
+                  ) : null}
+                  <ActionTile
+                    label="WhatsApp"
+                    disabled={busy}
+                    icon={(c) => <FontAwesome6 name="whatsapp" size={22} color={c} />}
+                    onPress={() => void shareToWhatsApp()}
+                  />
+                  {changeable ? (
+                    <ActionTile label="Delete" tone="danger" disabled={busy} icon={(c) => <Feather name="trash-2" size={22} color={c} />} onPress={confirmDelete} />
+                  ) : null}
+                </ActionRow>
               </View>
-              <Text style={styles.hint}>
-                WhatsApp opens with the text ready, and you pick who gets it. It only shares the words. Nothing is published from WhatsApp.
-              </Text>
+              <Text style={styles.hint}>WhatsApp opens with the text ready and you choose who gets it. Nothing is published from WhatsApp.</Text>
             </View>
           )}
         </View>
