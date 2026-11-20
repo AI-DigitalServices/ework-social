@@ -17,6 +17,7 @@ import {
   isRetryable,
   toPostSummary,
 } from './mobile-posts.util';
+import { charLimit } from '../ai/idea-prompt';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -179,6 +180,90 @@ export class MobilePostsService {
     }
     await this.claim(post, { status: 'SCHEDULED' as any, errorMessage: null });
     return { ok: true, post: await this.summary(post.id) };
+  }
+
+  /**
+   * Change the text and/or the time of a draft, scheduled or failed post.
+   * Choosing a time schedules it; choosing DRAFT unschedules it.
+   */
+  async editPost(
+    postId: string,
+    userId: string,
+    dto: { expectedUpdatedAt: string; content?: string; status?: 'DRAFT' | 'SCHEDULED'; scheduledAt?: string },
+  ) {
+    const { post, role } = await this.loadPost(postId, userId);
+    this.assertMayWrite(role);
+    await this.planGuard.assertCanWrite(post.workspaceId);
+    this.assertFresh(post, dto.expectedUpdatedAt);
+
+    if (post.status === 'PUBLISHED') throw new BadRequestException('A published post cannot be changed.');
+    if (post.status === 'PENDING_APPROVAL') {
+      throw new BadRequestException('This post is waiting for client approval and cannot be changed.');
+    }
+    if (dto.content === undefined && dto.status === undefined && dto.scheduledAt === undefined) {
+      throw new BadRequestException('Nothing to change.');
+    }
+
+    const data: Record<string, unknown> = {};
+
+    if (dto.content !== undefined) {
+      const content = dto.content.trim();
+      if (!content) throw new BadRequestException('Write something first.');
+      const platform = String((post as any).socialAccount?.platform ?? '');
+      if (content.length > charLimit(platform)) {
+        throw new BadRequestException(
+          `This text is too long for ${platform.charAt(0)}${platform.slice(1).toLowerCase()}. Shorten it first.`,
+        );
+      }
+      data.content = content;
+    }
+
+    const nextStatus: string = dto.status ?? String(post.status);
+    if (dto.scheduledAt !== undefined && nextStatus !== 'SCHEDULED' && dto.status !== 'DRAFT') {
+      throw new BadRequestException('Choose a schedule to set a time.');
+    }
+    if (dto.status !== undefined || dto.scheduledAt !== undefined) {
+      if (nextStatus === 'SCHEDULED') {
+        const when = new Date((dto.scheduledAt ?? (post as any).scheduledAt ?? '') as any);
+        if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() + 60_000) {
+          throw new BadRequestException('Pick a time in the future.');
+        }
+        data.status = 'SCHEDULED';
+        data.scheduledAt = when;
+        data.errorMessage = null;
+      } else if (nextStatus === 'DRAFT') {
+        data.status = 'DRAFT';
+        data.scheduledAt = null;
+        data.errorMessage = null;
+      }
+    }
+
+    await this.claim(post, data);
+    return { ok: true, post: await this.summary(post.id) };
+  }
+
+  /** Delete a draft, scheduled or failed post. */
+  async deletePost(postId: string, userId: string, expectedUpdatedAt: string) {
+    const { post, role } = await this.loadPost(postId, userId);
+    this.assertMayWrite(role);
+    await this.planGuard.assertCanWrite(post.workspaceId);
+    this.assertFresh(post, expectedUpdatedAt);
+
+    if (post.status === 'PUBLISHED') {
+      throw new BadRequestException('A published post cannot be deleted here. Remove it on the platform itself.');
+    }
+    if (post.status === 'PENDING_APPROVAL') {
+      throw new BadRequestException('This post is waiting for client approval. Wait for the answer first.');
+    }
+
+    let res: { count: number };
+    try {
+      res = await this.prisma.post.deleteMany({ where: { id: post.id, updatedAt: post.updatedAt, status: post.status } });
+    } catch {
+      throw new BadRequestException('This post could not be deleted.');
+    }
+    if (res.count === 0) throw this.conflict(await this.summary(post.id));
+    return { ok: true };
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────

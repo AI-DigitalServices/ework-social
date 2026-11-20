@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtGuard } from '../auth/jwt.guard';
 import { WorkspaceMemberGuard } from '../common/workspace-member.guard';
@@ -10,6 +10,7 @@ import { MobileNotificationsService } from './mobile-notifications.service';
 import { MobilePostsService } from './mobile-posts.service';
 import { RegisterDeviceDto, SocialLoginDto, UnregisterDeviceDto } from './dto/mobile.dto';
 import { PostActionDto } from './dto/post-action.dto';
+import { EditPostDto } from './dto/edit-post.dto';
 
 /**
  * Mobile API, served at /api/mobile/v1. Additive: nothing here changes the web
@@ -109,5 +110,20 @@ export class MobileController {
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   retryPost(@Request() req: any, @Param('postId') postId: string, @Body() dto: PostActionDto) {
     return this.posts.retry(postId, req.user.sub, dto.expectedUpdatedAt);
+  }
+
+  @Patch('posts/:postId')
+  @UseGuards(JwtGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  editPost(@Request() req: any, @Param('postId') postId: string, @Body() dto: EditPostDto) {
+    return this.posts.editPost(postId, req.user.sub, dto);
+  }
+
+  @Post('posts/:postId/delete')
+  @HttpCode(200)
+  @UseGuards(JwtGuard)
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  deletePost(@Request() req: any, @Param('postId') postId: string, @Body() dto: PostActionDto) {
+    return this.posts.deletePost(postId, req.user.sub, dto.expectedUpdatedAt);
   }
 }
