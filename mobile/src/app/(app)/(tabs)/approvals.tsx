@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';

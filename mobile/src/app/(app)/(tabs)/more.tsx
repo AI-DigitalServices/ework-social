@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../../auth/AuthContext';
 import { Avatar, Button, Card, FadeIn, Pill, SectionTitle } from '../../../ui';

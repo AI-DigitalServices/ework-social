@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../ui';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { Button, FadeIn, Logo, Screen } from '../ui';

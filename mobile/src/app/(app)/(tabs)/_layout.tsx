@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../../ui';
 import type { ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ export default function AppLayout() {
             paddingBottom: insets.bottom + 4,
           },
           tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarAllowFontScaling: false,
         }}
       >
         <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: icon('⌂') }} />

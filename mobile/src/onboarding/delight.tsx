@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../ui';
 import { colors, platformColors, radius, space, type } from '../theme';
 import { platformLabel } from './api';
 
