@@ -46,6 +46,52 @@ export function charLimit(platform: string): number {
   return PLATFORM_CHAR_LIMITS[platform] ?? 2200;
 }
 
+/** How a finished post should look on each platform. Spacing matters: it is what makes a post readable. */
+export const PLATFORM_LAYOUT: Record<string, string> = {
+  INSTAGRAM:
+    'Line 1 is a hook that can stand alone. Then 2 to 4 short paragraphs of one or two sentences, with one blank line between paragraphs. The call to action goes on its own line. End with one blank line, then 5 to 8 relevant hashtags together on the last line.',
+  FACEBOOK:
+    'Conversational. Short paragraphs of one or two sentences with one blank line between them. The call to action goes on its own line. Optionally end with one blank line and 1 to 3 hashtags on the last line.',
+  LINKEDIN:
+    'A strong first line, then short paragraphs with one blank line between them. A short list may use lines that start with "- ". End with one blank line and at most 3 hashtags on the last line.',
+  TWITTER: 'One or two short sentences with no blank lines. At most 2 hashtags, placed at the end of the same line.',
+  THREADS: 'Casual, 1 to 3 short lines, no more than 1 hashtag.',
+  BLUESKY: 'One or two short sentences, no hashtags needed.',
+  TIKTOK: 'A short caption of 1 to 3 lines, then one blank line and 3 to 5 hashtags on the last line.',
+  YOUTUBE: 'The first two lines say what the video is about. Then short paragraphs with one blank line between them. End with a blank line and up to 3 hashtags.',
+};
+
+const DEFAULT_LAYOUT = 'Short paragraphs with one blank line between them, the call to action on its own line, and any hashtags together on the last line.';
+
+const TAGS_ONLY = /^(?:#[\p{L}\p{N}_]+\s*)+$/u;
+const TEXT_THEN_TAGS = /^(.*?\S)\s+((?:#[\p{L}\p{N}_]+\s*)+)$/u;
+const SAME_LINE_PLATFORMS = ['TWITTER', 'BLUESKY', 'THREADS'];
+
+/**
+ * Cleans a post so it can be published as written: no markdown (social apps do not render it), no stray
+ * spaces, at most one blank line between paragraphs, and hashtags on their own last line.
+ */
+export function tidyPost(text: string, platform: string): string {
+  const t = String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/^#{1,6}[ \t]+/gm, '')
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (SAME_LINE_PLATFORMS.includes(platform)) return t;
+
+  const lines = t.split('\n');
+  const last = lines[lines.length - 1] ?? '';
+  if (TAGS_ONLY.test(last.trim())) {
+    if (lines.length > 1 && lines[lines.length - 2].trim() !== '') lines.splice(lines.length - 1, 0, '');
+  } else {
+    const m = TEXT_THEN_TAGS.exec(last);
+    if (m) lines.splice(lines.length - 1, 1, m[1], '', m[2].trim());
+  }
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export function buildIdeaPrompt(input: { idea: string; platform: string; business: IdeaBusiness }): string {
   const { business: b, platform } = input;
   const hard = charLimit(platform);
@@ -83,7 +129,8 @@ Rules:
 - Each post must be under ${soft} characters.
 - Make the three posts clearly different: for example one short and punchy, one that tells a small story, one that asks a question.
 - Use at most 2 emojis per post and end with a simple call to action.
-- Instagram and TikTok: add 3 to 5 relevant hashtags at the end. LinkedIn: at most 2 hashtags. Other platforms: no hashtags.
+- Layout for ${platform}: ${PLATFORM_LAYOUT[platform] ?? DEFAULT_LAYOUT}
+- Do not use markdown (no ** or # headings). Write plain text with real line breaks.
 - Do not invent prices, discounts, dates, phone numbers, addresses or claims that are not in the idea or the business details. If something is missing, keep it general. Do not add promises or guarantees the owner did not state, such as "no hidden fees" or "best in town".
 - Output only the three posts, separated by a line that contains only ---. No numbering, labels or commentary.`;
 }
@@ -98,6 +145,7 @@ export function parseIdeaOptions(text: string, platform: string): string[] {
       .replace(/^\s*(?:option\s*)?\d+\s*[.):]\s*/i, '')
       .replace(/^\s*["“]+|["”]+\s*$/g, '')
       .trim();
+    p = tidyPost(p, platform);
     if (!p) continue;
     if (p.length > limit) p = p.slice(0, limit - 1).trimEnd() + '…';
     const key = p.toLowerCase();

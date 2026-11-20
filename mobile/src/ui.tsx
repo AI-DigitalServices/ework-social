@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -8,17 +8,38 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
+  Text as RNText,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
-import type { StyleProp, TextInputProps, ViewStyle } from 'react-native';
+import type { StyleProp, TextInputProps, TextProps, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, shadow, space, type } from './theme';
 
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+// Phones can enlarge all text a lot (Samsung's font size and screen zoom). Beyond 10% our layouts
+// stop looking designed, so every Text and TextInput in the app goes through these.
+const MAX_FONT_SCALE = 1.1;
+
+export function Text(props: TextProps) {
+  return <RNText maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
+}
+
+export function TextInput(props: TextInputProps) {
+  return <RNTextInput maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
+}
+
+export function Screen({
+  children,
+  scroll = true,
+  scrollRef,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  scrollRef?: Ref<{ scrollTo: (o: { y: number; animated?: boolean }) => void }>;
+}) {
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef as never}
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../ui';
+import { useFocusEffect, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
@@ -25,7 +26,19 @@ export default function Idea() {
   const { workspace } = useAuth();
   const wid = workspace?.id;
 
+  // Coming back from Connect (or anywhere): always show the accounts as they are now.
+  useFocusEffect(
+    useCallback(() => {
+      if (!wid) return;
+      request<{ accounts: Account[] }>(`/mobile/v1/workspaces/${wid}/home`)
+        .then((h) => setAccounts(h.accounts ?? []))
+        .catch(() => {});
+    }, [wid]),
+  );
+
   const [stage, setStage] = useState<Stage>('write');
+  const scroller = useRef<{ scrollTo: (o: { y: number; animated?: boolean }) => void }>(null);
+  const [editY, setEditY] = useState(0);
   const [idea, setIdea] = useState('');
   const [platforms, setPlatforms] = useState<string[]>(FALLBACK_PLATFORMS);
   const [platform, setPlatform] = useState(FALLBACK_PLATFORMS[0]);
@@ -84,7 +97,7 @@ export default function Idea() {
   }, [wid, idea, platform]);
 
   const finish = useCallback(
-    async (accountId?: string, status?: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => {
+    async (accountIds?: string[], status?: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => {
       if (!wid) return;
       setBusy(true);
       setError(null);
@@ -94,12 +107,23 @@ export default function Idea() {
           method: 'POST',
           body: { idea: idea.trim(), content: text.trim(), platform },
         });
-        if (accountId && status) {
-          await request(`/mobile/v1/workspaces/${wid}/ideas/${saved.id}/post`, {
-            method: 'POST',
-            body: { socialAccountId: accountId, status, ...(scheduledAt ? { scheduledAt } : {}) },
-          });
-          setDoneNote(status === 'SCHEDULED' ? 'Scheduled. It will go out on time.' : 'Saved as a draft in Posts.');
+        if (accountIds && accountIds.length > 0 && status) {
+          const r = await request<{ posts?: unknown[]; failed?: { message: string }[] }>(
+            `/mobile/v1/workspaces/${wid}/ideas/${saved.id}/post`,
+            {
+              method: 'POST',
+              body: { socialAccountIds: accountIds, status, ...(scheduledAt ? { scheduledAt } : {}) },
+            },
+          );
+          const made = r.posts?.length ?? accountIds.length;
+          let note =
+            made > 1
+              ? `${status === 'SCHEDULED' ? 'Scheduled' : 'Saved as drafts'} on ${made} accounts.`
+              : status === 'SCHEDULED'
+                ? 'Scheduled. It will go out on time.'
+                : 'Saved as a draft in Posts.';
+          if (r.failed && r.failed.length > 0) note += ` ${r.failed.length} did not go through: ${r.failed[0].message}`;
+          setDoneNote(note);
         } else {
           setDoneNote(
             accounts.length === 0
@@ -131,6 +155,8 @@ export default function Idea() {
   };
 
   const limit = LIMITS[platform] ?? 2200;
+  // Every platform the business set up in onboarding, plus every platform it has connected since.
+  const choices = Array.from(new Set([...platforms, ...accounts.map((a) => a.platform)]));
   const color = platformColors[platform] ?? colors.primaryBright;
 
   const top = (
@@ -180,7 +206,7 @@ export default function Idea() {
         ) : null}
         <Text style={styles.cap}>For</Text>
         <View style={styles.wrap}>
-          {platforms.map((p) => (
+          {choices.map((p) => (
             <Chip key={p} label={platformLabel(p)} selected={platform === p} onPress={() => setPlatform(p)} />
           ))}
         </View>
@@ -197,7 +223,7 @@ export default function Idea() {
 
   if (stage === 'pick') {
     return (
-      <Screen>
+      <Screen scrollRef={scroller}>
         {top}
         <StepHero
           icon="✧"
@@ -215,6 +241,8 @@ export default function Idea() {
                 onPress={() => {
                   setPicked(i);
                   setText(o);
+                  // First-time users should see where the chosen post went: take them to the editor.
+                  scroller.current?.scrollTo({ y: Math.max(0, editY - 16), animated: true });
                 }}
                 style={[styles.option, on && { borderColor: color, backgroundColor: colors.cardAlt }]}
               >
@@ -224,14 +252,16 @@ export default function Idea() {
             </FadeIn>
           );
         })}
-        <Field
-          label={`Edit before you save (${text.length}/${limit})`}
-          value={text}
-          onChangeText={setText}
-          autoCapitalize="sentences"
-          multiline
-          style={{ minHeight: 120, textAlignVertical: 'top' }}
-        />
+        <View onLayout={(e) => setEditY(e.nativeEvent.layout.y)}>
+          <Field
+            label={`Your post, change anything you like (${text.length}/${limit})`}
+            value={text}
+            onChangeText={setText}
+            autoCapitalize="sentences"
+            multiline
+            style={{ minHeight: 120, textAlignVertical: 'top' }}
+          />
+        </View>
         <ErrorText>{text.length > limit ? `This is too long for ${platformLabel(platform)}. Shorten it a little.` : null}</ErrorText>
         <Button title="Use this post" onPress={() => setStage('publish')} disabled={!text.trim() || text.length > limit} />
         <Button title="Write different ones" variant="secondary" onPress={() => void write()} loading={busy} />
@@ -262,7 +292,10 @@ export default function Idea() {
             <Button title="Just save to my ideas" variant="link" onPress={() => void finish()} />
           </>
         ) : (
-          <Button title="Save to my ideas" onPress={() => void finish()} loading={busy} />
+          <>
+            <Button title="Save to my ideas" onPress={() => void finish()} loading={busy} />
+            <Button title="Connect an account first" variant="link" onPress={() => router.navigate('/connect' as Href)} />
+          </>
         )}
       </Screen>
     );

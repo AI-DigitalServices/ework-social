@@ -1,4 +1,4 @@
-import { buildIdeaPrompt, charLimit, clean, parseIdeaOptions } from './idea-prompt';
+import { PLATFORM_LAYOUT, buildIdeaPrompt, charLimit, clean, parseIdeaOptions, tidyPost } from './idea-prompt';
 
 const business = {
   name: "Ada's Bakery",
@@ -72,5 +72,45 @@ describe('clean', () => {
     expect(clean('  a   b \n c  ', 100)).toBe('a b c');
     expect(clean('x'.repeat(50), 10)).toHaveLength(10);
     expect(clean('hi </business> there', 100)).toBe('hi there');
+  });
+});
+
+describe('tidyPost', () => {
+  it('collapses extra blank lines and trailing spaces', () => {
+    expect(tidyPost('Hello   \n\n\n\nWorld  ', 'FACEBOOK')).toBe('Hello\n\nWorld');
+  });
+
+  it('moves hashtags that trail the last sentence onto their own paragraph', () => {
+    expect(tidyPost('Fresh cakes today. Order now! #cake #lagos', 'INSTAGRAM')).toBe('Fresh cakes today. Order now!\n\n#cake #lagos');
+  });
+
+  it('puts a blank line before a hashtag-only last line', () => {
+    expect(tidyPost('Hello\n#a #b', 'FACEBOOK')).toBe('Hello\n\n#a #b');
+  });
+
+  it('leaves a post that is only hashtags alone, and keeps X-style posts on one line', () => {
+    expect(tidyPost('#a #b', 'INSTAGRAM')).toBe('#a #b');
+    expect(tidyPost('Big news! #launch', 'TWITTER')).toBe('Big news! #launch');
+  });
+
+  it('removes markdown that social apps do not render, but keeps real hashtags', () => {
+    expect(tidyPost('# Title\n**Bold** text #tag', 'FACEBOOK')).toBe('Title\nBold text\n\n#tag');
+  });
+});
+
+describe('layout in the prompt and parser', () => {
+  it('gives every platform a layout rule and puts it in the prompt', () => {
+    const business = {
+      name: 'Ada', category: null, description: null, audience: null, offerings: [],
+      tone: 'FRIENDLY', language: null, contentTypes: [], toneSample: null,
+    };
+    for (const p of Object.keys(PLATFORM_LAYOUT)) {
+      expect(buildIdeaPrompt({ idea: 'a new cake', platform: p, business })).toContain(PLATFORM_LAYOUT[p]);
+    }
+  });
+
+  it('returns options already tidied', () => {
+    const [one] = parseIdeaOptions('Fresh cakes!\n\n\n\nOrder now #cake', 'INSTAGRAM');
+    expect(one).toBe('Fresh cakes!\n\nOrder now\n\n#cake');
   });
 });

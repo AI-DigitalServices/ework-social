@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
@@ -10,6 +11,7 @@ import type { OnboardingState } from '../../../onboarding/api';
 import { wasSkipped } from '../../../onboarding/session';
 import { Avatar, Button, Card, ErrorText, FadeIn, Pill, SectionTitle } from '../../../ui';
 import { colors, platformColors, radius, shadow, space } from '../../../theme';
+import PlatformIcon from '../../../platform';
 
 type HomePost = {
   id: string;
@@ -257,12 +259,16 @@ export default function Home() {
             <SectionTitle>Connected accounts</SectionTitle>
             <Card>
               {data.accounts.length === 0 ? (
-                <Text style={styles.muted}>No accounts connected yet. Connecting from the app is coming next.</Text>
+                <View>
+                  <Text style={styles.muted}>No accounts connected yet. Connect one so your posts can go out.</Text>
+                  <View style={{ height: 12 }} />
+                  <Button title="Connect an account" onPress={() => router.navigate('/connect' as Href)} />
+                </View>
               ) : (
                 <View style={styles.chips}>
                   {data.accounts.map((a) => (
                     <View key={a.id} style={styles.chip}>
-                      <View style={[styles.chipDot, { backgroundColor: platformColors[a.platform] ?? colors.primaryBright }]} />
+                      <PlatformIcon platform={a.platform} size={22} />
                       <Text style={styles.chipText}>
                         {platformName(a.platform)} · {a.accountName}
                       </Text>

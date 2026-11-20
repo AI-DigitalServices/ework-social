@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../ui';
 import { colors, platformColors, radius, space, type } from '../theme';
 import { platformLabel } from './api';
+import PlatformIcon from '../platform';
 
 /** Encouragement that changes as the person moves through setup. */
 function momentumText(step: number): string {
@@ -92,9 +94,7 @@ export function PlatformCard({ platform, selected, onPress }: { platform: string
       style={({ pressed }) => [styles.pCard, selected && { borderColor: color, backgroundColor: colors.cardAlt }, pressed && { opacity: 0.85 }]}
     >
       <View style={[styles.pStripe, { backgroundColor: color }]} />
-      <View style={[styles.pBadge, { backgroundColor: color }]}>
-        <Text style={styles.pBadgeText}>{platformLabel(platform).charAt(0)}</Text>
-      </View>
+      <PlatformIcon platform={platform} size={40} />
       <View style={{ flex: 1 }}>
         <Text style={styles.pName}>{platformLabel(platform)}</Text>
         {PLATFORM_HINT[platform] ? <Text style={styles.pHint}>{PLATFORM_HINT[platform]}</Text> : null}

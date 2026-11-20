@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../ui';
 import type { ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
