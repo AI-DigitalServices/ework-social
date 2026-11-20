@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useAuth } from '../../../auth/AuthContext';
 import { Avatar, Button, Card, FadeIn, Pill, SectionTitle } from '../../../ui';
 import { colors, radius, space } from '../../../theme';
@@ -11,6 +13,7 @@ function roleLabel(role: string | undefined | null): string {
 }
 
 export default function More() {
+  const router = useRouter();
   const { config, workspace, setActiveWorkspace, signOut } = useAuth();
   const name = config?.user.name || 'You';
   const ent = workspace?.entitlements ?? null;
@@ -71,11 +74,23 @@ export default function More() {
           </FadeIn>
         ) : null}
 
+        <FadeIn delay={120}>
+          <SectionTitle>Accounts</SectionTitle>
+          <Card onPress={() => router.navigate('/connect' as Href)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>Connected accounts</Text>
+                <Text style={styles.sub}>Connect Facebook and Instagram</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 24 }}>›</Text>
+            </View>
+          </Card>
+        </FadeIn>
+
         <FadeIn delay={160}>
           <SectionTitle>Coming soon</SectionTitle>
           <Card>
-            <Soon label="Inbox" text="Reply to messages and comments." />
-            <Soon label="Connect accounts" text="Link your social accounts." last />
+            <Soon label="Inbox" text="Reply to messages and comments." last />
           </Card>
         </FadeIn>
 

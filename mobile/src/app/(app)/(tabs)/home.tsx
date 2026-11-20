@@ -258,7 +258,11 @@ export default function Home() {
             <SectionTitle>Connected accounts</SectionTitle>
             <Card>
               {data.accounts.length === 0 ? (
-                <Text style={styles.muted}>No accounts connected yet. Connecting from the app is coming next.</Text>
+                <View>
+                  <Text style={styles.muted}>No accounts connected yet. Connect one so your posts can go out.</Text>
+                  <View style={{ height: 12 }} />
+                  <Button title="Connect an account" onPress={() => router.navigate('/connect' as Href)} />
+                </View>
               ) : (
                 <View style={styles.chips}>
                   {data.accounts.map((a) => (
