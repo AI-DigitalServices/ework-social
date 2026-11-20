@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { request } from '../../api/client';
-import { useAuth } from '../../auth/AuthContext';
-import { Button, ErrorText } from '../../ui';
-import { EmptyState, FilterChips, PostCard } from '../../posts/components';
-import type { PostItem } from '../../posts/components';
-import { colors, space } from '../../theme';
+import { request } from '../../../api/client';
+import { useAuth } from '../../../auth/AuthContext';
+import { Button, ErrorText } from '../../../ui';
+import { EmptyState, FilterChips, PostCard } from '../../../posts/components';
+import type { PostItem } from '../../../posts/components';
+import { colors, space } from '../../../theme';
 
 type Page = { items: PostItem[]; nextCursor: string | null };
 

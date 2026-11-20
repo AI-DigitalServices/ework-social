@@ -139,7 +139,7 @@ export default function Wizard() {
 
   const skip = () => {
     markSkipped();
-    router.replace('/home' as Href);
+    router.navigate('/home' as Href);
   };
 
   const category = options?.categories.find((c) => c.id === form.category) ?? null;
@@ -574,7 +574,7 @@ export default function Wizard() {
             Your free trial is running: {ent.trialDaysLeft ?? 0} {ent.trialDaysLeft === 1 ? 'day' : 'days'} left. Let us make them count.
           </Text>
         ) : null}
-        <Button title="Go to my home screen" onPress={() => router.replace('/home' as Href)} />
+        <Button title="Go to my home screen" onPress={() => router.navigate('/home' as Href)} />
       </FadeIn>
     </Screen>
   );
