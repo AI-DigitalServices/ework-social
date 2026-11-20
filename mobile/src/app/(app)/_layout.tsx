@@ -10,6 +10,7 @@ export default function AppLayout() {
       <Stack.Screen name="idea" />
       <Stack.Screen name="ideas" />
       <Stack.Screen name="connect" />
+      <Stack.Screen name="post" />
     </Stack>
   );
 }
