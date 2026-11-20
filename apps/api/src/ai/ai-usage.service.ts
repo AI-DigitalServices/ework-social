@@ -19,7 +19,7 @@ export class AiUsageService {
 
   async checkAndIncrement(
     workspaceId: string,
-    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN',
+    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN' | 'ONBOARDING_AI' | 'IDEA_POST',
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
@@ -61,6 +61,18 @@ export class AiUsageService {
         // Creative Hub — covers the vision tagging + embedding cost of one asset upload
         limit = limits.assetUploadsPerMonth;
         limitLabel = 'Creative Hub asset upload';
+        break;
+      case 'ONBOARDING_AI':
+        // Mobile onboarding: reading a business website to propose a profile. Open to every
+        // plan (including the trial) with a small fixed cap, so a new owner can always set up.
+        limit = 6;
+        limitLabel = 'AI business setup';
+        break;
+      case 'IDEA_POST':
+        // Mobile "Give us an idea": generous on the free trial so a new owner can feel the product,
+        // then the plan's caption allowance.
+        limit = isTrialing ? 30 : limits.aiCaptionsPerMonth;
+        limitLabel = 'AI post idea';
         break;
       case 'IMAGE_GEN':
         // AI OS Phase 2 — generative creative, premium only (0 below Growth)

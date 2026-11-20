@@ -1,3 +1,4 @@
+import { uniqueWorkspaceSlug } from './workspace-slug.util';
 import {
   Injectable,
   UnauthorizedException,
@@ -109,6 +110,9 @@ export class AuthService {
     }
 
     // ── Normal (agency) registration ─────────────────────────────────────────
+    // Two businesses can share a name: pick a free address instead of failing.
+    const slug = await uniqueWorkspaceSlug(this.prisma, dto.workspaceName);
+
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
@@ -119,10 +123,7 @@ export class AuthService {
         ownedWorkspaces: {
           create: {
             name: dto.workspaceName,
-            slug: dto.workspaceName
-              .toLowerCase()
-              .replace(/\s+/g, '-')
-              .replace(/[^a-z0-9-]/g, ''),
+            slug,
             members: {
               create: {
                 role: 'OWNER',
