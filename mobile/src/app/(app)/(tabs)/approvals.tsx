@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
 import { Button, ErrorText, Pill } from '../../../ui';
+import { router, useLocalSearchParams } from 'expo-router';
 import { EmptyState, FilterChips, platformName, when } from '../../../posts/components';
 import type { PostItem } from '../../../posts/components';
 import { colors, platformColors, radius, space } from '../../../theme';
@@ -28,8 +29,8 @@ const FILTERS = [
 ];
 
 const EMPTY_TEXT: Record<string, string> = {
-  '': 'When you send a post to a client for approval, it shows up here.',
-  PENDING: 'Nothing is waiting on a client right now.',
+  '': 'When you send a post to a client for approval, or share a draft for review, it shows up here.',
+  PENDING: 'Nothing is waiting on a reply right now.',
   REVISION_REQUESTED: 'No client has asked for changes.',
   APPROVED: 'No approved posts yet.',
 };
@@ -44,6 +45,12 @@ export default function Approvals() {
   const { workspace } = useAuth();
   const wid = workspace?.id;
   const [filter, setFilter] = useState('');
+  const params = useLocalSearchParams<{ status?: string; t?: string }>();
+  // A tap on a Home item arrives with ?status=...: show that filter. t makes a repeat tap count as new.
+  useEffect(() => {
+    if (params.status === undefined) return;
+    setFilter(FILTERS.some((f) => f.id === params.status) ? String(params.status) : '');
+  }, [params.status, params.t]);
   const [items, setItems] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,7 +101,9 @@ export default function Approvals() {
       <FlatList
         data={loading ? [] : items}
         keyExtractor={(a) => a.id}
-        renderItem={({ item }) => <ApprovalCard a={item} />}
+        renderItem={({ item }) => (
+          <ApprovalCard a={item} onPress={item.post ? () => router.navigate(`/post?id=${item.post!.id}` as never) : undefined} />
+        )}
         ListHeaderComponent={header}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -125,12 +134,12 @@ export default function Approvals() {
   );
 }
 
-function ApprovalCard({ a }: { a: Approval }) {
+function ApprovalCard({ a, onPress }: { a: Approval; onPress?: () => void }) {
   const m = meta(a.status);
   const stripe = a.status === 'APPROVED' ? colors.ok : a.status === 'REVISION_REQUESTED' ? colors.danger : colors.warn;
   const accent = platformColors[a.post?.platform ?? ''] ?? colors.primaryBright;
   return (
-    <View style={styles.card}>
+    <Pressable disabled={!onPress} onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}>
       <View style={[styles.stripe, { backgroundColor: stripe }]} />
       <View style={{ flex: 1, padding: space.md }}>
         <View style={styles.top}>
@@ -162,7 +171,7 @@ function ApprovalCard({ a }: { a: Approval }) {
           {a.respondedAt ? `Replied ${when(a.respondedAt, '')}` : `Sent ${when(a.sentAt, '')}`}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
 import { Button, ErrorText } from '../../../ui';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { EmptyState, FilterChips, PostCard } from '../../../posts/components';
 import type { PostItem } from '../../../posts/components';
 import { colors, space } from '../../../theme';
@@ -34,6 +34,12 @@ export default function Posts() {
   const { workspace } = useAuth();
   const wid = workspace?.id;
   const [filter, setFilter] = useState('');
+  const params = useLocalSearchParams<{ status?: string; t?: string }>();
+  // A tap on a Home tile arrives with ?status=...: show that filter. t makes a repeat tap count as new.
+  useEffect(() => {
+    if (params.status === undefined) return;
+    setFilter(FILTERS.some((f) => f.id === params.status) ? String(params.status) : '');
+  }, [params.status, params.t]);
   const [items, setItems] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
