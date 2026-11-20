@@ -108,16 +108,24 @@ export class MobileCreateService {
     return { ok: true };
   }
 
-  /** Turn a saved idea into a real post (draft, or scheduled) on one of the workspace's accounts. */
+  /**
+   * Turn a saved idea into real posts: one draft or scheduled post for each chosen account, all with the same
+   * text and time. Every account is checked before anything is created. If some accounts fail (for example the
+   * plan's post limit), the rest still go through and the failures are returned.
+   */
   async ideaToPost(
     workspaceId: string,
     userId: string,
     id: string,
-    dto: { socialAccountId: string; status: 'DRAFT' | 'SCHEDULED'; scheduledAt?: string },
+    dto: { socialAccountId?: string; socialAccountIds?: string[]; status: 'DRAFT' | 'SCHEDULED'; scheduledAt?: string },
   ) {
     const idea = await this.prisma.postIdea.findFirst({ where: { id, workspaceId } });
     if (!idea) throw new NotFoundException('That idea no longer exists.');
     if (idea.usedPostId) throw new ConflictException('This idea is already a post.');
+
+    const ids = Array.from(new Set([...(dto.socialAccountIds ?? []), ...(dto.socialAccountId ? [dto.socialAccountId] : [])]));
+    if (ids.length === 0) throw new BadRequestException('Choose at least one account.');
+    if (ids.length > 10) throw new BadRequestException('Choose up to 10 accounts at a time.');
 
     let scheduledAt: string | undefined;
     if (dto.status === 'SCHEDULED') {
@@ -128,42 +136,58 @@ export class MobileCreateService {
       scheduledAt = when.toISOString();
     }
 
-    const account = await this.prisma.socialAccount.findFirst({
-      where: { id: dto.socialAccountId, workspaceId, isActive: true },
+    const found = await this.prisma.socialAccount.findMany({
+      where: { id: { in: ids }, workspaceId, isActive: true },
       select: { id: true, platform: true },
     });
-    if (!account) throw new BadRequestException('Choose one of your connected accounts.');
-    if (idea.content.length > charLimit(String(account.platform))) {
-      throw new BadRequestException('This text is too long for that platform. Shorten it first.');
+    if (found.length !== ids.length) throw new BadRequestException('Choose your connected accounts.');
+    const byId = new Map<string, { id: string; platform: any }>(found.map((a: any): [string, any] => [a.id, a]));
+
+    const tooLong = found.find((a: any) => idea.content.length > charLimit(String(a.platform)));
+    if (tooLong) {
+      const p = String(tooLong.platform);
+      throw new BadRequestException(`This text is too long for ${p.charAt(0)}${p.slice(1).toLowerCase()}. Shorten it first.`);
     }
 
     const member = await this.prisma.workspaceMember.findFirst({ where: { workspaceId, userId }, select: { role: true } });
 
-    // Claim the idea first so two quick taps cannot create two posts.
+    // Claim the idea first so two quick taps cannot create the posts twice.
     const claim = await this.prisma.postIdea.updateMany({
       where: { id, workspaceId, usedPostId: null },
       data: { usedPostId: 'pending' },
     });
     if (claim.count === 0) throw new ConflictException('This idea is already a post.');
 
-    try {
-      const post: any = await this.scheduler.createPost(
-        {
-          workspaceId,
-          socialAccountId: account.id,
-          content: idea.content,
-          mediaUrls: [],
-          ...(scheduledAt ? { scheduledAt } : {}),
-          status: dto.status,
-        } as any,
-        member?.role,
-      );
-      await this.prisma.postIdea.update({ where: { id }, data: { usedPostId: post.id } });
-      return { post: toPostSummary(post) };
-    } catch (err) {
-      await this.prisma.postIdea.updateMany({ where: { id, usedPostId: 'pending' }, data: { usedPostId: null } });
-      throw err;
+    const posts: any[] = [];
+    const failed: { accountId: string; platform: string; message: string }[] = [];
+    let firstError: unknown = null;
+    for (const accountId of ids) {
+      const account = byId.get(accountId)!;
+      try {
+        const post: any = await this.scheduler.createPost(
+          {
+            workspaceId,
+            socialAccountId: account.id,
+            content: idea.content,
+            mediaUrls: [],
+            ...(scheduledAt ? { scheduledAt } : {}),
+            status: dto.status,
+          } as any,
+          member?.role,
+        );
+        posts.push(post);
+      } catch (err: any) {
+        firstError = firstError ?? err;
+        failed.push({ accountId, platform: String(account.platform), message: err?.message || 'Could not create the post.' });
+      }
     }
+
+    if (posts.length === 0) {
+      await this.prisma.postIdea.updateMany({ where: { id, usedPostId: 'pending' }, data: { usedPostId: null } });
+      throw firstError;
+    }
+    await this.prisma.postIdea.update({ where: { id }, data: { usedPostId: posts[0].id } });
+    return { post: toPostSummary(posts[0]), posts: posts.map((p) => toPostSummary(p)), failed };
   }
 
   private shape(r: any) {

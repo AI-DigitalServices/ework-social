@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -28,9 +28,18 @@ export function TextInput(props: TextInputProps) {
   return <RNTextInput maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
 }
 
-export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+export function Screen({
+  children,
+  scroll = true,
+  scrollRef,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  scrollRef?: Ref<{ scrollTo: (o: { y: number; animated?: boolean }) => void }>;
+}) {
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef as never}
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}

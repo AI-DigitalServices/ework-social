@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '../ui';
-import { Button } from '../ui';
-import PlatformIcon from '../platform';
-import { colors, platformColors, radius } from '../theme';
+import { Button, Text } from '../ui';
+import PlatformIcon, { platformColor } from '../platform';
+import { colors, radius } from '../theme';
 
 export type Account = { id: string; platform: string; accountName: string };
 
@@ -30,7 +29,10 @@ export function presets(now = new Date()): Preset[] {
   ];
 }
 
-/** Choose an account and when, then confirm. Used by the write flow and by the ideas shelf. */
+/**
+ * Choose one or more accounts and when, then confirm. The same text goes to every chosen account.
+ * Used by the write flow and by the ideas shelf.
+ */
 export default function PublishPanel({
   accounts,
   busy,
@@ -38,30 +40,52 @@ export default function PublishPanel({
 }: {
   accounts: Account[];
   busy: boolean;
-  onConfirm: (accountId: string, status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => void;
+  onConfirm: (accountIds: string[], status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => void;
 }) {
   const options = useMemo(() => presets(), []);
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
+  const [selected, setSelected] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
   const [when, setWhen] = useState('DRAFT');
   const chosen = options.find((o) => o.id === when) ?? options[0];
+  const n = selected.length;
+  const all = accounts.length > 1 && n === accounts.length;
+
+  const toggle = (id: string) => setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  const title = chosen.at
+    ? n > 1
+      ? `Schedule to ${n} accounts`
+      : 'Schedule this post'
+    : n > 1
+      ? `Save ${n} drafts`
+      : 'Save as a draft';
 
   return (
     <View>
-      <Text style={styles.cap}>Post to</Text>
+      <View style={styles.head}>
+        <Text style={styles.cap}>{accounts.length > 1 ? 'Post to (pick one or more)' : 'Post to'}</Text>
+        {accounts.length > 1 ? (
+          <Pressable hitSlop={10} onPress={() => setSelected(all ? [] : accounts.map((a) => a.id))}>
+            <Text style={styles.link}>{all ? 'Clear' : 'Select all'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       <View style={styles.wrap}>
         {accounts.map((a) => {
-          const on = a.id === accountId;
-          const c = platformColors[a.platform] ?? colors.primaryBright;
+          const on = selected.includes(a.id);
+          const c = platformColor(a.platform);
           return (
             <Pressable
               key={a.id}
-              onPress={() => setAccountId(a.id)}
+              onPress={() => toggle(a.id)}
               style={({ pressed }) => [styles.chip, on && { borderColor: c, backgroundColor: colors.cardAlt }, pressed && { opacity: 0.85 }]}
             >
               <PlatformIcon platform={a.platform} size={22} />
               <Text style={styles.chipText} numberOfLines={1}>
                 {platformName(a.platform)} · {a.accountName}
               </Text>
+              <View style={[styles.box, on && { backgroundColor: c, borderColor: c }]}>
+                {on ? <Text style={styles.tick}>✓</Text> : null}
+              </View>
             </Pressable>
           );
         })}
@@ -84,17 +108,19 @@ export default function PublishPanel({
       </View>
 
       <Button
-        title={chosen.at ? 'Schedule this post' : 'Save as a draft'}
+        title={title}
         loading={busy}
-        disabled={!accountId}
-        onPress={() => onConfirm(accountId, chosen.at ? 'SCHEDULED' : 'DRAFT', chosen.at ? chosen.at.toISOString() : undefined)}
+        disabled={n === 0}
+        onPress={() => onConfirm(selected, chosen.at ? 'SCHEDULED' : 'DRAFT', chosen.at ? chosen.at.toISOString() : undefined)}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cap: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 4 },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 8 },
+  cap: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  link: { color: colors.primaryBright, fontSize: 13, fontWeight: '700' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   chip: {
     flexDirection: 'row',
@@ -108,5 +134,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   chipText: { color: colors.text, fontSize: 14, flexShrink: 1 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  box: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#4A5C75',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tick: { color: '#fff', fontSize: 12, fontWeight: '900', marginTop: -1 },
 });

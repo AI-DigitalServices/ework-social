@@ -22,6 +22,11 @@ function build(over: { profile?: any; idea?: any; account?: any; open?: number }
     },
     socialAccount: {
       findFirst: jest.fn().mockResolvedValue(over.account === undefined ? { id: 'a1', platform: 'INSTAGRAM' } : over.account),
+      findMany: jest.fn().mockImplementation(async ({ where }: any) => {
+        if (over.account === null) return [];
+        const base = over.account ?? { id: 'a1', platform: 'INSTAGRAM' };
+        return (where.id.in as string[]).map((id) => ({ ...base, id }));
+      }),
     },
     workspaceMember: { findFirst: jest.fn().mockResolvedValue({ role: 'OWNER' }) },
   };
@@ -173,5 +178,42 @@ describe('updateIdea', () => {
     await expect(svc.updateIdea('w1', 'i1', '   ')).rejects.toBeInstanceOf(BadRequestException);
     prisma.postIdea.updateMany.mockResolvedValue({ count: 0 });
     await expect(svc.updateIdea('w1', 'zzz', 'text')).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
+describe('ideaToPost with several accounts', () => {
+  const ok = (id: string) => ({ id, content: 'Hello', status: 'DRAFT', updatedAt: new Date(), mediaUrls: [] });
+
+  it('creates one post per chosen account with the same text, and marks the idea used once', async () => {
+    const { svc, scheduler, prisma } = build();
+    const r = await svc.ideaToPost('w1', 'u1', 'i1', { socialAccountIds: ['a1', 'a2', 'a3'], status: 'DRAFT' });
+    expect(scheduler.createPost).toHaveBeenCalledTimes(3);
+    expect(scheduler.createPost.mock.calls.map((c: any) => c[0].socialAccountId)).toEqual(['a1', 'a2', 'a3']);
+    expect(scheduler.createPost.mock.calls.every((c: any) => c[0].content === 'Hello')).toBe(true);
+    expect(r.posts).toHaveLength(3);
+    expect(r.failed).toEqual([]);
+    expect(prisma.postIdea.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps going when one account fails, and reports it', async () => {
+    const { svc, scheduler, prisma } = build();
+    scheduler.createPost.mockResolvedValueOnce(ok('p1')).mockRejectedValueOnce(new Error('post limit'));
+    const r = await svc.ideaToPost('w1', 'u1', 'i1', { socialAccountIds: ['a1', 'a2'], status: 'DRAFT' });
+    expect(r.posts).toHaveLength(1);
+    expect(r.failed).toEqual([{ accountId: 'a2', platform: 'INSTAGRAM', message: 'post limit' }]);
+    expect(prisma.postIdea.update).toHaveBeenCalledWith({ where: { id: 'i1' }, data: { usedPostId: 'p1' } });
+  });
+
+  it('needs at least one account, and still accepts the old single socialAccountId', async () => {
+    const { svc, scheduler } = build();
+    await expect(svc.ideaToPost('w1', 'u1', 'i1', { socialAccountIds: [], status: 'DRAFT' })).rejects.toBeInstanceOf(BadRequestException);
+    await svc.ideaToPost('w1', 'u1', 'i1', { socialAccountId: 'a1', status: 'DRAFT' });
+    expect(scheduler.createPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('checks every account before creating anything', async () => {
+    const { svc, scheduler } = build({ account: null });
+    await expect(svc.ideaToPost('w1', 'u1', 'i1', { socialAccountIds: ['a1', 'a2'], status: 'DRAFT' })).rejects.toBeInstanceOf(BadRequestException);
+    expect(scheduler.createPost).not.toHaveBeenCalled();
   });
 });

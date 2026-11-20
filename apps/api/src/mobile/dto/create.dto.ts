@@ -1,4 +1,4 @@
-import { IsDateString, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class SuggestIdeaDto {
   @IsString()
@@ -30,8 +30,16 @@ export class SaveIdeaDto {
 }
 
 export class IdeaToPostDto {
+  @IsOptional()
   @IsString()
-  socialAccountId: string;
+  socialAccountId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  socialAccountIds?: string[];
 
   @IsIn(['DRAFT', 'SCHEDULED'])
   status: 'DRAFT' | 'SCHEDULED';

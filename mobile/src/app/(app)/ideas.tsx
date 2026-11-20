@@ -106,17 +106,20 @@ export default function Ideas() {
     if (await save()) setMode('publish');
   };
 
-  const confirm = async (accountId: string, status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => {
+  const confirm = async (accountIds: string[], status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => {
     if (!open || !wid) return;
     setBusy(true);
     setSheetError(null);
     try {
-      await request(`/mobile/v1/workspaces/${wid}/ideas/${open.id}/post`, {
+      const r = await request<{ failed?: { message: string }[] }>(`/mobile/v1/workspaces/${wid}/ideas/${open.id}/post`, {
         method: 'POST',
-        body: { socialAccountId: accountId, status, ...(scheduledAt ? { scheduledAt } : {}) },
+        body: { socialAccountIds: accountIds, status, ...(scheduledAt ? { scheduledAt } : {}) },
       });
       setItems((prev) => prev.filter((x) => x.id !== open.id));
       setOpen(null);
+      if (r.failed && r.failed.length > 0) {
+        Alert.alert('Partly done', `${r.failed.length} did not go through: ${r.failed[0].message}`);
+      }
     } catch (err: any) {
       setSheetError(err?.message || 'Could not create the post.');
     } finally {
