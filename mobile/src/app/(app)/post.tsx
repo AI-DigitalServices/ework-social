@@ -271,9 +271,7 @@ export default function PostDetail() {
               {tooLong ? <Text style={styles.warn}>This is too long for {platformName(post.platform)}. Shorten it to save.</Text> : null}
               <ActionRow>
                 <ActionTile
-                  fill="solid"
                   compact
-                  tone="primary"
                   label="Save changes"
                   loading={busy}
                   disabled={tooLong || draft.trim().length === 0}
@@ -281,16 +279,13 @@ export default function PostDetail() {
                   onPress={() => void saveEdit()}
                 />
                 <ActionTile
-                  fill="solid"
                   compact
-                  tone="ok"
                   label={whenSel?.id === 'custom' && whenSel.at ? formatShort(whenSel.at) : 'Pick date & time'}
                   disabled={busy}
                   icon={(c) => <Feather name="calendar" size={20} color={c} />}
                   onPress={() => whenRef.current?.open()}
                 />
                 <ActionTile
-                  fill="solid"
                   compact
                   tone="danger"
                   label="Delete"
