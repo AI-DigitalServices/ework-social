@@ -6,6 +6,9 @@ import { colors, radius } from '../theme';
 
 export type Account = { id: string; platform: string; accountName: string };
 
+// Video platforms: the app writes text posts for now, so they are not offered as post targets yet.
+const VIDEO_ONLY = ['YOUTUBE', 'TIKTOK'];
+
 type Preset = { id: string; label: string; at: Date | null };
 
 function platformName(p: string): string {
@@ -34,7 +37,7 @@ export function presets(now = new Date()): Preset[] {
  * Used by the write flow and by the ideas shelf.
  */
 export default function PublishPanel({
-  accounts,
+  accounts: allAccounts,
   busy,
   onConfirm,
 }: {
@@ -42,6 +45,8 @@ export default function PublishPanel({
   busy: boolean;
   onConfirm: (accountIds: string[], status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => void;
 }) {
+  const accounts = allAccounts.filter((a) => !VIDEO_ONLY.includes(a.platform));
+  const hiddenVideo = allAccounts.length - accounts.length;
   const options = useMemo(() => presets(), []);
   const [selected, setSelected] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
   const [when, setWhen] = useState('DRAFT');
@@ -61,6 +66,13 @@ export default function PublishPanel({
 
   return (
     <View>
+      {hiddenVideo > 0 ? (
+        <Text style={styles.note}>
+          {accounts.length === 0
+            ? 'Your connected accounts are video platforms. Text posts cannot go there yet, so connect another account to post.'
+            : 'YouTube and TikTok are connected, but they need a video. Video posting from the app is coming soon.'}
+        </Text>
+      ) : null}
       <View style={styles.head}>
         <Text style={styles.cap}>{accounts.length > 1 ? 'Post to (pick one or more)' : 'Post to'}</Text>
         {accounts.length > 1 ? (
@@ -120,6 +132,7 @@ export default function PublishPanel({
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 8 },
   cap: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  note: { color: colors.muted, fontSize: 12, lineHeight: 18, marginBottom: 12 },
   link: { color: colors.primaryBright, fontSize: 13, fontWeight: '700' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   chip: {

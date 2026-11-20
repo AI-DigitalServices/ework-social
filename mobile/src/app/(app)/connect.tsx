@@ -55,13 +55,25 @@ const PROVIDERS: Provider[] = [
     text: 'Post to your Threads profile.',
     path: '/social/threads/auth-url',
   },
+  {
+    id: 'youtube',
+    platforms: ['YOUTUBE'],
+    title: 'YouTube channel',
+    text: 'Connect your YouTube channel. Posting videos from the app is coming soon.',
+    path: '/social/youtube/auth-url',
+  },
+  {
+    id: 'tiktok',
+    platforms: ['TIKTOK'],
+    title: 'TikTok',
+    text: 'Connect your TikTok account. Posting videos from the app is coming soon.',
+    path: '/social/tiktok/auth-url',
+  },
 ];
 
 // Still to come in the app. The web dashboard connects these today.
 const LATER: { platform: string; label: string; hint: string }[] = [
   { platform: 'TWITTER', label: 'X', hint: 'Short updates' },
-  { platform: 'TIKTOK', label: 'TikTok', hint: 'Short videos' },
-  { platform: 'YOUTUBE', label: 'YouTube', hint: 'Videos and Shorts' },
 ];
 
 function platformName(p: string): string {
