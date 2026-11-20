@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
@@ -162,8 +162,8 @@ export default function PostDetail() {
    * Hand-off: eWork Social prepares the message, WhatsApp opens so you choose who gets it. Nothing is published.
    * A draft gets a review link (the reviewer can approve or ask for changes); anything else shares its text.
    */
-  const shareToWhatsApp = async () => {
-    if (!post) return;
+  const prepareShare = async (): Promise<string | null> => {
+    if (!post) return null;
     let msg = `Please have a look at this ${platformName(post.platform)} post:\n\n${post.content}`;
     if (post.canEdit && post.status === 'DRAFT') {
       setBusy(true);
@@ -182,10 +182,27 @@ export default function PostDetail() {
         setBusy(false);
       }
     }
+    return msg;
+  };
+
+  const shareToWhatsApp = async () => {
+    const msg = await prepareShare();
+    if (!msg) return;
     try {
       await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(msg)}`);
     } catch {
       Alert.alert('Could not open WhatsApp', 'Make sure WhatsApp is installed on this phone.');
+    }
+  };
+
+  /** The phone's own share menu: WhatsApp, Telegram, Messages, email, copy, and more. */
+  const shareAnywhere = async () => {
+    const msg = await prepareShare();
+    if (!msg) return;
+    try {
+      await Share.share({ message: msg });
+    } catch {
+      // closed without sharing
     }
   };
 
@@ -306,6 +323,12 @@ export default function PostDetail() {
                     icon={(c) => <FontAwesome6 name="whatsapp" size={22} color={c} />}
                     onPress={() => void shareToWhatsApp()}
                   />
+                  <ActionTile
+                    label="Share"
+                    disabled={busy}
+                    icon={(c) => <Feather name="share-2" size={22} color={c} />}
+                    onPress={() => void shareAnywhere()}
+                  />
                   {changeable ? (
                     <ActionTile label="Delete" tone="danger" disabled={busy} icon={(c) => <Feather name="trash-2" size={22} color={c} />} onPress={confirmDelete} />
                   ) : null}
@@ -313,8 +336,8 @@ export default function PostDetail() {
               </View>
               <Text style={styles.hint}>
                 {post.canEdit && post.status === 'DRAFT'
-                  ? 'WhatsApp opens with a review link. Whoever has it can approve the post or ask for changes. It never publishes anything.'
-                  : 'WhatsApp opens with the text ready and you choose who gets it. Nothing is published from WhatsApp.'}
+                  ? 'WhatsApp and Share send a review link. Whoever has it can approve the post or ask for changes. It never publishes anything.'
+                  : 'WhatsApp and Share send the text. You choose who gets it, and nothing is published from them.'}
               </Text>
             </View>
           )}
