@@ -279,8 +279,8 @@ export default function Idea() {
       </FadeIn>
       <FadeIn delay={300}>
         <Button title="Write another" onPress={reset} />
-        <Button title="See my ideas" variant="secondary" onPress={() => router.replace('/ideas' as Href)} />
-        <Button title="Back to home" variant="link" onPress={() => router.replace('/home' as Href)} />
+        <Button title="See my ideas" variant="secondary" onPress={() => router.navigate('/ideas' as Href)} />
+        <Button title="Back to home" variant="link" onPress={() => router.navigate('/home' as Href)} />
       </FadeIn>
       {busy ? <ActivityIndicator color={colors.primaryBright} /> : null}
     </Screen>

@@ -219,7 +219,7 @@ export default function Ideas() {
               text="Write a one-sentence idea and we turn it into posts you can keep here."
               action={
                 <View style={{ marginTop: 20, alignSelf: 'stretch' }}>
-                  <Button title="Write an idea" onPress={() => router.push('/idea' as Href)} />
+                  <Button title="Write an idea" onPress={() => router.navigate('/idea' as Href)} />
                 </View>
               }
             />

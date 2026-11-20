@@ -1,8 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../auth/AuthContext';
-import { Avatar, Button, Card, FadeIn, Pill, SectionTitle } from '../../ui';
-import { colors, radius, space } from '../../theme';
+import { useAuth } from '../../../auth/AuthContext';
+import { Avatar, Button, Card, FadeIn, Pill, SectionTitle } from '../../../ui';
+import { colors, radius, space } from '../../../theme';
 
 function roleLabel(role: string | undefined | null): string {
   if (!role) return '';

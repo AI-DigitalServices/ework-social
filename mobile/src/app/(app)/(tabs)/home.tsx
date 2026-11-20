@@ -3,13 +3,13 @@ import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
-import { request } from '../../api/client';
-import { useAuth } from '../../auth/AuthContext';
-import { canSetUp } from '../../onboarding/api';
-import type { OnboardingState } from '../../onboarding/api';
-import { wasSkipped } from '../../onboarding/session';
-import { Avatar, Button, Card, ErrorText, FadeIn, Pill, SectionTitle } from '../../ui';
-import { colors, platformColors, radius, shadow, space } from '../../theme';
+import { request } from '../../../api/client';
+import { useAuth } from '../../../auth/AuthContext';
+import { canSetUp } from '../../../onboarding/api';
+import type { OnboardingState } from '../../../onboarding/api';
+import { wasSkipped } from '../../../onboarding/session';
+import { Avatar, Button, Card, ErrorText, FadeIn, Pill, SectionTitle } from '../../../ui';
+import { colors, platformColors, radius, shadow, space } from '../../../theme';
 
 type HomePost = {
   id: string;
@@ -98,7 +98,7 @@ export default function Home() {
       .then((s) => {
         if (cancelled) return;
         setOnb(s);
-        if (s.shouldOnboard && !wasSkipped()) router.replace('/onboarding' as Href);
+        if (s.shouldOnboard && !wasSkipped()) router.navigate('/onboarding' as Href);
       })
       .catch(() => {});
     return () => {
@@ -172,7 +172,7 @@ export default function Home() {
 
         {onb?.shouldOnboard ? (
           <FadeIn delay={100}>
-            <Card tone="primary" onPress={() => router.push('/onboarding' as Href)}>
+            <Card tone="primary" onPress={() => router.navigate('/onboarding' as Href)}>
               <Pill label="Quick setup" />
               <Text style={[styles.cardTitle, { marginTop: 10, fontSize: 18 }]}>Finish setting up your business</Text>
               <Text style={styles.muted}>A few quick questions so your posts sound like you.</Text>
@@ -183,7 +183,7 @@ export default function Home() {
 
         {!onb?.shouldOnboard && canSetUp(workspace?.role) ? (
           <FadeIn delay={120}>
-            <Card tone="accent" onPress={() => router.push('/idea' as Href)}>
+            <Card tone="accent" onPress={() => router.navigate('/idea' as Href)}>
               <Pill label="New" color={colors.accent} soft={colors.accentSoft} />
               <Text style={[styles.cardTitle, { marginTop: 10, fontSize: 18 }]}>Give us an idea</Text>
               <Text style={styles.muted}>One sentence, and we write three posts in your voice.</Text>
