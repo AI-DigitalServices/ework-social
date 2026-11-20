@@ -1,11 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
-import WhenPicker from '../../create/WhenPicker';
-import type { When } from '../../create/WhenPicker';
+import WhenPicker, { formatShort } from '../../create/WhenPicker';
+import type { When, WhenPickerHandle } from '../../create/WhenPicker';
 import PlatformIcon, { platformColor } from '../../platform';
 import { platformName, statusMeta, when } from '../../posts/components';
 import { Button, Card, ErrorText, Field, Pill, Screen, Text } from '../../ui';
@@ -50,6 +50,7 @@ export default function PostDetail() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [whenSel, setWhenSel] = useState<When | null>(null); // null = keep as it is
+  const whenRef = useRef<WhenPickerHandle>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -259,21 +260,45 @@ export default function PostDetail() {
                 multiline
                 style={{ minHeight: 160, textAlignVertical: 'top' }}
               />
-              <WhenPicker value={whenSel} onChange={setWhenSel} keepLabel={post.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is'} />
+              <WhenPicker
+                ref={whenRef}
+                value={whenSel}
+                onChange={setWhenSel}
+                pickChip={false}
+                keepLabel={post.status === 'SCHEDULED' ? 'Keep the time' : 'Keep as it is'}
+              />
               <ErrorText>{error}</ErrorText>
-              <Button title="Save changes" loading={busy} disabled={tooLong || draft.trim().length === 0} onPress={() => void saveEdit()} />
               {tooLong ? <Text style={styles.warn}>This is too long for {platformName(post.platform)}. Shorten it to save.</Text> : null}
-              <View style={{ marginTop: space.lg }}>
-                <ActionRow>
-                  <ActionTile
-                    label="Delete this post"
-                    tone="danger"
-                    disabled={busy}
-                    icon={(c) => <Feather name="trash-2" size={22} color={c} />}
-                    onPress={confirmDelete}
-                  />
-                </ActionRow>
-              </View>
+              <ActionRow>
+                <ActionTile
+                  fill="solid"
+                  compact
+                  tone="primary"
+                  label="Save changes"
+                  loading={busy}
+                  disabled={tooLong || draft.trim().length === 0}
+                  icon={(c) => <Feather name="check" size={20} color={c} />}
+                  onPress={() => void saveEdit()}
+                />
+                <ActionTile
+                  fill="solid"
+                  compact
+                  tone="ok"
+                  label={whenSel?.id === 'custom' && whenSel.at ? formatShort(whenSel.at) : 'Pick date & time'}
+                  disabled={busy}
+                  icon={(c) => <Feather name="calendar" size={20} color={c} />}
+                  onPress={() => whenRef.current?.open()}
+                />
+                <ActionTile
+                  fill="solid"
+                  compact
+                  tone="danger"
+                  label="Delete"
+                  disabled={busy}
+                  icon={(c) => <Feather name="trash-2" size={20} color={c} />}
+                  onPress={confirmDelete}
+                />
+              </ActionRow>
             </View>
           ) : (
             <View>
