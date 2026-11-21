@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
@@ -7,9 +8,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CreateSheet from '../../../create/CreateSheet';
 import { colors } from '../../../theme';
 
-function icon(glyph: string) {
+function icon(name: string) {
   return function TabIcon({ color }: { color: ColorValue }) {
-    return <Text style={{ color, fontSize: 21, fontWeight: '700', marginBottom: -2 }}>{glyph}</Text>;
+    return <Feather name={name as never} size={22} color={color as string} />;
   };
 }
 
@@ -36,8 +37,8 @@ export default function AppLayout() {
           tabBarAllowFontScaling: false,
         }}
       >
-        <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: icon('⌂') }} />
-        <Tabs.Screen name="posts" options={{ title: 'Posts', tabBarIcon: icon('▤') }} />
+        <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: icon('home') }} />
+        <Tabs.Screen name="posts" options={{ title: 'Posts', tabBarIcon: icon('file-text') }} />
         <Tabs.Screen
           name="create"
           options={{
@@ -56,8 +57,8 @@ export default function AppLayout() {
             ),
           }}
         />
-        <Tabs.Screen name="approvals" options={{ title: 'Approvals', tabBarIcon: icon('✓') }} />
-        <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: icon('≡') }} />
+        <Tabs.Screen name="approvals" options={{ title: 'Approvals', tabBarIcon: icon('check-square') }} />
+        <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: icon('menu') }} />
       </Tabs>
       <CreateSheet visible={sheet} onClose={() => setSheet(false)} />
     </>
