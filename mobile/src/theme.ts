@@ -22,9 +22,24 @@ export const colors = {
 export const radius = { sm: 10, md: 14, lg: 20, pill: 999 };
 export const space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
+// Brand fonts, same pairing as the website: serif for headlines, Inter for everything else.
+// Custom fonts have one family per weight, so Text picks the Inter family from fontWeight (see ui.tsx).
+export const fonts = {
+  sans: {
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    semibold: 'Inter_600SemiBold',
+    bold: 'Inter_700Bold',
+    extra: 'Inter_800ExtraBold',
+  },
+  serif: 'LibreBaskerville_400Regular',
+  serifBold: 'LibreBaskerville_700Bold',
+  serifItalic: 'LibreBaskerville_400Regular_Italic',
+};
+
 export const type = {
-  display: { fontSize: 32, fontWeight: '800' as const, letterSpacing: -0.8, lineHeight: 38 },
-  title: { fontSize: 26, fontWeight: '800' as const, letterSpacing: -0.5, lineHeight: 32 },
+  display: { fontFamily: fonts.serifBold, fontSize: 30, letterSpacing: -0.3, lineHeight: 40 },
+  title: { fontFamily: fonts.serifBold, fontSize: 24, letterSpacing: -0.2, lineHeight: 32 },
   heading: { fontSize: 18, fontWeight: '700' as const, letterSpacing: -0.2 },
   body: { fontSize: 15, lineHeight: 22 },
   small: { fontSize: 13, lineHeight: 18 },

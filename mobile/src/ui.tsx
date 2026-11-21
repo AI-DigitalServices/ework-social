@@ -13,20 +13,32 @@ import {
   TextInput as RNTextInput,
   View,
 } from 'react-native';
-import type { StyleProp, TextInputProps, TextProps, ViewStyle } from 'react-native';
+import type { StyleProp, TextInputProps, TextProps, TextStyle, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, shadow, space, type } from './theme';
+import { colors, fonts, radius, shadow, space, type } from './theme';
 
 // Phones can enlarge all text a lot (Samsung's font size and screen zoom). Beyond 10% our layouts
 // stop looking designed, so every Text and TextInput in the app goes through these.
 const MAX_FONT_SCALE = 1.1;
 
-export function Text(props: TextProps) {
-  return <RNText maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
+// Inter has one font file per weight. Pick the family from fontWeight and drop the weight, so Android
+// does not add a fake bold on top. A style that already sets fontFamily (the serif) is left as it is.
+function brandText(style: StyleProp<TextStyle>): TextStyle {
+  const flat = (StyleSheet.flatten(style) || {}) as TextStyle;
+  const { fontWeight, fontStyle, ...rest } = flat;
+  if (rest.fontFamily) return rest;
+  const w = fontWeight === 'bold' ? 700 : fontWeight === 'normal' || fontWeight == null ? 400 : Number(fontWeight) || 400;
+  const fontFamily =
+    w >= 800 ? fonts.sans.extra : w >= 700 ? fonts.sans.bold : w >= 600 ? fonts.sans.semibold : w >= 500 ? fonts.sans.medium : fonts.sans.regular;
+  return fontStyle ? { ...rest, fontFamily, fontStyle } : { ...rest, fontFamily };
 }
 
-export function TextInput(props: TextInputProps) {
-  return <RNTextInput maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
+export function Text({ style, ...props }: TextProps) {
+  return <RNText maxFontSizeMultiplier={MAX_FONT_SCALE} style={brandText(style)} {...props} />;
+}
+
+export function TextInput({ style, ...props }: TextInputProps) {
+  return <RNTextInput maxFontSizeMultiplier={MAX_FONT_SCALE} style={brandText(style)} {...props} />;
 }
 
 export function Screen({
@@ -94,7 +106,7 @@ export function Logo({ size = 28 }: { size?: number }) {
         source={require('../assets/images/logo-mark.png')}
         style={{ width: size + 12, height: size + 12, borderRadius: (size + 12) * 0.24 }}
       />
-      <Text style={[styles.logo, { fontSize: size * 0.68 }]}>eWork Social</Text>
+      <Text style={[styles.logo, { fontSize: size * 0.68, fontFamily: fonts.serif, letterSpacing: 0 }]}>eWork Social</Text>
     </View>
   );
 }

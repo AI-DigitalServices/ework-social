@@ -28,11 +28,11 @@ export default function AppLayout() {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 58 + insets.bottom,
+            height: 64 + insets.bottom,
             paddingTop: 6,
             paddingBottom: insets.bottom + 4,
           },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarLabelStyle: { fontSize: 11, fontFamily: 'Inter_700Bold' },
           tabBarAllowFontScaling: false,
         }}
       >
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    marginTop: -18,
+    marginTop: -22,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
