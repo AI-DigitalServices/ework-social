@@ -8,7 +8,7 @@ import { Button, ErrorText } from '../../../ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { EmptyState, FilterChips, PostCard } from '../../../posts/components';
 import type { PostItem } from '../../../posts/components';
-import { colors, space } from '../../../theme';
+import { colors, space, type } from '../../../theme';
 
 type Page = { items: PostItem[]; nextCursor: string | null };
 
@@ -152,5 +152,5 @@ const styles = StyleSheet.create({
     opacity: 0.14,
   },
   content: { paddingHorizontal: space.lg, paddingBottom: 32 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, marginBottom: space.md },
+  title: { color: colors.text, ...type.title, fontSize: 30, lineHeight: 38, marginBottom: space.md },
 });

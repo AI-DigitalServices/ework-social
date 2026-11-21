@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
@@ -48,6 +49,28 @@ export function statusMeta(status: string): { label: string; color: string; soft
   }
 }
 
+const FILTER_ICONS: Record<string, string> = {
+  '': 'layers',
+  SCHEDULED: 'clock',
+  DRAFT: 'edit-2',
+  PUBLISHED: 'check-circle',
+  PENDING_APPROVAL: 'user-check',
+  FAILED: 'alert-circle',
+  PENDING: 'clock',
+  REVISION_REQUESTED: 'message-circle',
+  APPROVED: 'check-circle',
+};
+
+const STATUS_ICONS: Record<string, string> = {
+  SCHEDULED: 'clock',
+  PUBLISHED: 'check-circle',
+  FAILED: 'alert-circle',
+  PENDING_APPROVAL: 'user-check',
+  DRAFT: 'edit-2',
+};
+
+const EMPTY_ICONS: Record<string, string> = { '▤': 'file-text', '✓': 'check-square' };
+
 export function FilterChips({
   options,
   value,
@@ -67,6 +90,9 @@ export function FilterChips({
             onPress={() => onChange(o.id)}
             style={({ pressed }) => [styles.filter, on && styles.filterOn, pressed && { opacity: 0.8 }]}
           >
+            {FILTER_ICONS[o.id] ? (
+              <Feather name={FILTER_ICONS[o.id] as never} size={15} color={on ? '#fff' : colors.muted} />
+            ) : null}
             <Text style={[styles.filterText, on && { color: '#fff', fontWeight: '700' }]}>{o.label}</Text>
           </Pressable>
         );
@@ -101,10 +127,13 @@ export function PostCard({ post, onPress }: { post: PostItem; onPress?: () => vo
         <Text style={styles.text} numberOfLines={3}>
           {post.content || '(no text)'}
         </Text>
-        <Text style={styles.time}>
-          {time}
-          {post.mediaCount > 0 ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
-        </Text>
+        <View style={styles.timeRow}>
+          <Feather name={(STATUS_ICONS[post.status] ?? 'edit-2') as never} size={13} color={meta.color} />
+          <Text style={styles.time}>
+            {time}
+            {post.mediaCount > 0 ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
+          </Text>
+        </View>
         {post.status === 'FAILED' && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
       </View>
     </Pressable>
@@ -115,7 +144,11 @@ export function EmptyState({ icon, title, text, action }: { icon: string; title:
   return (
     <View style={styles.empty}>
       <View style={styles.emptyBadge}>
-        <Text style={styles.emptyIcon}>{icon}</Text>
+        {EMPTY_ICONS[icon] ? (
+          <Feather name={EMPTY_ICONS[icon] as never} size={28} color={colors.primaryBright} />
+        ) : (
+          <Text style={styles.emptyIcon}>{icon}</Text>
+        )}
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptyText}>{text}</Text>
@@ -127,6 +160,9 @@ export function EmptyState({ icon, title, text, action }: { icon: string; title:
 const styles = StyleSheet.create({
   filters: { gap: 8, paddingBottom: space.md, paddingRight: space.lg },
   filter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.card,
@@ -149,7 +185,8 @@ const styles = StyleSheet.create({
   postTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
   meta: { color: colors.muted, fontSize: 12, fontWeight: '600', flexShrink: 1 },
   text: { color: colors.text, fontSize: 15, lineHeight: 22 },
-  time: { color: colors.muted, fontSize: 12, marginTop: 8 },
+  time: { color: colors.muted, fontSize: 12 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   err: { color: colors.danger, fontSize: 13, marginTop: 8, lineHeight: 18 },
   empty: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: space.lg },
   emptyBadge: {

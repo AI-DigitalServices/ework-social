@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
 import { AppState } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { Body, Button, ErrorText, Logo, Screen, Title } from '../ui';
@@ -66,7 +67,10 @@ export default function Verify() {
 
   return (
     <Screen>
-      <Logo />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ marginBottom: 28 }}>
+        <Logo />
+      </View>
       <Title>Check your email</Title>
       <Body>
         We sent a confirmation link to{' '}
@@ -83,6 +87,7 @@ export default function Verify() {
         disabled={cooldown > 0}
       />
       <Button title="Log out" variant="link" onPress={() => void signOut()} />
+      </View>
     </Screen>
   );
 }

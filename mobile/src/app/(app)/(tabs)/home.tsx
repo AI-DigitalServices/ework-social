@@ -1,3 +1,6 @@
+import { Linking } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { IdeaCard } from '../../../home/parts';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
@@ -113,6 +116,9 @@ export default function Home() {
   const firstName = fullName.split(' ')[0] || 'there';
   const ent = workspace?.entitlements ?? null;
   const multi = !!config && config.workspaces.length > 1;
+  // No posts of any kind yet: the idea card glows to point at the next step.
+  const isFresh =
+    !!data && data.posts.scheduled + data.posts.drafts + data.posts.publishedLast7Days + data.posts.pendingApproval + data.posts.failed === 0;
   const attention = data
     ? [
         { n: data.needsAttention.failedPosts, text: 'posts failed to publish', color: colors.danger, soft: colors.dangerSoft, path: `/posts?status=FAILED&t=${Date.now()}` },
@@ -164,6 +170,9 @@ export default function Home() {
               <Text style={styles.trialText}>
                 {ent.trialDaysLeft ?? 0} {ent.trialDaysLeft === 1 ? 'day' : 'days'} left to try everything
               </Text>
+              <Text onPress={() => void Linking.openURL('https://www.eworksocial.com/#pricing')} style={styles.upgrade}>
+                Upgrade
+              </Text>
             </View>
           </FadeIn>
         ) : null}
@@ -186,12 +195,7 @@ export default function Home() {
 
         {!onb?.shouldOnboard && canSetUp(workspace?.role) ? (
           <FadeIn delay={120}>
-            <Card tone="accent" onPress={() => router.navigate('/idea' as Href)}>
-              <Pill label="New" color={colors.accent} soft={colors.accentSoft} />
-              <Text style={[styles.cardTitle, { marginTop: 10, fontSize: 18 }]}>Give us an idea</Text>
-              <Text style={styles.muted}>One sentence, and we write three posts in your voice.</Text>
-              <Text style={[styles.cta, { color: colors.accent }]}>Write a post  →</Text>
-            </Card>
+            <IdeaCard onPress={() => router.navigate('/idea' as Href)} fresh={isFresh} />
           </FadeIn>
         ) : null}
 
@@ -206,10 +210,10 @@ export default function Home() {
           <>
             <FadeIn delay={140}>
               <View style={styles.grid}>
-                <Stat label="Scheduled" value={data.posts.scheduled} color={colors.primaryBright} soft={colors.primarySoft} onPress={() => open(`/posts?status=SCHEDULED&t=${Date.now()}`)} />
-                <Stat label="Drafts" value={data.posts.drafts} color={colors.accent} soft={colors.accentSoft} onPress={() => open(`/posts?status=DRAFT&t=${Date.now()}`)} />
-                <Stat label="Published, 7 days" value={data.posts.publishedLast7Days} color={colors.ok} soft={colors.okSoft} onPress={() => open(`/posts?status=PUBLISHED&t=${Date.now()}`)} />
-                <Stat label="Awaiting approval" value={data.posts.pendingApproval} color={colors.warn} soft={colors.warnSoft} onPress={() => open(`/posts?status=PENDING_APPROVAL&t=${Date.now()}`)} />
+                <Stat icon="clock" label="Scheduled" value={data.posts.scheduled} color={colors.primaryBright} soft={colors.primarySoft} onPress={() => open(`/posts?status=SCHEDULED&t=${Date.now()}`)} />
+                <Stat icon="edit-2" label="Drafts" value={data.posts.drafts} color={colors.accent} soft={colors.accentSoft} onPress={() => open(`/posts?status=DRAFT&t=${Date.now()}`)} />
+                <Stat icon="check-circle" label="Published, 7 days" value={data.posts.publishedLast7Days} color={colors.ok} soft={colors.okSoft} onPress={() => open(`/posts?status=PUBLISHED&t=${Date.now()}`)} />
+                <Stat icon="user-check" label="Awaiting approval" value={data.posts.pendingApproval} color={colors.warn} soft={colors.warnSoft} onPress={() => open(`/posts?status=PENDING_APPROVAL&t=${Date.now()}`)} />
               </View>
             </FadeIn>
 
@@ -320,18 +324,21 @@ function Stat({
   color,
   soft,
   onPress,
+  icon,
 }: {
   label: string;
   value: number;
   color: string;
   soft: string;
   onPress?: () => void;
+  icon?: string;
 }) {
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [styles.stat, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
       <View style={[styles.statBar, { backgroundColor: soft }]}>
         <View style={[styles.statBarFill, { backgroundColor: color }]} />
       </View>
+      {icon ? <Feather name={icon as never} size={18} color={color} style={{ marginBottom: 10 }} /> : null}
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </Pressable>
@@ -400,6 +407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: space.md,
   },
+  upgrade: { color: colors.primaryBright, fontSize: 14, fontWeight: '700', textDecorationLine: 'underline' },
   trialText: { color: colors.text, fontSize: 14, fontWeight: '600', flexShrink: 1 },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 4 },
   cta: { color: colors.primaryBright, fontSize: 15, fontWeight: '700', marginTop: 12 },

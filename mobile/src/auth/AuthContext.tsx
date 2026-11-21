@@ -1,3 +1,5 @@
+import * as WebBrowser from 'expo-web-browser';
+import { API_URL } from '../config';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -53,6 +55,7 @@ type AuthValue = {
   setActiveWorkspace: (id: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: { name: string; workspaceName: string; email: string; password: string }) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   retry: () => void;
   checkVerified: () => Promise<boolean>;
@@ -158,6 +161,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist, loadConfig],
   );
 
+  // Google: the browser sheet goes to the API, then Google, then back to the app's return link with a one-time
+  // code. The code (not the tokens) travels in the link; one POST swaps it for the real tokens.
+  const signInWithGoogle = useCallback(async () => {
+    const result = await WebBrowser.openAuthSessionAsync(`${API_URL}/auth/google?client=app`, 'eworksocial://oauth-return');
+    if (result.type !== 'success' || !result.url) return; // closed or cancelled: nothing to do
+    if (/[?&]google_error=/.test(result.url)) throw new Error('Google sign-in did not finish. Please try again.');
+    if (!/[?&]google=1/.test(result.url)) return;
+    const code = /[?&]code=([^&#]+)/.exec(result.url)?.[1];
+    if (!code) throw new Error('Google sign-in did not finish. Please try again.');
+    const r = await request<AuthResponse>('/auth/google/app-exchange', {
+      method: 'POST',
+      body: { code: decodeURIComponent(code) },
+      auth: false,
+    });
+    await persist(r);
+    await loadConfig();
+  }, [persist, loadConfig]);
+
   // Local sign-out only. The server's /auth/logout signs out EVERY device
   // (including the web app), so the phone never calls it.
   const signOut = useCallback(async () => {
@@ -194,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setActiveWorkspace,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     retry: () => void bootstrap(),
     checkVerified,

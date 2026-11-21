@@ -8,12 +8,14 @@
     "scheme": "eworksocial",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.eworksocial.app"
+      "bundleIdentifier": "com.eworksocial.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B1440",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -32,16 +34,28 @@
         {
           "backgroundColor": "#080C14",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "25b3d1cc-26d6-43db-9d89-562285a2e66b"
+      }
+    },
+    "owner": "eworksocial"
   }
 }

@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
@@ -8,7 +9,7 @@ import { Button, ErrorText, Pill } from '../../../ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { EmptyState, FilterChips, platformName, when } from '../../../posts/components';
 import type { PostItem } from '../../../posts/components';
-import { colors, platformColors, radius, space } from '../../../theme';
+import { colors, platformColors, radius, space, type } from '../../../theme';
 
 type Approval = {
   id: string;
@@ -167,9 +168,16 @@ function ApprovalCard({ a, onPress }: { a: Approval; onPress?: () => void }) {
             <Text style={styles.noteText}>{a.revisionNote}</Text>
           </View>
         ) : null}
-        <Text style={styles.time}>
-          {a.respondedAt ? `Replied ${when(a.respondedAt, '')}` : `Sent ${when(a.sentAt, '')}`}
-        </Text>
+        <View style={styles.timeRow}>
+          <Feather
+            name={(a.status === 'APPROVED' ? 'check-circle' : a.status === 'REVISION_REQUESTED' ? 'message-circle' : 'clock') as never}
+            size={13}
+            color={m.color}
+          />
+          <Text style={styles.time}>
+            {a.respondedAt ? `Replied ${when(a.respondedAt, '')}` : `Sent ${when(a.sentAt, '')}`}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -188,7 +196,7 @@ const styles = StyleSheet.create({
     opacity: 0.14,
   },
   content: { paddingHorizontal: space.lg, paddingBottom: 32 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, marginBottom: space.md },
+  title: { color: colors.text, ...type.title, fontSize: 30, lineHeight: 38, marginBottom: space.md },
   card: {
     flexDirection: 'row',
     backgroundColor: colors.card,
@@ -207,5 +215,6 @@ const styles = StyleSheet.create({
   note: { backgroundColor: colors.dangerSoft, borderRadius: radius.sm, padding: 12, marginTop: 10 },
   noteLabel: { color: colors.danger, fontSize: 12, fontWeight: '800', marginBottom: 4 },
   noteText: { color: colors.text, fontSize: 14, lineHeight: 20 },
-  time: { color: colors.muted, fontSize: 12, marginTop: 10 },
+  time: { color: colors.muted, fontSize: 12 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
 });
