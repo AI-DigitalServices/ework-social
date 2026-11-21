@@ -1,9 +1,9 @@
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, FadeIn, Logo } from '../ui';
-import { colors, space, type } from '../theme';
+import { Button, FadeIn, Logo, Text } from '../ui';
+import { colors, fonts, space, type } from '../theme';
 
 const SITE = 'https://app.eworksocial.com';
 
@@ -55,7 +55,7 @@ export default function Welcome() {
         <FadeIn delay={120} style={{ marginTop: 36 }}>
           <Text style={styles.headline}>
             Your social media,{'\n'}
-            <Text style={{ color: '#6FB0FF' }}>handled.</Text>
+            <Text style={{ color: '#6FB0FF', fontFamily: fonts.serifItalic }}>handled.</Text>
           </Text>
           <Text style={styles.sub}>Plan, write, and schedule posts in minutes.</Text>
         </FadeIn>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   corner: { position: 'absolute', top: -150, right: -125, width: BOX, height: BOX },
   body: { flex: 1, paddingHorizontal: 22, paddingBottom: space.md },
-  headline: { color: colors.text, ...type.display, fontSize: 36, lineHeight: 42, textAlign: 'center' },
+  headline: { color: colors.text, ...type.display, fontSize: 31, lineHeight: 41, textAlign: 'center' },
   sub: { color: '#A9BBD1', fontSize: 16, lineHeight: 24, textAlign: 'center', marginTop: 12, paddingHorizontal: 16 },
   previewWrap: { marginTop: 40, marginHorizontal: 6 },
   stackBack2: {
