@@ -45,6 +45,17 @@
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "25b3d1cc-26d6-43db-9d89-562285a2e66b"
+      }
+    },
+    "owner": "eworksocial"
   }
 }
