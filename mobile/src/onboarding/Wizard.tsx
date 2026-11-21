@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import Confetti from './Confetti';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
@@ -262,7 +263,10 @@ export default function Wizard() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         {step !== 'name' && step !== 'done' ? (
           <Pressable onPress={back} hitSlop={12}>
-            <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>‹ Back</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Feather name="chevron-left" size={20} color={colors.primaryBright} />
+              <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>Back</Text>
+            </View>
           </Pressable>
         ) : (
           <View />
