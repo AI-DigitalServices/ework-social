@@ -18,6 +18,7 @@ function Routes() {
         <Stack.Screen name="welcome" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
+        <Stack.Screen name="forgot" />
       </Stack.Protected>
       <Stack.Protected guard={status === 'needsVerification'}>
         <Stack.Screen name="verify" />
