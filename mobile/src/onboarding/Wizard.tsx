@@ -1,3 +1,4 @@
+import Confetti from './Confetti';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
@@ -536,10 +537,11 @@ export default function Wizard() {
   return (
     <Screen>
       {header}
+      <Confetti />
       <Celebration />
       <FadeIn delay={150}>
-        <Text style={styles.doneTitle}>You are all set, {shortName}</Text>
-        <Text style={styles.doneSub}>Here is what we know. This is what makes every post sound like you.</Text>
+        <Text style={styles.doneTitle}>Congratulations, {shortName}!</Text>
+        <Text style={styles.doneSub}>Welcome to eWork Social. Here is what we know, and it is what makes every post sound like you.</Text>
       </FadeIn>
 
       <FadeIn delay={300}>

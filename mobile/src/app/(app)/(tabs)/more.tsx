@@ -1,3 +1,4 @@
+import { readOnlyInfo } from '../../../plan';
 import Feather from '@expo/vector-icons/Feather';
 import { Linking } from 'react-native';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -51,7 +52,7 @@ export default function More() {
               </View>
             ) : null}
             {ent && !ent.canWrite ? (
-              <Text style={styles.readOnly}>{ent.readOnlyReason || 'This workspace is read only right now.'}</Text>
+              <Text style={styles.readOnly}>{readOnlyInfo(ent.readOnlyReason).title}. {readOnlyInfo(ent.readOnlyReason).text}</Text>
             ) : null}
           </Card>
         </FadeIn>

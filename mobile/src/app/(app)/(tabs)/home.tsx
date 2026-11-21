@@ -1,6 +1,7 @@
 import { Linking } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { IdeaCard } from '../../../home/parts';
+import { IdeaCard, NextStepCard } from '../../../home/parts';
+import { PLAN_URL, readOnlyInfo } from '../../../plan';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
@@ -178,18 +179,24 @@ export default function Home() {
         ) : null}
         {ent && !ent.canWrite ? (
           <Card tone="warn">
-            <Text style={styles.cardTitle}>{ent.readOnlyReason || 'This workspace is read only right now.'}</Text>
+            <Text style={styles.cardTitle}>{readOnlyInfo(ent.readOnlyReason).title}</Text>
+            <Text style={[styles.muted, { marginBottom: 14 }]}>{readOnlyInfo(ent.readOnlyReason).text}</Text>
+            <Button title="Choose a plan" onPress={() => void Linking.openURL(PLAN_URL)} />
           </Card>
         ) : null}
 
         {onb?.shouldOnboard ? (
           <FadeIn delay={100}>
-            <Card tone="primary" onPress={() => router.navigate('/onboarding' as Href)}>
-              <Pill label="Quick setup" />
-              <Text style={[styles.cardTitle, { marginTop: 10, fontSize: 18 }]}>Finish setting up your business</Text>
-              <Text style={styles.muted}>A few quick questions so your posts sound like you.</Text>
-              <Text style={styles.cta}>Continue  →</Text>
-            </Card>
+            <NextStepCard
+              pill="Quick setup"
+              title="Finish setting up your business"
+              text="A few quick questions so your posts sound like you."
+              cta="Continue"
+              tone={colors.primaryBright}
+              toneSoft={colors.primarySoft}
+              pulse
+              onPress={() => router.navigate('/onboarding' as Href)}
+            />
           </FadeIn>
         ) : null}
 
