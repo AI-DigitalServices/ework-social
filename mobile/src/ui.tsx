@@ -68,7 +68,7 @@ export function Screen({
     <SafeAreaView style={styles.screen}>
       <View pointerEvents="none" style={styles.glow} />
       <View pointerEvents="none" style={styles.glow2} />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         {body}
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Text } from '../ui';
@@ -45,6 +47,20 @@ export default function PublishPanel({
     : n > 1
       ? `Save ${n} drafts`
       : 'Save as a draft';
+
+  // Nothing to post text to: say so and offer the next step, instead of an empty "Post to" and a dead button.
+  if (accounts.length === 0) {
+    return (
+      <View>
+        <Text style={[styles.note, { fontSize: 14, lineHeight: 21 }]}>
+          {allAccounts.length === 0
+            ? 'You have not connected an account yet. Connect one to schedule this post.'
+            : 'Your connected accounts are video platforms. Text posts cannot go there yet, so connect another account to post.'}
+        </Text>
+        <Button title="Connect an account" onPress={() => router.navigate('/connect' as Href)} />
+      </View>
+    );
+  }
 
   return (
     <View>
