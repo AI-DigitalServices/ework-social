@@ -41,6 +41,7 @@ export default function Signup() {
       </View>
       <Title>Create your account</Title>
       <Body>It takes about a minute. Your free trial starts right away.</Body>
+      <GoogleButton />
       <Field
         label="Your name"
         value={name}
@@ -77,7 +78,6 @@ export default function Signup() {
       />
       <ErrorText>{error}</ErrorText>
       <Button title="Create account" onPress={submit} loading={busy} />
-      <GoogleButton />
       <Button title="I already have an account" variant="link" onPress={() => router.replace('/login' as Href)} />
       </View>
     </Screen>

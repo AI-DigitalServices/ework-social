@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import AntDesign from '@expo/vector-icons/AntDesign';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { ErrorText, Text } from '../ui';
 import { colors, radius } from '../theme';
 import { useAuth } from './AuthContext';
 
-/** "or" divider and a Continue with Google button. Shows its own error line; the screen's error line is untouched. */
+/** Continue with Google (Google's dark button style, full-colour G), then an "or" divider. Shows its own error line. */
 export default function GoogleButton() {
   const { signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -25,12 +24,7 @@ export default function GoogleButton() {
   };
 
   return (
-    <View style={{ marginTop: 6 }}>
-      <View style={styles.divider}>
-        <View style={styles.line} />
-        <Text style={styles.or}>or</Text>
-        <View style={styles.line} />
-      </View>
+    <View style={{ marginTop: 4, marginBottom: 4 }}>
       <Pressable
         onPress={press}
         disabled={busy}
@@ -39,33 +33,39 @@ export default function GoogleButton() {
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
       >
         {busy ? (
-          <ActivityIndicator color={colors.text} />
+          <ActivityIndicator color="#E3E3E3" />
         ) : (
           <>
-            <AntDesign name="google" size={18} color={colors.text} />
+            <Image source={require('../../assets/images/google-g.png')} style={styles.g} />
             <Text style={styles.label}>Continue with Google</Text>
           </>
         )}
       </Pressable>
       <ErrorText>{error}</ErrorText>
+      <View style={styles.divider}>
+        <View style={styles.line} />
+        <Text style={styles.or}>or</Text>
+        <View style={styles.line} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 14 },
-  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  or: { color: colors.muted, fontSize: 13 },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 12,
     height: 52,
     borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: '#8E918F',
+    backgroundColor: '#131314',
   },
-  label: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  g: { width: 20, height: 20 },
+  label: { color: '#E3E3E3', fontSize: 16, fontWeight: '600' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14, marginBottom: 6 },
+  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  or: { color: colors.muted, fontSize: 13 },
 });
