@@ -3,6 +3,7 @@ import type { ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -89,12 +90,11 @@ export function FadeIn({
 export function Logo({ size = 28 }: { size?: number }) {
   return (
     <View style={styles.logoRow}>
-      <View style={[styles.logoMark, { width: size + 8, height: size + 8, borderRadius: (size + 8) * 0.3 }]}>
-        <Text style={[styles.logoMarkText, { fontSize: size * 0.72 }]}>e</Text>
-      </View>
-      <Text style={[styles.logo, { fontSize: size }]}>
-        eWork<Text style={{ color: colors.primaryBright }}>/</Text>Social
-      </Text>
+      <Image
+        source={require('../assets/images/logo-mark.png')}
+        style={{ width: size + 12, height: size + 12, borderRadius: (size + 12) * 0.24 }}
+      />
+      <Text style={[styles.logo, { fontSize: size * 0.68 }]}>eWork Social</Text>
     </View>
   );
 }

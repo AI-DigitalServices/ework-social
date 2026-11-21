@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useAuth } from '../auth/AuthContext';
@@ -33,7 +34,10 @@ export default function Signup() {
 
   return (
     <Screen>
-      <Logo />
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ marginBottom: 28 }}>
+        <Logo />
+      </View>
       <Title>Create your account</Title>
       <Body>It takes about a minute. Your free trial starts right away.</Body>
       <Field
@@ -73,6 +77,7 @@ export default function Signup() {
       <ErrorText>{error}</ErrorText>
       <Button title="Create account" onPress={submit} loading={busy} />
       <Button title="I already have an account" variant="link" onPress={() => router.replace('/login' as Href)} />
+      </View>
     </Screen>
   );
 }
