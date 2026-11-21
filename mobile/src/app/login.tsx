@@ -1,3 +1,5 @@
+import { Pressable } from 'react-native';
+import { Text } from '../ui';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -54,6 +56,13 @@ export default function Login() {
         autoComplete="password"
         placeholder="Your password"
       />
+      <Pressable
+        onPress={() => router.push('/forgot' as Href)}
+        hitSlop={8}
+        style={{ alignSelf: 'flex-end', marginTop: -6, marginBottom: 14 }}
+      >
+        <Text style={{ color: '#6FB0FF', fontSize: 14, fontWeight: '600' }}>Forgot password?</Text>
+      </Pressable>
       <ErrorText>{error}</ErrorText>
       <Button title="Log in" onPress={submit} loading={busy} />
       <Button title="New here? Create an account" variant="link" onPress={() => router.replace('/signup' as Href)} />
