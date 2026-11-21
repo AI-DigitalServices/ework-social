@@ -1,14 +1,23 @@
-import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Get, Delete, Query, HttpCode, UseGuards, Request, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import type { Response, Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './jwt.guard';
+import { GoogleAuthGuard } from './google-auth.guard';
+import { isGoogleAppState, signGoogleAppCode, verifyGoogleAppCode } from './google-app.util';
+import { isSafeAppReturnUrl } from '../social/oauth-state.util';
 
 const REFRESH_COOKIE = 'refresh_token';
+
+/** Where the browser goes to hand a Google sign-in back to the app (same return link as the Connect screen). */
+function googleAppReturn(query: string, frontendUrl: string): string {
+  const base = (process.env.MOBILE_OAUTH_RETURN_URL || '').trim();
+  if (!isSafeAppReturnUrl(base)) return `${frontendUrl}/login`;
+  return `${base}${base.includes('?') ? '&' : '?'}${query}`;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -139,16 +148,26 @@ export class AuthController {
 
   /** Step 1 — redirect user to Google consent screen */
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   googleAuth() {
     // Passport handles the redirect automatically
   }
 
   /** Step 2 — Google redirects back here after user approves */
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   async googleCallback(@Request() req: any, @Res() res: Response) {
     const user = req.user;
+    const fromApp = isGoogleAppState(req.query?.state);
+    if (!user) {
+      if (fromApp) return res.redirect(googleAppReturn('google_error=1', this.config.get('FRONTEND_URL')));
+      throw new UnauthorizedException('Google sign-in failed');
+    }
+    if (fromApp) {
+      // The app gets a one-time code, never the tokens themselves.
+      const code = signGoogleAppCode(user.id, user.email);
+      return res.redirect(googleAppReturn(`google=1&code=${encodeURIComponent(code)}`, this.config.get('FRONTEND_URL')));
+    }
     const tokens = await this.authService.generateTokensPublic(user.id, user.email);
 
     // Also set the refresh token as an HttpOnly cookie (backward-compatible —
@@ -171,5 +190,19 @@ export class AuthController {
     });
 
     return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+  }
+
+  /** The app swaps the one-time code from the Google sign-in for its login tokens. */
+  @Post('google/app-exchange')
+  @HttpCode(200)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  async googleAppExchange(@Body() body: { code?: string }) {
+    let claims: { userId: string; email: string };
+    try {
+      claims = verifyGoogleAppCode(body?.code);
+    } catch {
+      throw new UnauthorizedException('That sign-in link has expired. Please try again.');
+    }
+    return this.authService.generateTokensPublic(claims.userId, claims.email);
   }
 }

@@ -1,3 +1,4 @@
+import GoogleButton from '../auth/GoogleButton';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -76,6 +77,7 @@ export default function Signup() {
       />
       <ErrorText>{error}</ErrorText>
       <Button title="Create account" onPress={submit} loading={busy} />
+      <GoogleButton />
       <Button title="I already have an account" variant="link" onPress={() => router.replace('/login' as Href)} />
       </View>
     </Screen>

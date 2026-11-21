@@ -1,3 +1,4 @@
+import GoogleButton from '../auth/GoogleButton';
 import { Pressable } from 'react-native';
 import { Text } from '../ui';
 import { useState } from 'react';
@@ -65,6 +66,7 @@ export default function Login() {
       </Pressable>
       <ErrorText>{error}</ErrorText>
       <Button title="Log in" onPress={submit} loading={busy} />
+      <GoogleButton />
       <Button title="New here? Create an account" variant="link" onPress={() => router.replace('/signup' as Href)} />
       </View>
     </Screen>
