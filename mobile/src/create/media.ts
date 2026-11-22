@@ -4,7 +4,6 @@ import * as Crypto from 'expo-crypto';
 import { File } from 'expo-file-system';
 import { fetch as expoFetch } from 'expo/fetch';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import { Video as Compressor } from 'react-native-compressor';
 import { request } from '../api/client';
 
 export type Picked = { uri: string; width: number; height: number };
@@ -151,6 +150,9 @@ export async function prepareVideo(p: PickedVideo, onProgress: (percent: number)
       progressDivider: 5,
       preserveMetadata: false,
     };
+    // Loaded here, not at the top: Expo Go has no native compressor, and a top-level import would break the screen.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Video: Compressor } = require('react-native-compressor');
     uri = await Compressor.compress(p.uri, options as never, (pr: number) => onProgress(Math.round(pr * 100)));
   } catch {
     // Could not compress: the original goes up if it is small enough; the size check below says if it is not.
