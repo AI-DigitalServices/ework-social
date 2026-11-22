@@ -301,9 +301,9 @@ export default function Idea() {
         {top}
         <StepHero
           icon="✎"
-          kicker="Write an idea"
+          kicker="Create a post"
           title="What would you like to post about?"
-          sub="A sentence is enough. We write three posts in your voice."
+          sub="Start with a photo, a sentence, or both. We write three posts in your voice."
         />
         <Text style={styles.cap}>Start with a photo (optional)</Text>
         {photoUri ? (
