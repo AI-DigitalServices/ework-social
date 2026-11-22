@@ -4,6 +4,9 @@ import { getPlanLimits, getAgentActionLimit } from '../common/plan-limits';
 import { PostHogService } from '../analytics/posthog.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 
+/** AI writes included each month on a free trial ('Give us an idea'). After the trial the plan's caption allowance applies. */
+export const IDEA_TRIAL_LIMIT = 30;
+
 @Injectable()
 export class AiUsageService {
   constructor(
@@ -71,7 +74,7 @@ export class AiUsageService {
       case 'IDEA_POST':
         // Mobile "Give us an idea": generous on the free trial so a new owner can feel the product,
         // then the plan's caption allowance.
-        limit = isTrialing ? 30 : limits.aiCaptionsPerMonth;
+        limit = isTrialing ? IDEA_TRIAL_LIMIT : limits.aiCaptionsPerMonth;
         limitLabel = 'AI post idea';
         break;
       case 'IMAGE_GEN':
@@ -110,6 +113,25 @@ export class AiUsageService {
     });
 
     this.posthog.capture(workspaceId, 'ai_feature_used', { type });
+  }
+
+  /** How many "Give us an idea" writes this workspace has used and has left this month (regenerating counts). */
+  async getIdeaUsage(workspaceId: string) {
+    const month = this.getCurrentMonth();
+    const [row, eff] = await Promise.all([
+      this.prisma.aiUsage.findUnique({ where: { workspaceId_type_month: { workspaceId, type: 'IDEA_POST', month } } }),
+      this.planGuard.getEffectivePlan(workspaceId),
+    ]);
+    const limit = eff.isTrialing ? IDEA_TRIAL_LIMIT : getPlanLimits(eff.plan).aiCaptionsPerMonth;
+    const used = row?.count ?? 0;
+    const now = new Date();
+    return {
+      used,
+      limit,
+      remaining: Math.max(0, limit - used),
+      trial: !!eff.isTrialing,
+      resets: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString(),
+    };
   }
 
   async getUsage(workspaceId: string) {

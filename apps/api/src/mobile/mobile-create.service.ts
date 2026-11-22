@@ -6,8 +6,12 @@ import { SchedulerService } from '../scheduler/scheduler.service';
 import { IDEA_PLATFORMS, charLimit, clean } from '../ai/idea-prompt';
 import { CATEGORIES } from './onboarding-options';
 import { toPostSummary } from './mobile-posts.util';
+import axios from 'axios';
+import { isOwnMediaUrl } from './media-url.util';
 
 const SHELF_CAP = 100;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 function normalizePlatform(p?: string | null): string | null {
   const v = String(p ?? '').trim().toUpperCase();
@@ -28,10 +32,18 @@ export class MobileCreateService {
     private planGuard: PlanGuardService,
   ) {}
 
-  async suggest(workspaceId: string, dto: { idea: string; platform?: string }) {
+  async suggest(workspaceId: string, dto: { idea: string; platform?: string; imageUrl?: string; hint?: string }) {
     const idea = clean(dto.idea, 600);
     if (idea.length < 3) throw new BadRequestException('Tell us a little more about your idea.');
     await this.planGuard.assertCanWrite(workspaceId);
+
+    let image: { mediaType: string; data: string } | undefined;
+    if (dto.imageUrl) {
+      if (!isOwnMediaUrl(dto.imageUrl, workspaceId)) {
+        throw new BadRequestException('That photo could not be used. Please choose it again.');
+      }
+      image = await this.loadImage(dto.imageUrl);
+    }
 
     const [workspace, profile] = await Promise.all([
       this.prisma.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
@@ -45,6 +57,8 @@ export class MobileCreateService {
     const { options } = await this.ai.generateFromIdea(workspaceId, {
       idea,
       platform,
+      image,
+      hint: dto.hint,
       business: {
         name: workspace?.name ?? '',
         category: category?.label ?? null,
@@ -57,12 +71,21 @@ export class MobileCreateService {
         toneSample: tone ? ((category?.toneSamples as Record<string, string> | undefined)?.[tone] ?? null) : null,
       },
     });
-    return { platform, options };
+    const usage = await this.usageOf(workspaceId);
+    return { platform, options, usage };
   }
 
-  async saveIdea(workspaceId: string, userId: string, dto: { idea: string; content: string; platform?: string }) {
+  async saveIdea(
+    workspaceId: string,
+    userId: string,
+    dto: { idea: string; content: string; platform?: string; mediaUrls?: string[] },
+  ) {
     const content = String(dto.content ?? '').trim();
     if (!content) throw new BadRequestException('There is no text to save.');
+    const mediaUrls = (dto.mediaUrls ?? []).slice(0, 4);
+    if (mediaUrls.some((u) => !isOwnMediaUrl(u, workspaceId))) {
+      throw new BadRequestException('That photo could not be used. Please choose it again.');
+    }
     const open = await this.prisma.postIdea.count({ where: { workspaceId, usedPostId: null } });
     if (open >= SHELF_CAP) {
       throw new BadRequestException('Your ideas shelf is full. Use or delete a few first.');
@@ -73,6 +96,7 @@ export class MobileCreateService {
         idea: clean(dto.idea, 600),
         content,
         platform: normalizePlatform(dto.platform),
+        mediaUrls,
         createdById: userId,
       },
     });
@@ -169,7 +193,7 @@ export class MobileCreateService {
             workspaceId,
             socialAccountId: account.id,
             content: idea.content,
-            mediaUrls: [],
+            mediaUrls: (idea as any).mediaUrls ?? [],
             ...(scheduledAt ? { scheduledAt } : {}),
             status: dto.status,
           } as any,
@@ -190,12 +214,45 @@ export class MobileCreateService {
     return { post: toPostSummary(posts[0]), posts: posts.map((p) => toPostSummary(p)), failed };
   }
 
+  /** AI writes used and left this month, for the (?) next to the AI actions. */
+  async usage(workspaceId: string) {
+    return (await this.usageOf(workspaceId)) ?? { used: 0, limit: 0, remaining: 0, trial: false, resets: null };
+  }
+
+  // Never let a usage lookup break writing a post.
+  private async usageOf(workspaceId: string) {
+    try {
+      return await this.ai.ideaUsage(workspaceId);
+    } catch {
+      return null;
+    }
+  }
+
+  /** Downloads the owner's photo from our own storage so Claude can look at it. */
+  private async loadImage(url: string): Promise<{ mediaType: string; data: string }> {
+    try {
+      const res = await axios.get<ArrayBuffer>(url, {
+        responseType: 'arraybuffer',
+        timeout: 15000,
+        maxContentLength: MAX_IMAGE_BYTES,
+        maxRedirects: 0,
+      });
+      const type = String(res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+      const buf = Buffer.from(res.data);
+      if (!IMAGE_TYPES.includes(type) || buf.length === 0 || buf.length > MAX_IMAGE_BYTES) throw new Error('bad image');
+      return { mediaType: type, data: buf.toString('base64') };
+    } catch {
+      throw new BadRequestException('We could not read that photo. Try a smaller JPG or PNG.');
+    }
+  }
+
   private shape(r: any) {
     return {
       id: r.id,
       idea: r.idea,
       content: r.content,
       platform: r.platform ?? null,
+      mediaUrls: r.mediaUrls ?? [],
       createdAt: r.createdAt,
     };
   }

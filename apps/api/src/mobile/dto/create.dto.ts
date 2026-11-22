@@ -10,6 +10,17 @@ export class SuggestIdeaDto {
   @IsString()
   @MaxLength(20)
   platform?: string;
+
+  // A photo already uploaded to this workspace's media storage. The posts are written around it.
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  imageUrl?: string;
+
+  // Steers a re-write: "make them shorter", "funnier" and so on.
+  @IsOptional()
+  @IsIn(['SHORTER', 'LONGER', 'FUNNIER', 'MORE_FORMAL', 'MORE_FRIENDLY'])
+  hint?: string;
 }
 
 export class SaveIdeaDto {
@@ -27,6 +38,13 @@ export class SaveIdeaDto {
   @IsString()
   @MaxLength(20)
   platform?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(4)
+  @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  mediaUrls?: string[];
 }
 
 export class IdeaToPostDto {
