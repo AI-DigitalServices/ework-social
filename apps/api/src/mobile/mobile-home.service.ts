@@ -77,6 +77,16 @@ export class MobileHomeService {
       updatedAt: p.updatedAt,
       errorMessage: p.errorMessage ?? null,
       mediaCount: Array.isArray(p.mediaUrls) ? p.mediaUrls.length : 0,
+      thumbUrl:
+        Array.isArray(p.mediaUrls) && typeof p.mediaUrls[0] === 'string' && !/\.(mp4|mov|webm)$/i.test(p.mediaUrls[0])
+          ? p.mediaUrls[0]
+          : null,
+      mediaKind:
+        Array.isArray(p.mediaUrls) && typeof p.mediaUrls[0] === 'string'
+          ? /\.(mp4|mov|webm)$/i.test(p.mediaUrls[0])
+            ? 'VIDEO'
+            : 'PHOTO'
+          : null,
       platform: p.socialAccount?.platform ?? null,
       accountName: p.socialAccount?.accountName ?? null,
     });
