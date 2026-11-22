@@ -16,7 +16,7 @@ import { Button, Card, ErrorText, FadeIn, Field, Screen } from '../../ui';
 import { ActionRow, ActionTile } from '../../actions';
 import AiInfo, { LimitNote } from '../../create/AiInfo';
 import type { IdeaUsage } from '../../create/AiInfo';
-import { pickPhoto, uploadPhoto } from '../../create/media';
+import { cropForInstagram, needsInstagramCrop, pickPhoto, uploadPhoto } from '../../create/media';
 import { colors, platformColors, radius } from '../../theme';
 
 type Stage = 'write' | 'pick' | 'publish' | 'done';
@@ -67,6 +67,7 @@ export default function Idea() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [photoDims, setPhotoDims] = useState<{ width: number; height: number } | null>(null);
   const [usage, setUsage] = useState<IdeaUsage | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const autoOpened = useRef(false);
@@ -79,6 +80,7 @@ export default function Idea() {
         const picked = await pickPhoto(source);
         if (!picked) return;
         setPhotoUri(picked.uri);
+        setPhotoDims({ width: picked.width, height: picked.height });
         setPhotoUrl(null);
         setUploading(true);
         setPhotoUrl(await uploadPhoto(wid, picked));
@@ -94,6 +96,7 @@ export default function Idea() {
   );
 
   const removePhoto = () => {
+    setPhotoDims(null);
     setPhotoUri(null);
     setPhotoUrl(null);
   };
@@ -113,6 +116,26 @@ export default function Idea() {
       .then(setUsage)
       .catch(() => {});
   }, [wid]);
+
+  // Instagram only takes photos between 4:5 and 1.91:1. Offer a centre crop instead of a failed post later.
+  const fixForInstagram = async () => {
+    if (!wid || !photoUri || !photoDims) return;
+    setError(null);
+    setUploading(true);
+    setPhotoUrl(null);
+    try {
+      const cropped = await cropForInstagram({ uri: photoUri, width: photoDims.width, height: photoDims.height });
+      setPhotoUri(cropped.uri);
+      setPhotoDims({ width: cropped.width, height: cropped.height });
+      setPhotoUrl(await uploadPhoto(wid, cropped));
+    } catch (err: any) {
+      setError(err?.message || 'We could not crop that photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+  const igProblem =
+    !!photoDims && needsInstagramCrop(photoDims) && (platform === 'INSTAGRAM' || accounts.some((a) => a.platform === 'INSTAGRAM'));
 
   // Out of AI writes: carry on by hand with the idea as the starting text.
   const writeMyself = () => {
@@ -242,6 +265,7 @@ export default function Idea() {
 
   const reset = () => {
     setIdea('');
+    setPhotoDims(null);
     setPhotoUri(null);
     setPhotoUrl(null);
     setLimitHit(false);
@@ -301,6 +325,13 @@ export default function Idea() {
             <ActionTile compact label="Camera" icon={(c) => <Feather name="camera" size={20} color={c} />} onPress={() => void choosePhoto('camera')} />
           </ActionRow>
         )}
+        {igProblem && !uploading ? (
+          <Card tone="warn">
+            <Text style={styles.igTitle}>Instagram will not take this photo as it is</Text>
+            <Text style={styles.igBody}>Instagram needs photos that are not too tall or too wide. Crop it to fit, or post it to Facebook only.</Text>
+            <Button title="Crop for Instagram" variant="secondary" onPress={() => void fixForInstagram()} />
+          </Card>
+        ) : null}
         <Field
           label={photoUri ? 'Add a note (optional)' : 'Your idea'}
           value={idea}
@@ -456,6 +487,8 @@ export default function Idea() {
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
+  igTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  igBody: { color: colors.muted, fontSize: 14, lineHeight: 20, marginBottom: 12 },
   photoBox: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: 14, backgroundColor: colors.card },
   photo: { width: '100%', height: 220 },
   photoSmall: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: 12 },

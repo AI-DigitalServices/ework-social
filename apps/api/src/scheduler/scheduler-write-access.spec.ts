@@ -14,6 +14,7 @@ function build(status = 'DRAFT', role: string | null = 'EDITOR') {
     post: {
       findUnique: jest.fn().mockResolvedValue(post),
       update: jest.fn().mockResolvedValue({ id: 'p1' }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       delete: jest.fn().mockResolvedValue({ id: 'p1' }),
       create: jest.fn().mockResolvedValue({ id: 'new', socialAccount: { platform: 'LINKEDIN' } }),
     },

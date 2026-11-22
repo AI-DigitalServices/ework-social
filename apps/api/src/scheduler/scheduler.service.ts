@@ -230,6 +230,11 @@ export class SchedulerService {
           throw new Error(message);
         }
 
+        await this.prisma.post.updateMany({
+          where: { id: post.id, status: 'PUBLISHED', publishedAt: null },
+          data: { publishedAt: new Date() },
+        });
+
         // Notify workspace owner
         const ownerId = post.workspace?.ownerId;
         if (ownerId) {
@@ -308,14 +313,19 @@ export class SchedulerService {
       throw new BadRequestException('This post is already published.');
     }
     const platform = post.socialAccount?.platform;
-    if (platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
-    if (platform === 'FACEBOOK')  return this.socialService.publishToFacebook(postId);
-    if (platform === 'LINKEDIN')  return this.socialService.publishToLinkedIn(postId);
-    if (platform === 'THREADS')   return this.socialService.publishToThreads(postId);
-    if (platform === 'BLUESKY')   return this.socialService.publishToBluesky(postId);
-    if (platform === 'TIKTOK')    return this.socialService.publishToTikTok(postId);
-    if (platform === 'YOUTUBE')   return this.socialService.publishToYouTube(postId);
-    if (platform === 'TWITTER')   return this.twitterService.publishTweet(postId);
+    const run = (): Promise<any> | null => {
+      if (platform === 'INSTAGRAM') return this.socialService.publishToInstagram(postId);
+      if (platform === 'FACEBOOK')  return this.socialService.publishToFacebook(postId);
+      if (platform === 'LINKEDIN')  return this.socialService.publishToLinkedIn(postId);
+      if (platform === 'THREADS')   return this.socialService.publishToThreads(postId);
+      if (platform === 'BLUESKY')   return this.socialService.publishToBluesky(postId);
+      if (platform === 'TIKTOK')    return this.socialService.publishToTikTok(postId);
+      if (platform === 'YOUTUBE')   return this.socialService.publishToYouTube(postId);
+      if (platform === 'TWITTER')   return this.twitterService.publishTweet(postId);
+      return null;
+    };
+    const pending = run();
+    if (pending) return this.stampPublished(postId, pending);
 
     // No publisher implemented for this platform (e.g. Twitter/X posting).
     // Previously this silently marked the post PUBLISHED without sending it
@@ -327,6 +337,16 @@ export class SchedulerService {
       data: { status: 'FAILED', errorMessage: message },
     });
     throw new Error(message);
+  }
+
+  /** After a publish succeeds, record when it went out (the publishers only set the status). */
+  private async stampPublished(postId: string, publishing: Promise<any>) {
+    const result = await publishing;
+    await this.prisma.post.updateMany({
+      where: { id: postId, status: 'PUBLISHED', publishedAt: null },
+      data: { publishedAt: new Date() },
+    });
+    return result;
   }
 
   async getStats(workspaceId: string) {

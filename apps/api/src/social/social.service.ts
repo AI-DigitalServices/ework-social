@@ -552,7 +552,10 @@ export class SocialService {
       });
       return { success: true, postId: publishRes.data.id };
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to publish to Instagram';
+      const rawMessage = err.response?.data?.error?.message || err.message || 'Failed to publish to Instagram';
+      const errorMessage = /aspect ratio/i.test(rawMessage)
+        ? 'Instagram needs a photo that is not too tall or too wide (between 4:5 and 1.91:1). Crop the photo and try again.'
+        : rawMessage;
       await this.prisma.post.update({
         where: { id: postId },
         data: { status: 'FAILED', errorMessage },
