@@ -1,3 +1,4 @@
+import { markFresh } from '../onboarding/session';
 import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { ErrorText, Text } from '../ui';
@@ -15,6 +16,7 @@ export default function GoogleButton() {
     setBusy(true);
     setError(null);
     try {
+      markFresh();
       await signInWithGoogle();
     } catch (err: any) {
       setError(err?.message || 'Google sign-in did not finish. Please try again.');
