@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
 import { Text } from '../../ui';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { request } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
@@ -12,13 +13,25 @@ import { Chip } from '../../onboarding/components';
 import PublishPanel from '../../create/PublishPanel';
 import type { Account } from '../../create/PublishPanel';
 import { Button, Card, ErrorText, FadeIn, Field, Screen } from '../../ui';
+import { ActionRow, ActionTile } from '../../actions';
+import AiInfo, { LimitNote } from '../../create/AiInfo';
+import type { IdeaUsage } from '../../create/AiInfo';
+import { pickPhoto, uploadPhoto } from '../../create/media';
 import { colors, platformColors, radius } from '../../theme';
 
 type Stage = 'write' | 'pick' | 'publish' | 'done';
-type Suggest = { platform: string; options: string[] };
+type Suggest = { platform: string; options: string[]; usage?: IdeaUsage | null };
 type Saved = { id: string };
 
 const FALLBACK_PLATFORMS = ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN'];
+// Steers "write different ones". The ids are what the API understands.
+const HINTS = [
+  { id: 'SHORTER', label: 'Shorter' },
+  { id: 'LONGER', label: 'Longer' },
+  { id: 'FUNNIER', label: 'Funnier' },
+  { id: 'MORE_FORMAL', label: 'More formal' },
+  { id: 'MORE_FRIENDLY', label: 'More friendly' },
+];
 const LIMITS: Record<string, number> = { TWITTER: 280, BLUESKY: 300, THREADS: 500, INSTAGRAM: 2200, LINKEDIN: 3000, TIKTOK: 2200, YOUTUBE: 5000 };
 
 export default function Idea() {
@@ -50,6 +63,64 @@ export default function Idea() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneNote, setDoneNote] = useState('');
+  const { photo: openPhoto } = useLocalSearchParams<{ photo?: string }>();
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [usage, setUsage] = useState<IdeaUsage | null>(null);
+  const [limitHit, setLimitHit] = useState(false);
+  const autoOpened = useRef(false);
+
+  const choosePhoto = useCallback(
+    async (source: 'library' | 'camera') => {
+      if (!wid) return;
+      setError(null);
+      try {
+        const picked = await pickPhoto(source);
+        if (!picked) return;
+        setPhotoUri(picked.uri);
+        setPhotoUrl(null);
+        setUploading(true);
+        setPhotoUrl(await uploadPhoto(wid, picked));
+      } catch (err: any) {
+        setPhotoUri(null);
+        setPhotoUrl(null);
+        setError(err?.message || 'We could not add that photo. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+    },
+    [wid],
+  );
+
+  const removePhoto = () => {
+    setPhotoUri(null);
+    setPhotoUrl(null);
+  };
+
+  // "Upload a photo" in the create sheet opens this screen straight in the gallery.
+  useEffect(() => {
+    if (openPhoto === '1' && wid && !autoOpened.current) {
+      autoOpened.current = true;
+      void choosePhoto('library');
+    }
+  }, [openPhoto, wid, choosePhoto]);
+
+  // How many AI writes are left this month, for the "?" beside the AI actions.
+  useEffect(() => {
+    if (!wid) return;
+    request<IdeaUsage>(`/mobile/v1/workspaces/${wid}/create/usage`)
+      .then(setUsage)
+      .catch(() => {});
+  }, [wid]);
+
+  // Out of AI writes: carry on by hand with the idea as the starting text.
+  const writeMyself = () => {
+    setOptions([]);
+    setText(idea.trim() === 'Photo post' ? '' : idea.trim());
+    setLimitHit(false);
+    setStage('pick');
+  };
 
   // Quietly pick up what we know about the business: its channels, and example ideas for its kind of business.
   useEffect(() => {
@@ -76,25 +147,43 @@ export default function Idea() {
     };
   }, [wid]);
 
-  const write = useCallback(async () => {
-    if (!wid) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await request<Suggest>(`/mobile/v1/workspaces/${wid}/create/suggest`, {
-        method: 'POST',
-        body: { idea: idea.trim(), platform },
-      });
-      setOptions(r.options);
-      setPicked(0);
-      setText(r.options[0] ?? '');
-      setStage('pick');
-    } catch (err: any) {
-      setError(err?.message || 'We could not write that one. Please try again.');
-    } finally {
-      setBusy(false);
-    }
-  }, [wid, idea, platform]);
+  const write = useCallback(
+    async (nextHint?: string) => {
+      if (!wid || busy) return;
+      setBusy(true);
+      setError(null);
+      setLimitHit(false);
+      try {
+        const r = await request<Suggest>(`/mobile/v1/workspaces/${wid}/create/suggest`, {
+          method: 'POST',
+          body: {
+            idea: idea.trim() || 'Photo post',
+            platform,
+            ...(photoUrl ? { imageUrl: photoUrl } : {}),
+            ...(nextHint ? { hint: nextHint } : {}),
+          },
+        });
+        setOptions(r.options);
+        setPicked(0);
+        setText(r.options[0] ?? '');
+        if (r.usage) setUsage(r.usage);
+        setStage('pick');
+      } catch (err: any) {
+        // Out of AI writes: explain calmly instead of showing an error.
+        if (err?.status === 403 && /limit|plan/i.test(String(err?.message))) {
+          setLimitHit(true);
+          request<IdeaUsage>(`/mobile/v1/workspaces/${wid}/create/usage`)
+            .then(setUsage)
+            .catch(() => {});
+        } else {
+          setError(err?.message || 'We could not write that one. Please try again.');
+        }
+      } finally {
+        setBusy(false);
+      }
+    },
+    [wid, busy, idea, platform, photoUrl],
+  );
 
   const finish = useCallback(
     async (accountIds?: string[], status?: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => {
@@ -105,7 +194,12 @@ export default function Idea() {
       try {
         saved = await request<Saved>(`/mobile/v1/workspaces/${wid}/ideas`, {
           method: 'POST',
-          body: { idea: idea.trim(), content: text.trim(), platform },
+          body: {
+            idea: idea.trim() || 'Photo post',
+            content: text.trim(),
+            platform,
+            ...(photoUrl ? { mediaUrls: [photoUrl] } : {}),
+          },
         });
         if (accountIds && accountIds.length > 0 && status) {
           const r = await request<{ posts?: unknown[]; failed?: { message: string }[] }>(
@@ -143,11 +237,14 @@ export default function Idea() {
         setBusy(false);
       }
     },
-    [wid, idea, text, platform, accounts.length],
+    [wid, idea, text, platform, accounts.length, photoUrl],
   );
 
   const reset = () => {
     setIdea('');
+    setPhotoUri(null);
+    setPhotoUrl(null);
+    setLimitHit(false);
     setOptions([]);
     setText('');
     setError(null);
@@ -184,17 +281,37 @@ export default function Idea() {
           title="What would you like to post about?"
           sub="A sentence is enough. We write three posts in your voice."
         />
+        <Text style={styles.cap}>Start with a photo (optional)</Text>
+        {photoUri ? (
+          <View style={styles.photoBox}>
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+            {uploading ? (
+              <View style={styles.photoOverlay}>
+                <ActivityIndicator color="#fff" />
+                <Text style={styles.photoNote}>Uploading...</Text>
+              </View>
+            ) : null}
+            <Pressable onPress={removePhoto} hitSlop={10} style={styles.photoX} accessibilityLabel="Remove photo">
+              <Feather name="x" size={16} color="#fff" />
+            </Pressable>
+          </View>
+        ) : (
+          <ActionRow>
+            <ActionTile compact label="Gallery" icon={(c) => <Feather name="image" size={20} color={c} />} onPress={() => void choosePhoto('library')} />
+            <ActionTile compact label="Camera" icon={(c) => <Feather name="camera" size={20} color={c} />} onPress={() => void choosePhoto('camera')} />
+          </ActionRow>
+        )}
         <Field
-          label="Your idea"
+          label={photoUri ? 'Add a note (optional)' : 'Your idea'}
           value={idea}
           onChangeText={setIdea}
           autoCapitalize="sentences"
           multiline
           maxLength={600}
           style={{ minHeight: 110, textAlignVertical: 'top' }}
-          placeholder="We have fresh red velvet cakes this weekend"
+          placeholder={photoUri ? 'Anything we should mention about it?' : 'We have fresh red velvet cakes this weekend'}
         />
-        {chips.length > 0 ? (
+        {chips.length > 0 && !photoUri ? (
           <View style={{ marginBottom: 12 }}>
             <Text style={styles.cap}>Need a spark?</Text>
             <View style={styles.wrap}>
@@ -211,12 +328,19 @@ export default function Idea() {
           ))}
         </View>
         <ErrorText>{error}</ErrorText>
-        <Button
-          title={busy ? 'Writing your post...' : 'Write my post'}
-          onPress={() => void write()}
-          loading={busy}
-          disabled={idea.trim().length < 3}
-        />
+        {limitHit ? (
+          <LimitNote usage={usage} onWriteMyself={writeMyself} />
+        ) : (
+          <>
+            <Button
+              title={busy ? 'Writing your post...' : photoUrl ? 'Write posts for my photo' : 'Write my post'}
+              onPress={() => void write()}
+              loading={busy}
+              disabled={uploading || (idea.trim().length < 3 && !photoUrl)}
+            />
+            <AiInfo usage={usage} />
+          </>
+        )}
       </Screen>
     );
   }
@@ -227,12 +351,13 @@ export default function Idea() {
         {top}
         <StepHero
           icon="✧"
-          kicker="Three ways to say it"
-          title="Pick the one you like"
-          sub="Tap one, then change anything you want."
+          kicker={options.length > 0 ? 'Three ways to say it' : 'Your post'}
+          title={options.length > 0 ? 'Pick the one you like' : 'Write your post'}
+          sub={options.length > 0 ? 'Tap one, then change anything you want.' : 'Say it your way. You can change it any time.'}
           tint={colors.accent}
           soft={colors.accentSoft}
         />
+        {photoUri ? <Image source={{ uri: photoUri }} style={styles.photoSmall} resizeMode="cover" /> : null}
         {options.map((o, i) => {
           const on = i === picked;
           return (
@@ -264,7 +389,15 @@ export default function Idea() {
         </View>
         <ErrorText>{text.length > limit ? `This is too long for ${platformLabel(platform)}. Shorten it a little.` : null}</ErrorText>
         <Button title="Use this post" onPress={() => setStage('publish')} disabled={!text.trim() || text.length > limit} />
+        {limitHit ? <LimitNote usage={usage} onWriteMyself={() => setLimitHit(false)} /> : null}
+        <Text style={styles.cap}>Not quite right? Try</Text>
+        <View style={styles.wrap}>
+          {HINTS.map((h) => (
+            <Chip key={h.id} label={h.label} onPress={() => void write(h.id)} />
+          ))}
+        </View>
         <Button title="Write different ones" variant="secondary" onPress={() => void write()} loading={busy} />
+        <AiInfo usage={usage} />
         <ErrorText>{error}</ErrorText>
       </Screen>
     );
@@ -283,6 +416,7 @@ export default function Idea() {
           soft={colors.okSoft}
         />
         <Card tone="primary">
+          {photoUri ? <Image source={{ uri: photoUri }} style={styles.photoSmall} resizeMode="cover" /> : null}
           <Text style={styles.preview}>{text}</Text>
         </Card>
         <ErrorText>{error}</ErrorText>
@@ -322,6 +456,12 @@ export default function Idea() {
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
+  photoBox: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: 14, backgroundColor: colors.card },
+  photo: { width: '100%', height: 220 },
+  photoSmall: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: 12 },
+  photoOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  photoNote: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  photoX: { position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   back: { color: colors.primaryBright, fontSize: 15, fontWeight: '600' },
   cap: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
