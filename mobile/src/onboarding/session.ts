@@ -13,3 +13,19 @@ export function wasSkipped(): boolean {
 export function resetSkipped() {
   skipped = false;
 }
+
+// Set when someone has just created an account in this app session, so Home waits for the setup check
+// (and shows a loading screen) instead of flashing the dashboard before onboarding opens.
+let fresh = false;
+
+export function markFresh() {
+  fresh = true;
+}
+
+export function isFresh(): boolean {
+  return fresh;
+}
+
+export function clearFresh() {
+  fresh = false;
+}

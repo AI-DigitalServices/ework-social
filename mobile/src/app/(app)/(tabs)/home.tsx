@@ -12,7 +12,7 @@ import { request } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
 import { canSetUp } from '../../../onboarding/api';
 import type { OnboardingState } from '../../../onboarding/api';
-import { wasSkipped } from '../../../onboarding/session';
+import { clearFresh, isFresh as isNewSignup, wasSkipped } from '../../../onboarding/session';
 import { Avatar, Button, Card, ErrorText, FadeIn, Pill, SectionTitle } from '../../../ui';
 import { colors, platformColors, radius, shadow, space } from '../../../theme';
 import PlatformIcon from '../../../platform';
@@ -67,6 +67,9 @@ export default function Home() {
   const [picker, setPicker] = useState(false);
   const router = useRouter();
   const [onb, setOnb] = useState<OnboardingState | null>(null);
+  // A just-signed-up owner never sees the dashboard before setup: wait for the check behind a loading screen.
+  const [checked, setChecked] = useState(() => !isNewSignup());
+  const hasConfig = !!config;
   const open = (path: string) => router.navigate(path as Href);
 
   const workspaceId = workspace?.id;
@@ -99,19 +102,33 @@ export default function Home() {
 
   // New businesses are guided through setup once. Existing customers never see it.
   useEffect(() => {
-    if (!workspaceId || !canSetUp(workspace?.role)) return;
+    const done = () => {
+      clearFresh();
+      setChecked(true);
+    };
+    if (!workspaceId || !canSetUp(workspace?.role)) {
+      if (hasConfig) done();
+      return;
+    }
     let cancelled = false;
+    const fallback = setTimeout(done, 6000);
     request<OnboardingState>(`/mobile/v1/workspaces/${workspaceId}/onboarding`)
       .then((s) => {
         if (cancelled) return;
         setOnb(s);
-        if (s.shouldOnboard && !wasSkipped()) router.navigate('/onboarding' as Href);
+        if (s.shouldOnboard && !wasSkipped()) {
+          router.navigate('/onboarding' as Href);
+          setTimeout(done, 600);
+        } else {
+          done();
+        }
       })
-      .catch(() => {});
+      .catch(() => done());
     return () => {
       cancelled = true;
+      clearTimeout(fallback);
     };
-  }, [workspaceId, workspace?.role, router]);
+  }, [workspaceId, workspace?.role, hasConfig, router]);
 
   const fullName = config?.user.name || '';
   const firstName = fullName.split(' ')[0] || 'there';
@@ -127,6 +144,14 @@ export default function Home() {
         { n: data.needsAttention.unreadInbox, text: 'unread messages', color: colors.primaryBright, soft: colors.primarySoft, path: '' },
       ].filter((a) => a.n > 0)
     : [];
+
+  if (!checked) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primaryBright} size="large" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>

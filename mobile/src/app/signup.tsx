@@ -1,3 +1,4 @@
+import { markFresh } from '../onboarding/session';
 import GoogleButton from '../auth/GoogleButton';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -26,6 +27,7 @@ export default function Signup() {
     setBusy(true);
     setError(null);
     try {
+      markFresh();
       await signUp({ name, workspaceName: business, email, password });
     } catch (err: any) {
       setError(err?.message || 'Could not create your account. Please try again.');
