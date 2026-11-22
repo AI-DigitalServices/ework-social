@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { ActionRow, ActionTile } from '../actions';
 import { Button, Text } from '../ui';
 import PlatformIcon, { platformColor } from '../platform';
 import { colors, radius } from '../theme';
-import WhenPicker, { DRAFT_WHEN } from './WhenPicker';
-import type { When } from './WhenPicker';
+import WhenPicker, { DRAFT_WHEN, formatShort } from './WhenPicker';
+import type { When, WhenPickerHandle } from './WhenPicker';
 
 export type Account = { id: string; platform: string; accountName: string };
 
@@ -35,6 +37,7 @@ export default function PublishPanel({
   const hiddenVideo = allAccounts.length - accounts.length;
   const [selected, setSelected] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
   const [when, setWhen] = useState<When>(DRAFT_WHEN);
+  const whenRef = useRef<WhenPickerHandle>(null);
   const n = selected.length;
   const all = accounts.length > 1 && n === accounts.length;
 
@@ -101,7 +104,17 @@ export default function PublishPanel({
         })}
       </View>
 
-      <WhenPicker value={when} onChange={(w) => w && setWhen(w)} />
+      <WhenPicker ref={whenRef} pickChip={false} value={when} onChange={(w) => w && setWhen(w)} />
+      <ActionRow>
+        <ActionTile
+          compact
+          label={when.id === 'custom' && when.at ? formatShort(when.at) : 'Pick date & time'}
+          accent={when.id === 'custom' ? colors.primaryBright : undefined}
+          disabled={busy}
+          icon={(c) => <Feather name="calendar" size={20} color={c} />}
+          onPress={() => whenRef.current?.open()}
+        />
+      </ActionRow>
 
       <Button
         title={title}

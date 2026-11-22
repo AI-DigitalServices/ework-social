@@ -90,7 +90,14 @@ export default function CreateSheet({ visible, onClose }: { visible: boolean; on
                 soft={colors.primarySoft}
                 onPress={() => go('/idea')}
               />
-              <Row icon="▣" title="Upload a photo" sub="We write the post around it" soon tint={colors.accent} soft={colors.accentSoft} />
+              <Row
+                icon="▣"
+                title="Upload a photo"
+                sub="We write the post around it"
+                tint={colors.accent}
+                soft={colors.accentSoft}
+                onPress={() => go('/idea?photo=1')}
+              />
               <Row icon="▶" title="Upload a video" sub="Short clips for Reels and TikTok" soon tint={colors.accent} soft={colors.accentSoft} />
               <Row icon="♪" title="Talk to your AI assistant" sub="Say it out loud, we turn it into a post" soon tint={colors.accent} soft={colors.accentSoft} />
 

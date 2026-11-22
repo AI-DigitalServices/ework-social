@@ -174,6 +174,7 @@ export function Button({
         style={[
           styles.btn,
           variant === 'primary' && styles.btnPrimary,
+          variant === 'primary' && off && styles.btnOff,
           variant === 'secondary' && styles.btnSecondary,
           variant === 'link' && styles.btnLink,
         ]}
@@ -324,6 +325,8 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: colors.primary, ...shadow, shadowColor: colors.primary, shadowOpacity: 0.45 },
   btnSecondary: { backgroundColor: colors.cardAlt, borderWidth: 1.5, borderColor: colors.border },
   btnLink: { backgroundColor: 'transparent' },
+  // No shadow while faded: on Android it shows through as a darker rectangle inside the button.
+  btnOff: { elevation: 0, shadowOpacity: 0 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.1 },
   errorBox: {
     backgroundColor: colors.dangerSoft,

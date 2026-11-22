@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
@@ -300,14 +301,14 @@ export default function PostDetail() {
               <Text style={[styles.time, { color: platformColor(post.platform) }]}>{time}</Text>
 
               <Card>
+                {post.mediaUrls && post.mediaUrls.length > 0
+                  ? post.mediaUrls.slice(0, 4).map((u) => (
+                      <Image key={u} source={{ uri: u }} style={styles.photo} contentFit="cover" transition={150} />
+                    ))
+                  : null}
                 <Text style={styles.content} selectable>
                   {post.content || '(no text)'}
                 </Text>
-                {post.mediaUrls && post.mediaUrls.length > 0 ? (
-                  <Text style={styles.media}>
-                    {post.mediaUrls.length} {post.mediaUrls.length === 1 ? 'photo' : 'photos'} attached
-                  </Text>
-                ) : null}
               </Card>
 
               {post.status === 'FAILED' && post.errorMessage ? <ErrorText>{post.errorMessage}</ErrorText> : null}
@@ -367,6 +368,7 @@ const styles = StyleSheet.create({
   time: { fontSize: 14, fontWeight: '700', marginBottom: space.md },
   content: { color: colors.text, fontSize: 16, lineHeight: 24 },
   media: { color: colors.muted, fontSize: 13, marginTop: space.sm },
+  photo: { width: '100%', aspectRatio: 1.25, borderRadius: radius.md, marginBottom: space.md, backgroundColor: colors.cardAlt },
   approvalTitle: { color: colors.text, fontSize: 15, fontWeight: '800' },
   approvalText: { color: colors.muted, fontSize: 14, marginTop: 4 },
   ok: { color: colors.ok, fontSize: 14, fontWeight: '600', marginTop: space.sm },
