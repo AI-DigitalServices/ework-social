@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { getPlanLimits, getAgentActionLimit } from '../common/plan-limits';
+import { getPlanLimits, getAgentActionLimit, getVideoLimit } from '../common/plan-limits';
 import { PostHogService } from '../analytics/posthog.service';
 import { PlanGuardService } from '../common/plan-guard.service';
 
@@ -22,7 +22,7 @@ export class AiUsageService {
 
   async checkAndIncrement(
     workspaceId: string,
-    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN' | 'ONBOARDING_AI' | 'IDEA_POST',
+    type: 'CAPTION' | 'HASHTAG' | 'REWRITE' | 'CRM_INSIGHT' | 'REPLY_SUGGEST' | 'AGENT_ACTION' | 'ASSET_UPLOAD' | 'IMAGE_GEN' | 'ONBOARDING_AI' | 'IDEA_POST' | 'VIDEO_UPLOAD',
   ): Promise<void> {
     const month = this.getCurrentMonth();
 
@@ -77,6 +77,11 @@ export class AiUsageService {
         limit = isTrialing ? IDEA_TRIAL_LIMIT : limits.aiCaptionsPerMonth;
         limitLabel = 'AI post idea';
         break;
+      case 'VIDEO_UPLOAD':
+        // Short videos from the app: storage and bandwidth cost, so each plan has its own monthly allowance.
+        limit = getVideoLimit(plan, isTrialing);
+        limitLabel = 'video';
+        break;
       case 'IMAGE_GEN':
         // AI OS Phase 2 — generative creative, premium only (0 below Growth)
         limit = limits.aiImageGenPerMonth;
@@ -123,6 +128,25 @@ export class AiUsageService {
       this.planGuard.getEffectivePlan(workspaceId),
     ]);
     const limit = eff.isTrialing ? IDEA_TRIAL_LIMIT : getPlanLimits(eff.plan).aiCaptionsPerMonth;
+    const used = row?.count ?? 0;
+    const now = new Date();
+    return {
+      used,
+      limit,
+      remaining: Math.max(0, limit - used),
+      trial: !!eff.isTrialing,
+      resets: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString(),
+    };
+  }
+
+  /** How many videos this workspace has posted from the app this month and how many it may. */
+  async getVideoUsage(workspaceId: string) {
+    const month = this.getCurrentMonth();
+    const [row, eff] = await Promise.all([
+      this.prisma.aiUsage.findUnique({ where: { workspaceId_type_month: { workspaceId, type: 'VIDEO_UPLOAD', month } } }),
+      this.planGuard.getEffectivePlan(workspaceId),
+    ]);
+    const limit = getVideoLimit(eff.plan, !!eff.isTrialing);
     const used = row?.count ?? 0;
     const now = new Date();
     return {

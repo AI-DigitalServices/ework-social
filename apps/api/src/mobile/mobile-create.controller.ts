@@ -27,6 +27,11 @@ export class MobileCreateController {
     return this.create.usage(workspaceId);
   }
 
+  @Get('create/video-usage')
+  videoUsage(@Param('workspaceId') workspaceId: string) {
+    return this.create.videoUsage(workspaceId);
+  }
+
   @Get('ideas')
   list(@Param('workspaceId') workspaceId: string) {
     return this.create.listIdeas(workspaceId);
