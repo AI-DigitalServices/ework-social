@@ -41,14 +41,17 @@
       "expo-web-browser",
       "@react-native-community/datetimepicker",
       "expo-font",
+      "react-native-compressor",
       [
         "expo-image-picker",
         {
           "photosPermission": "eWork Social needs your photos so you can post them.",
           "cameraPermission": "eWork Social needs the camera so you can take a photo to post.",
-          "microphonePermission": false
+          "microphonePermission": "eWork Social needs the microphone so you can record a video with sound."
         }
-      ]
+      ],
+      "expo-video",
+      "react-native-compressor"
     ],
     "experiments": {
       "typedRoutes": false,

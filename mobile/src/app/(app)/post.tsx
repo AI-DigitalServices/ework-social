@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { ActionRow, ActionTile } from '../../actions';
 import { request } from '../../api/client';
@@ -303,7 +304,11 @@ export default function PostDetail() {
               <Card>
                 {post.mediaUrls && post.mediaUrls.length > 0
                   ? post.mediaUrls.slice(0, 4).map((u) => (
-                      <Image key={u} source={{ uri: u }} style={styles.photo} contentFit="cover" transition={150} />
+                      isVideoUrl(u) ? (
+                        <PostVideo key={u} uri={u} />
+                      ) : (
+                        <Image key={u} source={{ uri: u }} style={styles.photo} contentFit="cover" transition={150} />
+                      )
                     ))
                   : null}
                 <Text style={styles.content} selectable>
@@ -359,6 +364,16 @@ export default function PostDetail() {
   );
 }
 
+const isVideoUrl = (u: string) => /\.(mp4|mov|webm)$/i.test(u);
+
+/** The post's video, with the phone's own play controls. */
+function PostVideo({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+  return <VideoView player={player} style={styles.video} contentFit="contain" nativeControls />;
+}
+
 const styles = StyleSheet.create({
   back: { color: colors.primaryBright, fontSize: 16, fontWeight: '700' },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6 },
@@ -369,6 +384,7 @@ const styles = StyleSheet.create({
   content: { color: colors.text, fontSize: 16, lineHeight: 24 },
   media: { color: colors.muted, fontSize: 13, marginTop: space.sm },
   photo: { width: '100%', aspectRatio: 1.25, borderRadius: radius.md, marginBottom: space.md, backgroundColor: colors.cardAlt },
+  video: { width: '100%', height: 420, borderRadius: radius.md, marginBottom: space.md, backgroundColor: '#000' },
   approvalTitle: { color: colors.text, fontSize: 15, fontWeight: '800' },
   approvalText: { color: colors.muted, fontSize: 14, marginTop: 4 },
   ok: { color: colors.ok, fontSize: 14, fontWeight: '600', marginTop: space.sm },

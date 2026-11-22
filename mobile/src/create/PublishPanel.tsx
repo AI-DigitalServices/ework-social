@@ -14,6 +14,8 @@ export type Account = { id: string; platform: string; accountName: string };
 
 // Video platforms: the app writes text posts for now, so they are not offered as post targets yet.
 const VIDEO_ONLY = ['YOUTUBE', 'TIKTOK'];
+// A video from the app can go to these.
+const VIDEO_TARGETS = ['INSTAGRAM', 'FACEBOOK', 'YOUTUBE', 'TIKTOK'];
 
 function platformName(p: string): string {
   if (p === 'TWITTER') return 'X';
@@ -28,13 +30,17 @@ export default function PublishPanel({
   accounts: allAccounts,
   busy,
   onConfirm,
+  kind,
 }: {
   accounts: Account[];
   busy: boolean;
+  kind?: 'VIDEO';
   onConfirm: (accountIds: string[], status: 'DRAFT' | 'SCHEDULED', scheduledAt?: string) => void;
 }) {
-  const accounts = allAccounts.filter((a) => !VIDEO_ONLY.includes(a.platform));
-  const hiddenVideo = allAccounts.length - accounts.length;
+  const isVideo = kind === 'VIDEO';
+  const accounts = allAccounts.filter((a) => (isVideo ? VIDEO_TARGETS.includes(a.platform) : !VIDEO_ONLY.includes(a.platform)));
+  const hiddenVideo = isVideo ? 0 : allAccounts.length - accounts.length;
+  const hiddenOther = isVideo ? allAccounts.length - accounts.length : 0;
   const [selected, setSelected] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
   const [when, setWhen] = useState<When>(DRAFT_WHEN);
   const whenRef = useRef<WhenPickerHandle>(null);
@@ -58,7 +64,9 @@ export default function PublishPanel({
         <Text style={[styles.note, { fontSize: 14, lineHeight: 21 }]}>
           {allAccounts.length === 0
             ? 'You have not connected an account yet. Connect one to schedule this post.'
-            : 'Your connected accounts are video platforms. Text posts cannot go there yet, so connect another account to post.'}
+            : isVideo
+              ? 'None of your connected accounts can take a video from the app yet. Connect Instagram, Facebook, YouTube or TikTok to post it.'
+              : 'Your connected accounts are video platforms. Text posts cannot go there yet, so connect another account to post.'}
         </Text>
         <Button title="Connect an account" onPress={() => router.navigate('/connect' as Href)} />
       </View>
@@ -73,6 +81,9 @@ export default function PublishPanel({
             ? 'Your connected accounts are video platforms. Text posts cannot go there yet, so connect another account to post.'
             : 'YouTube and TikTok are connected, but they need a video. Video posting from the app is coming soon.'}
         </Text>
+      ) : null}
+      {hiddenOther > 0 ? (
+        <Text style={styles.note}>Videos from the app go to Instagram, Facebook, YouTube and TikTok. Your other accounts are not shown.</Text>
       ) : null}
       <View style={styles.head}>
         <Text style={styles.cap}>{accounts.length > 1 ? 'Post to (pick one or more)' : 'Post to'}</Text>
