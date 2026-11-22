@@ -39,6 +39,7 @@ export default function Login() {
       </View>
       <Title>Welcome back</Title>
       <Body>Log in to see how your social media is doing.</Body>
+      <GoogleButton />
       <Field
         label="Email"
         value={email}
@@ -66,7 +67,6 @@ export default function Login() {
       </Pressable>
       <ErrorText>{error}</ErrorText>
       <Button title="Log in" onPress={submit} loading={busy} />
-      <GoogleButton />
       <Button title="New here? Create an account" variant="link" onPress={() => router.replace('/signup' as Href)} />
       </View>
     </Screen>

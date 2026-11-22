@@ -751,6 +751,7 @@ model PostIdea {
   idea        String
   content     String
   platform    String?
+  mediaUrls   String[] @default([])
   createdById String?
   usedPostId  String?
   createdAt   DateTime @default(now())

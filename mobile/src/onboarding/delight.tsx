@@ -1,9 +1,24 @@
+import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
 import { colors, platformColors, radius, space, type } from '../theme';
 import { platformLabel } from './api';
 import PlatformIcon from '../platform';
+
+// The setup steps name their icon with a text glyph; these are the vector icons used instead.
+const STEP_ICONS: Record<string, string> = {
+  '✦': 'zap',
+  '◈': 'briefcase',
+  '◎': 'target',
+  '✓': 'check',
+  '✎': 'edit-3',
+  '☺': 'users',
+  '◷': 'clock',
+  '◉': 'share-2',
+  '♪': 'mic',
+  '✧': 'star',
+};
 
 /** Encouragement that changes as the person moves through setup. */
 function momentumText(step: number): string {
@@ -65,7 +80,7 @@ export function StepHero({
       <View style={styles.heroTop}>
         <View style={[styles.badgeOuter, { backgroundColor: soft }]}>
           <View style={[styles.badgeInner, { backgroundColor: tint }]}>
-            <Text style={styles.badgeIcon}>{icon}</Text>
+            {STEP_ICONS[icon] ? <Feather name={STEP_ICONS[icon] as never} size={18} color="#fff" /> : <Text style={styles.badgeIcon}>{icon}</Text>}
           </View>
         </View>
         <Text style={[styles.kicker, { color: tint }]}>{kicker}</Text>
@@ -100,7 +115,7 @@ export function PlatformCard({ platform, selected, onPress }: { platform: string
         {PLATFORM_HINT[platform] ? <Text style={styles.pHint}>{PLATFORM_HINT[platform]}</Text> : null}
       </View>
       <View style={[styles.pCheck, selected && { backgroundColor: color, borderColor: color }]}>
-        {selected ? <Text style={styles.pCheckText}>✓</Text> : null}
+        {selected ? <Feather name="check" size={14} color="#fff" /> : null}
       </View>
     </Pressable>
   );
@@ -127,7 +142,7 @@ export function VoiceCard({
         <View style={[styles.vPill, selected && { backgroundColor: colors.accent }]}>
           <Text style={[styles.vPillText, selected && { color: '#fff' }]}>{label}</Text>
         </View>
-        {selected ? <Text style={{ color: colors.accent, fontWeight: '900', fontSize: 16 }}>✓</Text> : null}
+        {selected ? <Feather name="check" size={18} color={colors.accent} /> : null}
       </View>
       {sample ? (
         <View style={styles.vQuoteRow}>
@@ -161,7 +176,7 @@ export function Celebration() {
         ]}
       />
       <Animated.View style={[styles.celebCore, { transform: [{ scale: pop }] }]}>
-        <Text style={styles.celebTick}>✓</Text>
+        <Feather name="check" size={46} color="#fff" />
       </Animated.View>
     </View>
   );

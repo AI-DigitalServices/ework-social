@@ -1,3 +1,5 @@
+import { Linking } from 'react-native';
+import { PLAN_URL } from './plan';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, Ref } from 'react';
 import {
@@ -66,7 +68,7 @@ export function Screen({
     <SafeAreaView style={styles.screen}>
       <View pointerEvents="none" style={styles.glow} />
       <View pointerEvents="none" style={styles.glow2} />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         {body}
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -172,6 +174,7 @@ export function Button({
         style={[
           styles.btn,
           variant === 'primary' && styles.btnPrimary,
+          variant === 'primary' && off && styles.btnOff,
           variant === 'secondary' && styles.btnSecondary,
           variant === 'link' && styles.btnLink,
         ]}
@@ -186,11 +189,21 @@ export function Button({
   );
 }
 
+// Plan messages from the API end with the website's plan path. Show them as plain words plus a real button.
+const PLAN_PATH = /\s*\/dashboard\/settings\?tab=plan/;
+
 export function ErrorText({ children }: { children?: string | null }) {
   if (!children) return null;
+  const needsPlan = PLAN_PATH.test(children);
+  const text = needsPlan ? children.replace(PLAN_PATH, '').replace(/\s*Upgrade at\s*$/i, '').trim() : children;
   return (
     <View style={styles.errorBox}>
-      <Text style={styles.error}>{children}</Text>
+      <Text style={styles.error}>{text}</Text>
+      {needsPlan ? (
+        <Pressable onPress={() => void Linking.openURL(PLAN_URL)} hitSlop={8} style={{ marginTop: 10 }}>
+          <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '700' }}>Choose a plan  →</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -312,6 +325,8 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: colors.primary, ...shadow, shadowColor: colors.primary, shadowOpacity: 0.45 },
   btnSecondary: { backgroundColor: colors.cardAlt, borderWidth: 1.5, borderColor: colors.border },
   btnLink: { backgroundColor: 'transparent' },
+  // No shadow while faded: on Android it shows through as a darker rectangle inside the button.
+  btnOff: { elevation: 0, shadowOpacity: 0 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.1 },
   errorBox: {
     backgroundColor: colors.dangerSoft,

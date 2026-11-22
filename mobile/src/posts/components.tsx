@@ -1,4 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
+import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
@@ -15,6 +16,7 @@ export type PostItem = {
   errorMessage: string | null;
   updatedAt: string;
   mediaCount: number;
+  thumbUrl?: string | null;
   platform: string | null;
   accountName: string | null;
 };
@@ -124,14 +126,26 @@ export function PostCard({ post, onPress }: { post: PostItem; onPress?: () => vo
           </View>
           <Pill label={meta.label} color={meta.color} soft={meta.soft} />
         </View>
-        <Text style={styles.text} numberOfLines={3}>
-          {post.content || '(no text)'}
-        </Text>
+        <View style={styles.bodyRow}>
+          <Text style={[styles.text, { flex: 1 }]} numberOfLines={3}>
+            {post.content || '(no text)'}
+          </Text>
+          {post.thumbUrl ? (
+            <View style={styles.thumbWrap}>
+              <Image source={{ uri: post.thumbUrl }} style={styles.thumb} contentFit="cover" transition={150} />
+              {post.mediaCount > 1 ? (
+                <View style={styles.thumbMore}>
+                  <Text style={styles.thumbMoreText}>+{post.mediaCount - 1}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
         <View style={styles.timeRow}>
           <Feather name={(STATUS_ICONS[post.status] ?? 'edit-2') as never} size={13} color={meta.color} />
           <Text style={styles.time}>
             {time}
-            {post.mediaCount > 0 ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
+            {post.mediaCount > 0 && !post.thumbUrl ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
           </Text>
         </View>
         {post.status === 'FAILED' && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
@@ -185,6 +199,11 @@ const styles = StyleSheet.create({
   postTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
   meta: { color: colors.muted, fontSize: 12, fontWeight: '600', flexShrink: 1 },
   text: { color: colors.text, fontSize: 15, lineHeight: 22 },
+  bodyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  thumbWrap: { width: 72, height: 72, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.cardAlt },
+  thumb: { width: '100%', height: '100%' },
+  thumbMore: { position: 'absolute', right: 4, bottom: 4, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
+  thumbMoreText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   time: { color: colors.muted, fontSize: 12 },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   err: { color: colors.danger, fontSize: 13, marginTop: 8, lineHeight: 18 },

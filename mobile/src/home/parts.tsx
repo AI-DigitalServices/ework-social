@@ -2,19 +2,37 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Pill, Text } from '../ui';
-import { colors, radius, space, type } from '../theme';
+import { colors, fonts, radius, space } from '../theme';
 
 /** Halo layers: wide and faint on the outside, tighter toward the card. */
 const HALO = [26, 20, 15, 10, 6, 3];
 
 /**
- * "Give us an idea" card. The glow marks the next step. While the workspace has no posts yet (`fresh`)
- * it breathes slowly; once there is activity it settles to a still, softer glow so it never nags.
+ * A card that points at the next step: serif title, a blue button at the bottom and a glow around the border.
+ * With `pulse` the glow breathes slowly; without it the glow stays still and softer.
  */
-export function IdeaCard({ onPress, fresh }: { onPress: () => void; fresh: boolean }) {
-  const pulse = useRef(new Animated.Value(fresh ? 0 : 0.3)).current;
+export function NextStepCard({
+  pill,
+  title,
+  text,
+  cta,
+  onPress,
+  tone = colors.accent,
+  toneSoft = colors.accentSoft,
+  pulse: breathe,
+}: {
+  pill: string;
+  title: string;
+  text: string;
+  cta: string;
+  onPress: () => void;
+  tone?: string;
+  toneSoft?: string;
+  pulse: boolean;
+}) {
+  const pulse = useRef(new Animated.Value(breathe ? 0 : 0.3)).current;
   useEffect(() => {
-    if (!fresh) {
+    if (!breathe) {
       pulse.setValue(0.3);
       return;
     }
@@ -26,7 +44,7 @@ export function IdeaCard({ onPress, fresh }: { onPress: () => void; fresh: boole
     );
     loop.start();
     return () => loop.stop();
-  }, [fresh, pulse]);
+  }, [breathe, pulse]);
 
   return (
     <View style={styles.wrap}>
@@ -41,18 +59,18 @@ export function IdeaCard({ onPress, fresh }: { onPress: () => void; fresh: boole
             left: -g,
             right: -g,
             borderRadius: radius.lg + g,
-            backgroundColor: colors.accent,
+            backgroundColor: tone,
             opacity: Animated.multiply(pulse, 0.05 + i * 0.012),
           }}
         />
       ))}
-      <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
-        <Pill label="New" color={colors.accent} soft={colors.accentSoft} />
-        <Text style={styles.title}>Give us an idea</Text>
-        <Text style={styles.body}>One sentence, and we write three posts in your voice.</Text>
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.card, { borderColor: tone }, pressed && { opacity: 0.9 }]}>
+        <Pill label={pill} color={tone} soft={toneSoft} />
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.body}>{text}</Text>
         <View style={styles.btnRow}>
           <View style={styles.btn}>
-            <Text style={styles.btnText}>Write a post</Text>
+            <Text style={styles.btnText}>{cta}</Text>
             <Feather name="arrow-right" size={16} color="#fff" />
           </View>
         </View>
@@ -61,16 +79,29 @@ export function IdeaCard({ onPress, fresh }: { onPress: () => void; fresh: boole
   );
 }
 
+/** "Give us an idea" card. Glows and breathes while the workspace has no posts yet (`fresh`). */
+export function IdeaCard({ onPress, fresh }: { onPress: () => void; fresh: boolean }) {
+  return (
+    <NextStepCard
+      pill="New"
+      title="Give us an idea"
+      text="One sentence, and we write three posts in your voice."
+      cta="Write a post"
+      onPress={onPress}
+      pulse={fresh}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: { marginBottom: space.md },
   card: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.accent,
     borderRadius: radius.lg,
     padding: space.md,
   },
-  title: { color: colors.text, ...type.heading, fontSize: 18, marginTop: 10, marginBottom: 4 },
+  title: { color: colors.text, fontFamily: fonts.serifBold, fontSize: 20, lineHeight: 28, marginTop: 10, marginBottom: 4 },
   body: { color: colors.muted, fontSize: 15, lineHeight: 22 },
   btnRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 },
   btn: {

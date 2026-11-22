@@ -1,3 +1,5 @@
+import Feather from '@expo/vector-icons/Feather';
+import Confetti from './Confetti';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../ui';
@@ -10,10 +12,13 @@ import { colors, platformColors, radius, space } from '../theme';
 import { Chip, Choice } from './components';
 import { Celebration, Momentum, NextStep, PlatformCard, StepHero, VoiceCard } from './delight';
 import { markSkipped } from './session';
+import PlatformIcon from '../platform';
+import { fonts as brandFonts } from '../theme';
 import { platformLabel } from './api';
 import type { AnalyzeResponse, OnboardingState, Options } from './api';
 
 type Step =
+  | 'intro'
   | 'name'
   | 'category'
   | 'website'
@@ -26,7 +31,11 @@ type Step =
   | 'topics'
   | 'done';
 
+// Only steps that are optional by nature can be skipped; the rest decide how good the AI output is.
+const SKIPPABLE: Step[] = ['website', 'frequency', 'audience'];
+
 const PROGRESS: Record<Step, number> = {
+  intro: 0,
   name: 1,
   category: 2,
   website: 3,
@@ -77,7 +86,7 @@ export default function Wizard() {
 
   const [options, setOptions] = useState<Options | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
-  const [step, setStep] = useState<Step>('name');
+  const [step, setStep] = useState<Step>('intro');
   const [history, setHistory] = useState<Step[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -136,6 +145,15 @@ export default function Wizard() {
       setStep(prev);
       setError(null);
     }
+  };
+
+  // Optional steps move on to the next step; they never drop the person out of setup.
+  const skipStep = () => {
+    if (step === 'website') {
+      set('website', '');
+      go('about');
+    } else if (step === 'audience') go('frequency');
+    else if (step === 'frequency') go('platforms');
   };
 
   const skip = () => {
@@ -261,13 +279,16 @@ export default function Wizard() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         {step !== 'name' && step !== 'done' ? (
           <Pressable onPress={back} hitSlop={12}>
-            <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>‹ Back</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Feather name="chevron-left" size={20} color={colors.primaryBright} />
+              <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '600' }}>Back</Text>
+            </View>
           </Pressable>
         ) : (
           <View />
         )}
-        {step !== 'done' ? (
-          <Pressable onPress={skip} hitSlop={12}>
+        {SKIPPABLE.includes(step) ? (
+          <Pressable onPress={skipStep} hitSlop={12}>
             <Text style={{ color: colors.muted, fontSize: 14 }}>Skip for now</Text>
           </Pressable>
         ) : null}
@@ -282,6 +303,47 @@ export default function Wizard() {
       <Button title={title} onPress={onPress} loading={busy} disabled={disabled} />
     </View>
   );
+
+  if (step === 'intro') {
+    return (
+      <Screen scroll={false}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ borderWidth: 1, borderColor: colors.primaryBright, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 }}>
+            <Text style={{ color: colors.primaryBright, fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>WELCOME</Text>
+          </View>
+          <View style={{ width: 240, height: 200, marginTop: 28, marginBottom: 20 }}>
+            <View style={{ position: 'absolute', left: 62, top: 6, width: 116, height: 150, borderRadius: 16, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card, padding: 12 }}>
+              <View style={{ height: 66, borderRadius: 10, backgroundColor: '#16233A' }} />
+              <View style={{ height: 7, borderRadius: 4, backgroundColor: '#2A3A55', marginTop: 12 }} />
+              <View style={{ height: 7, width: '60%', borderRadius: 4, backgroundColor: '#2A3A55', marginTop: 7 }} />
+              <View style={{ height: 18, width: 56, borderRadius: 9, backgroundColor: colors.primary, marginTop: 14 }} />
+            </View>
+            <View style={{ position: 'absolute', left: 0, top: 70 }}>
+              <PlatformIcon platform="INSTAGRAM" size={48} />
+            </View>
+            <View style={{ position: 'absolute', right: 0, top: 14 }}>
+              <PlatformIcon platform="FACEBOOK" size={48} />
+            </View>
+            <View style={{ position: 'absolute', right: 8, top: 120 }}>
+              <PlatformIcon platform="LINKEDIN" size={48} />
+            </View>
+            <View style={{ position: 'absolute', left: 88, top: 140, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.ok, alignItems: 'center', justifyContent: 'center' }}>
+              <Feather name="check" size={20} color="#fff" />
+            </View>
+          </View>
+          <Text style={{ color: colors.text, fontFamily: brandFonts.serifBold, fontSize: 30, lineHeight: 40, textAlign: 'center' }}>
+            Your posts, <Text style={{ color: colors.primaryBright, fontFamily: brandFonts.serifItalic }}>handled.</Text>
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 15, lineHeight: 23, textAlign: 'center', marginTop: 10, marginBottom: 28, paddingHorizontal: 8 }}>
+            Tell us about your business in about 2 minutes. We will write posts that sound like you.
+          </Text>
+          <View style={{ alignSelf: 'stretch' }}>
+            <Button title="Get started" onPress={() => go('name')} />
+          </View>
+        </View>
+      </Screen>
+    );
+  }
 
   if (step === 'name') {
     return (
@@ -536,10 +598,11 @@ export default function Wizard() {
   return (
     <Screen>
       {header}
+      <Confetti />
       <Celebration />
       <FadeIn delay={150}>
-        <Text style={styles.doneTitle}>You are all set, {shortName}</Text>
-        <Text style={styles.doneSub}>Here is what we know. This is what makes every post sound like you.</Text>
+        <Text style={styles.doneTitle}>Congratulations, {shortName}!</Text>
+        <Text style={styles.doneSub}>Welcome to eWork Social. Here is what we know, and it is what makes every post sound like you.</Text>
       </FadeIn>
 
       <FadeIn delay={300}>

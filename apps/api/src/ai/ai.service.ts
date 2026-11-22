@@ -87,17 +87,30 @@ Return ONLY the 3 captions, nothing else.`;
    */
   async generateFromIdea(
     workspaceId: string,
-    input: { idea: string; platform: string; business: IdeaBusiness },
+    input: {
+      idea: string;
+      platform: string;
+      business: IdeaBusiness;
+      image?: { mediaType: string; data: string };
+      hint?: string;
+    },
   ): Promise<{ options: string[] }> {
     await this.aiUsage.checkAndIncrement(workspaceId, 'IDEA_POST');
 
-    const prompt = buildIdeaPrompt(input);
+    const prompt = buildIdeaPrompt({ ...input, hasPhoto: !!input.image });
+    // With a photo, Claude gets the picture first and the instructions after it.
+    const content: any = input.image
+      ? [
+          { type: 'image', source: { type: 'base64', media_type: input.image.mediaType, data: input.image.data } },
+          { type: 'text', text: prompt },
+        ]
+      : prompt;
 
     try {
       const message = await this.anthropic.messages.create({
         model: 'claude-haiku-4-5',
         max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content }],
       });
       const text = message.content[0].type === 'text' ? message.content[0].text : '';
       const options = parseIdeaOptions(text, input.platform);
@@ -109,6 +122,11 @@ Return ONLY the 3 captions, nothing else.`;
       if (err instanceof BadRequestException) throw err;
       throw new BadRequestException('Writing your post failed. Please try again.');
     }
+  }
+
+  /** AI writes used and left this month for "Give us an idea". */
+  ideaUsage(workspaceId: string) {
+    return this.aiUsage.getIdeaUsage(workspaceId);
   }
 
   async generateHashtags(
