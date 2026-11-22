@@ -21,7 +21,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.eworksocial.app"
+      "package": "com.eworksocial.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "server",
@@ -42,6 +43,12 @@
       "@react-native-community/datetimepicker",
       "expo-font",
       "react-native-compressor",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png"
+        }
+      ],
       [
         "expo-image-picker",
         {

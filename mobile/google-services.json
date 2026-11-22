@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "886300373138",
+    "project_id": "ework-social-d1fdc",
+    "storage_bucket": "ework-social-d1fdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886300373138:android:e8630b4ed91408bfc0764b",
+        "android_client_info": {
+          "package_name": "com.eworksocial.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8GjX8XzIH9o-upaKm66D7dgXs5heSpS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

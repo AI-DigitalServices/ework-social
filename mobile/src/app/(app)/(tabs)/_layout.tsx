@@ -6,6 +6,7 @@ import type { ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CreateSheet from '../../../create/CreateSheet';
+import { usePush } from '../../../push';
 import { colors } from '../../../theme';
 
 function icon(name: string) {
@@ -16,6 +17,7 @@ function icon(name: string) {
 
 export default function AppLayout() {
   const [sheet, setSheet] = useState(false);
+  usePush();
   const insets = useSafeAreaInsets();
 
   return (

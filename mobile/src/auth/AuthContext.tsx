@@ -17,6 +17,7 @@ import {
   saveRefreshToken,
   saveWorkspaceId,
 } from './storage';
+import { unregisterPush } from '../push';
 
 export type Entitlements = {
   plan: string;
@@ -182,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Local sign-out only. The server's /auth/logout signs out EVERY device
   // (including the web app), so the phone never calls it.
   const signOut = useCallback(async () => {
+    await unregisterPush();
     await clearSession();
   }, [clearSession]);
 
