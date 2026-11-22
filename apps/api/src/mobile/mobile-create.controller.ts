@@ -22,6 +22,11 @@ export class MobileCreateController {
     return this.create.suggest(workspaceId, dto);
   }
 
+  @Get('create/usage')
+  usage(@Param('workspaceId') workspaceId: string) {
+    return this.create.usage(workspaceId);
+  }
+
   @Get('ideas')
   list(@Param('workspaceId') workspaceId: string) {
     return this.create.listIdeas(workspaceId);
