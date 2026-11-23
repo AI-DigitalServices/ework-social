@@ -34,6 +34,11 @@ export default function More() {
               <Avatar name={name} size={52} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{name}</Text>
+                {config?.user.email ? (
+                  <Text style={styles.sub} numberOfLines={1}>
+                    {config.user.email}
+                  </Text>
+                ) : null}
                 <Text style={styles.sub}>
                   {workspace?.name ?? 'No workspace'}
                   {workspace?.role ? `  ·  ${roleLabel(workspace.role)}` : ''}
@@ -83,6 +88,12 @@ export default function More() {
         <FadeIn delay={120}>
           <SectionTitle>Accounts</SectionTitle>
           <Card>
+            <MoreRow
+              icon="user"
+              label="Profile and account"
+              text={config?.user.email ?? 'Your details, delete account'}
+              onPress={() => router.navigate('/profile' as Href)}
+            />
             <MoreRow
               icon="link"
               label="Connected accounts"

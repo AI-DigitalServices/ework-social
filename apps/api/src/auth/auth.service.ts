@@ -14,6 +14,8 @@ import { PostHogService } from '../analytics/posthog.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
+import axios from 'axios';
+import { storageAuthHeaders } from '../assets/media-upload.util';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -351,21 +353,82 @@ export class AuthService {
       select: { id: true },
     });
     const workspaceIds = workspaces.map((w) => w.id);
+    const inWs = { workspaceId: { in: workspaceIds } };
+    const ofClients = { client: { workspaceId: { in: workspaceIds } } };
 
     // All-or-nothing: run every delete in a single transaction so a mid-way
     // failure can't leave the account half-deleted (matters for GDPR erasure).
+    // Order matters: rows that point at others go first, parents last.
     await this.prisma.$transaction([
-      this.prisma.notification.deleteMany({ where: { userId } }),
-      this.prisma.post.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
-      this.prisma.socialAccount.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
-      this.prisma.client.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
-      this.prisma.subscription.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
-      this.prisma.workspaceMember.deleteMany({ where: { workspaceId: { in: workspaceIds } } }),
+      // What other people's rows hold against this person is cleared, not deleted
+      this.prisma.user.updateMany({ where: { referredById: userId }, data: { referredById: null } }),
+      this.prisma.client.updateMany({ where: { assignedToId: userId }, data: { assignedToId: null } }),
+      this.prisma.inboxMessage.updateMany({ where: { assignedToId: userId }, data: { assignedToId: null } }),
+      this.prisma.activity.updateMany({ where: { userId }, data: { userId: null } }),
+      this.prisma.workspaceInvite.deleteMany({ where: { invitedById: userId } }),
+      this.prisma.workspaceMember.deleteMany({ where: { userId } }),
+      // Everything inside the workspaces they own
+      this.prisma.campaignTask.deleteMany({ where: { campaign: inWs } }),
+      this.prisma.postApproval.deleteMany({ where: inWs }),
+      this.prisma.agentRun.deleteMany({ where: inWs }),
+      this.prisma.asset.deleteMany({ where: inWs }),
+      this.prisma.inboxMessage.deleteMany({ where: inWs }),
+      this.prisma.post.deleteMany({ where: inWs }),
+      this.prisma.campaign.deleteMany({ where: inWs }),
+      this.prisma.note.deleteMany({ where: ofClients }),
+      this.prisma.task.deleteMany({ where: ofClients }),
+      this.prisma.activity.deleteMany({ where: ofClients }),
+      this.prisma.client.deleteMany({ where: inWs }),
+      this.prisma.socialAccount.deleteMany({ where: inWs }),
+      this.prisma.subscription.deleteMany({ where: inWs }),
+      this.prisma.aiUsage.deleteMany({ where: inWs }),
+      this.prisma.automationRule.deleteMany({ where: inWs }),
+      this.prisma.autoResponderRule.deleteMany({ where: inWs }),
+      this.prisma.postIdea.deleteMany({ where: inWs }),
+      this.prisma.workspaceInvite.deleteMany({ where: inWs }),
+      this.prisma.workspaceMemory.deleteMany({ where: inWs }),
+      this.prisma.workspaceWebhook.deleteMany({ where: inWs }),
+      this.prisma.workspaceMember.deleteMany({ where: inWs }),
       this.prisma.workspace.deleteMany({ where: { ownerId: userId } }),
+      // The person
+      this.prisma.notification.deleteMany({ where: { userId } }),
+      this.prisma.mobileDevice.deleteMany({ where: { userId } }),
       this.prisma.user.delete({ where: { id: userId } }),
     ]);
 
+    // Their uploaded photos and videos. Best effort: the account is already gone, so this never fails the request.
+    void this.purgeMedia(workspaceIds).catch(() => undefined);
+
     return { message: 'Account deleted successfully' };
+  }
+
+  /** Removes everything stored under each workspace's folder in media storage. */
+  private async purgeMedia(workspaceIds: string[]): Promise<void> {
+    const base = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+    if (!base || !key || workspaceIds.length === 0) return;
+    const bucket = process.env.SUPABASE_BUCKET || 'media';
+    const headers = { ...storageAuthHeaders(key), 'Content-Type': 'application/json' };
+    for (const wid of workspaceIds) {
+      try {
+        for (let page = 0; page < 50; page++) {
+          const list = await axios.post(
+            `${base}/storage/v1/object/list/${bucket}`,
+            { prefix: wid, limit: 1000 },
+            { headers, timeout: 15000 },
+          );
+          const names: string[] = (Array.isArray(list.data) ? list.data : []).map((o: any) => o?.name).filter(Boolean);
+          if (names.length === 0) break;
+          await axios.delete(`${base}/storage/v1/object/${bucket}`, {
+            headers,
+            data: { prefixes: names.map((n) => `${wid}/${n}`) },
+            timeout: 15000,
+          });
+        }
+      } catch {
+        // storage is cleaned up on a later pass if this one fails
+      }
+    }
   }
 
   async generateTokens(userId: string, email: string, tokenVersion?: number) {
