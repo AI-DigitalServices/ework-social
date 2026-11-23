@@ -13,6 +13,8 @@ const PLATFORM_COLORS: Record<string, { bg: string; label: string }> = {
   YOUTUBE:   { bg: '#FF0000', label: 'YouTube' },
 };
 
+const isVideoUrl = (u: string) => /\.(mp4|mov|webm)(\?|$)/i.test(u);
+
 export default function ApprovalPage() {
   const params = useParams();
   const token = params?.token as string;
@@ -155,7 +157,7 @@ export default function ApprovalPage() {
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
 
           {/* Platform header */}
-          <div style={{ background: platform.bg, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ background: platform.bg, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{platform.label}</span>
             <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>· @{data?.post?.accountName}</span>
             <span style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>Scheduled: {scheduledDate}</span>
@@ -170,7 +172,17 @@ export default function ApprovalPage() {
             {/* Media previews — click to enlarge */}
             {data?.post?.mediaUrls?.length > 0 && (
               <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-                {data.post.mediaUrls.map((url: string, i: number) => (
+                {data.post.mediaUrls.map((url: string, i: number) =>
+                  isVideoUrl(url) ? (
+                    <video
+                      key={i}
+                      src={url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      style={{ width: '100%', maxWidth: 320, maxHeight: 420, borderRadius: 8, background: '#000', border: '2px solid rgba(55,138,221,0.3)' }}
+                    />
+                  ) : (
                   <div key={i} onClick={() => setLightboxUrl(url)}
                     style={{ cursor: 'pointer', position: 'relative' }}>
                     <img src={url} alt={`Media ${i + 1}`}
@@ -184,7 +196,8 @@ export default function ApprovalPage() {
                       <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>View</span>
                     </div>
                   </div>
-                ))}
+                  ),
+                )}
               </div>
             )}
 

@@ -144,6 +144,10 @@ export default function LandingPage() {
         @media (max-width: 640px) {
           .site-nav { padding: 0 16px !important; }
         }
+        @media (max-width: 768px) {
+          footer .grid-4col { row-gap: 28px !important; }
+          footer a { min-height: 44px; display: flex; align-items: center; }
+        }
         .feature-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 16px; padding: 32px; transition: all 0.3s; }
         .feature-card:hover { border-color: rgba(37,99,235,0.5); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .pricing-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 20px; padding: 36px; transition: all 0.3s; position: relative; }

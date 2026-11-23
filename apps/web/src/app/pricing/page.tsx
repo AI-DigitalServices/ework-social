@@ -91,6 +91,8 @@ export default function PricingPage() {
         .cmp-table thead th { position: sticky; top: 0; background: #0A1220; }
         .cmp-pro { background: rgba(37,99,235,0.06); }
         .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .cmp-hint { display: none; color: #6B8299; font-size: 13px; text-align: center; margin-bottom: 12px; padding: 0 24px; }
+        @media (max-width: 860px) { .cmp-hint { display: block; } }
       `}</style>
 
       {/* Nav */}
@@ -121,6 +123,7 @@ export default function PricingPage() {
 
       {/* Comparison table */}
       <section style={{ padding: '20px 0 80px' }}>
+        <p className="cmp-hint">Swipe sideways to compare plans →</p>
         <div className="wrap" style={{ overflowX: 'auto' }}>
           <table className="cmp-table">
             <thead>

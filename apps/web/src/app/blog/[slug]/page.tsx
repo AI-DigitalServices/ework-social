@@ -37,14 +37,15 @@ export default async function BlogPostPage({ params }: Props) {
     <div style={{ minHeight: '100vh', background: '#080C14', fontFamily: "'Inter', sans-serif" }}>
 
       {/* Nav */}
-      <nav style={{ borderBottom: '1px solid #1A2840', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, position: 'sticky', top: 0, background: '#080C14', zIndex: 10 }}>
+      <nav className="blog-nav" style={{ borderBottom: '1px solid #1A2840', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, position: 'sticky', top: 0, background: '#080C14', zIndex: 10 }}>
+        <style>{`@media (max-width: 520px) { .blog-nav { padding: 0 16px !important; } .blog-nav-all { display: none !important; } }`}</style>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>eWork Social</span>
+          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 18, color: '#fff', whiteSpace: 'nowrap' }}>eWork Social</span>
         </Link>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Link href="/blog" style={{ color: '#6B8299', fontSize: 14, textDecoration: 'none' }}>← All articles</Link>
-          <Link href="/register" style={{ background: '#2563EB', color: 'white', padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
+          <Link href="/blog" className="blog-nav-all" style={{ color: '#6B8299', fontSize: 14, textDecoration: 'none' }}>← All articles</Link>
+          <Link href="/register" style={{ background: '#2563EB', color: 'white', padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
             Start Free Trial
           </Link>
         </div>
