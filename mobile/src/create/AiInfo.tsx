@@ -3,6 +3,7 @@ import { Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Button, Card, Text } from '../ui';
 import { PLAN_URL } from '../plan';
+import { PLAN_LINKS } from '../storePolicy';
 import { colors, radius, space } from '../theme';
 
 /** What the API reports for AI writing ("Give us an idea"): this month's use and allowance. */
@@ -45,10 +46,10 @@ export default function AiInfo({ usage }: { usage: IdeaUsage | null }) {
             <Text style={styles.body}>Writing three posts, or writing different ones, uses one AI write each time. Editing the text yourself is always free.</Text>
             {capped ? (
               <Text style={styles.body}>
-                If you run out, you can still write posts by hand, save drafts and schedule. AI writing comes back on {resetText(usage)}, or you can choose a plan for more.
+                If you run out, you can still write posts by hand, save drafts and schedule. AI writing comes back on {resetText(usage)}{PLAN_LINKS ? ', or you can choose a plan for more' : ''}.
               </Text>
             ) : null}
-            {capped ? <Button title="Choose a plan" onPress={() => void Linking.openURL(PLAN_URL)} /> : null}
+            {capped && PLAN_LINKS ? <Button title="Choose a plan" onPress={() => void Linking.openURL(PLAN_URL)} /> : null}
             <Button title="Got it" variant="link" onPress={() => setOpen(false)} />
           </Pressable>
         </Pressable>
@@ -63,10 +64,10 @@ export function LimitNote({ usage, onWriteMyself }: { usage: IdeaUsage | null; o
     <Card tone="warn">
       <Text style={styles.noteTitle}>You have used your AI writes for now</Text>
       <Text style={[styles.body, { marginBottom: 14 }]}>
-        You can still write this post yourself, save it and schedule it. AI writing returns on {resetText(usage)}, or you can choose a plan for more.
+        You can still write this post yourself, save it and schedule it. AI writing returns on {resetText(usage)}{PLAN_LINKS ? ', or you can choose a plan for more' : ''}.
       </Text>
       <Button title="Write it myself" onPress={onWriteMyself} />
-      <Button title="Choose a plan" variant="link" onPress={() => void Linking.openURL(PLAN_URL)} />
+      {PLAN_LINKS ? <Button title="Choose a plan" variant="link" onPress={() => void Linking.openURL(PLAN_URL)} /> : null}
     </Card>
   );
 }

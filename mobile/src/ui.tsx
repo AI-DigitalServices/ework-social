@@ -1,5 +1,6 @@
 import { Linking } from 'react-native';
 import { PLAN_URL } from './plan';
+import { PLAN_LINKS } from './storePolicy';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, Ref } from 'react';
 import {
@@ -199,7 +200,7 @@ export function ErrorText({ children }: { children?: string | null }) {
   return (
     <View style={styles.errorBox}>
       <Text style={styles.error}>{text}</Text>
-      {needsPlan ? (
+      {needsPlan && PLAN_LINKS ? (
         <Pressable onPress={() => void Linking.openURL(PLAN_URL)} hitSlop={8} style={{ marginTop: 10 }}>
           <Text style={{ color: colors.primaryBright, fontSize: 15, fontWeight: '700' }}>Choose a plan  →</Text>
         </Pressable>
