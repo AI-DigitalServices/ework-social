@@ -144,6 +144,20 @@ export default function LandingPage() {
         @media (max-width: 640px) {
           .site-nav { padding: 0 16px !important; }
         }
+        @media (max-width: 768px) {
+          footer .grid-4col { row-gap: 28px !important; }
+          footer a { min-height: 44px; display: flex; align-items: center; }
+        }
+        @media (max-width: 768px) {
+          .section-pad { padding-top: 56px !important; padding-bottom: 56px !important; }
+          .m-pad { padding: 56px 20px !important; }
+          .m-scroll { display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory; gap: 14px !important; padding-bottom: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+          .m-scroll::-webkit-scrollbar { display: none; }
+          .m-scroll > * { flex: 0 0 84%; scroll-snap-align: start; }
+          .m-two { grid-template-columns: 1fr 1fr !important; }
+          .feature-card { padding: 24px !important; }
+          .pricing-card { padding: 26px !important; }
+        }
         .feature-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 16px; padding: 32px; transition: all 0.3s; }
         .feature-card:hover { border-color: rgba(37,99,235,0.5); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .pricing-card { background: #0C1524; border: 1px solid #1A2840; border-radius: 20px; padding: 36px; transition: all 0.3s; position: relative; }
@@ -317,7 +331,7 @@ export default function LandingPage() {
           </h2>
           <p style={{ color: '#6B8299', fontSize: 17, marginTop: 18, fontWeight: 400 }}>The AI does the heavy lifting. You stay in control of every post.</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+        <div className="m-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
           {[
             { Icon: Sparkles, title: 'AI Agent & Autopilot', desc: 'Give it a campaign brief and it proposes a whole week of on-brand posts — grounded in your analytics, inbox, and clients. Put it on Autopilot and it runs itself on a schedule. Nothing publishes without your approval.', color: '#3B82F6' },
             { Icon: Brain, title: 'Brand Brain', desc: 'The agent learns your voice from your own published posts and clients, so every draft sounds like your brand — not generic AI. Semantic memory that gets sharper over time.', color: '#8B5CF6' },
@@ -336,7 +350,7 @@ export default function LandingPage() {
       </section>
 
       {/* AI SECTION */}
-      <section style={{ padding: '110px 48px', background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
+      <section className="m-pad" style={{ padding: '110px 48px', background: '#070B12', borderTop: '1px solid #1A2840', borderBottom: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
           <span className="section-label">The AI OS</span>
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 700, letterSpacing: '-1.5px', lineHeight: 1.1, color: '#F0F6FF', marginBottom: 18 }}>
@@ -346,7 +360,7 @@ export default function LandingPage() {
             eWork Social is built around an AI agent that researches, plans, writes, and creates — powered by Claude, with a full audit trail and a kill switch. It proposes; you approve. Always.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, textAlign: 'left' as const, marginBottom: 40 }}>
+          <div className="m-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, textAlign: 'left' as const, marginBottom: 40 }}>
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A2840', borderRadius: 16, padding: 28 }}>
               <h3 style={{ fontSize: 17, fontWeight: 700, color: '#E8F0FA', marginBottom: 10 }}>It plans campaigns, not just captions</h3>
               <p style={{ color: '#6B8299', fontSize: 14.5, lineHeight: 1.7 }}>Give the agent a goal and a brief. It checks your analytics, reads your inbox, looks up the client&apos;s CRM stage, and proposes a full multi-day series — each post ready to approve and schedule.</p>
@@ -535,7 +549,7 @@ export default function LandingPage() {
               Real feedback from our early users and founding community members.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+          <div className="m-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
             {[
               {
                 quote: "This is exactly what agencies need. The CRM + scheduler combo in one tool is a game changer for managing multiple clients.",
@@ -583,7 +597,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section style={{ padding: '100px 48px', borderTop: '1px solid #1A2840' }}>
+      <section className="m-pad" style={{ padding: '100px 48px', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 780, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <span className="section-label">FAQ</span>
@@ -633,7 +647,7 @@ export default function LandingPage() {
       </section>
 
       {/* FOUNDING MEMBER WAITLIST */}
-      <section id="waitlist" style={{ padding: '110px 48px', borderTop: '1px solid #1A2840', background: 'linear-gradient(180deg, #080C14 0%, #070B12 100%)' }}>
+      <section id="waitlist" className="m-pad" style={{ padding: '110px 48px', borderTop: '1px solid #1A2840', background: 'linear-gradient(180deg, #080C14 0%, #070B12 100%)' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
@@ -667,7 +681,7 @@ export default function LandingPage() {
           </div>
 
           {/* Perks list */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 40 }}>
+          <div className="m-two" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 40 }}>
             {[
               { icon: '💰', title: '50% off Agency Pro, forever', desc: 'Locked in at founding price' },
               { icon: '🚀', title: 'Priority early access', desc: 'Before public launch' },
@@ -764,7 +778,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '90px 48px', borderTop: '1px solid #1A2840' }}>
+      <section className="m-pad" style={{ padding: '90px 48px', borderTop: '1px solid #1A2840' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
           <img src="/icon.png" alt="eWork Social" style={{ width: 68, height: 68, borderRadius: 18, objectFit: 'cover', margin: '0 auto 28px', display: 'block', boxShadow: '0 12px 32px rgba(37,99,235,0.4)' }} />
           <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 'clamp(32px, 5vw, 50px)', fontWeight: 700, letterSpacing: '-1.5px', marginBottom: 18, color: '#F0F6FF' }}>

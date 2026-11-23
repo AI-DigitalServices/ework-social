@@ -10,16 +10,17 @@ export const metadata = {
 export default function BlogPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: "'Inter', sans-serif" }}>
+      <style>{`@media (max-width: 520px) { .blog-nav { padding: 0 16px !important; } .blog-nav-home { display: none !important; } }`}</style>
 
       {/* Nav */}
-      <nav style={{ borderBottom: '1px solid #E5E7EB', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, position: 'sticky', top: 0, background: 'rgba(249,250,251,0.95)', backdropFilter: 'blur(12px)', zIndex: 10 }}>
+      <nav className="blog-nav" style={{ borderBottom: '1px solid #E5E7EB', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, position: 'sticky', top: 0, background: 'rgba(249,250,251,0.95)', backdropFilter: 'blur(12px)', zIndex: 10 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 18, color: '#111827' }}>eWork Social</span>
+          <img src="/icon.png" alt="eWork Social" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
+          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 18, color: '#111827', whiteSpace: 'nowrap' }}>eWork Social</span>
         </Link>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <Link href="/" style={{ color: '#6B7280', fontSize: 14, textDecoration: 'none' }}>Home</Link>
-          <Link href="/register" style={{ background: '#2563EB', color: 'white', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
+          <Link href="/" className="blog-nav-home" style={{ color: '#6B7280', fontSize: 14, textDecoration: 'none' }}>Home</Link>
+          <Link href="/register" style={{ background: '#2563EB', color: 'white', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
             Start Free Trial →
           </Link>
         </div>
