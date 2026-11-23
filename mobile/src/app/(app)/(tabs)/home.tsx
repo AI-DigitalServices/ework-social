@@ -3,6 +3,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { IdeaCard, NextStepCard } from '../../../home/parts';
 import { PLAN_URL, readOnlyInfo } from '../../../plan';
+import { PLAN_LINKS } from '../../../storePolicy';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../ui';
@@ -199,17 +200,23 @@ export default function Home() {
               <Text style={styles.trialText}>
                 {ent.trialDaysLeft ?? 0} {ent.trialDaysLeft === 1 ? 'day' : 'days'} left to try everything
               </Text>
-              <Text onPress={() => void Linking.openURL('https://www.eworksocial.com/#pricing')} style={styles.upgrade}>
-                Upgrade
-              </Text>
+              {PLAN_LINKS ? (
+                <Text onPress={() => void Linking.openURL('https://www.eworksocial.com/#pricing')} style={styles.upgrade}>
+                  Upgrade
+                </Text>
+              ) : null}
             </View>
           </FadeIn>
         ) : null}
         {ent && !ent.canWrite ? (
           <Card tone="warn">
             <Text style={styles.cardTitle}>{readOnlyInfo(ent.readOnlyReason).title}</Text>
-            <Text style={[styles.muted, { marginBottom: 14 }]}>{readOnlyInfo(ent.readOnlyReason).text}</Text>
-            <Button title="Choose a plan" onPress={() => void Linking.openURL(PLAN_URL)} />
+            <Text style={[styles.muted, { marginBottom: PLAN_LINKS ? 14 : 0 }]}>{readOnlyInfo(ent.readOnlyReason).text}</Text>
+            {PLAN_LINKS ? (
+              <Button title="Choose a plan" onPress={() => void Linking.openURL(PLAN_URL)} />
+            ) : (
+              <Text style={[styles.muted, { marginTop: 8 }]}>Your plan is managed in your eWork Social account on the web.</Text>
+            )}
           </Card>
         ) : null}
 

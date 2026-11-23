@@ -1,4 +1,5 @@
 import { readOnlyInfo } from '../../../plan';
+import { PLAN_LINKS } from '../../../storePolicy';
 import Feather from '@expo/vector-icons/Feather';
 import { Linking } from 'react-native';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -34,6 +35,11 @@ export default function More() {
               <Avatar name={name} size={52} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{name}</Text>
+                {config?.user.email ? (
+                  <Text style={styles.sub} numberOfLines={1}>
+                    {config.user.email}
+                  </Text>
+                ) : null}
                 <Text style={styles.sub}>
                   {workspace?.name ?? 'No workspace'}
                   {workspace?.role ? `  ·  ${roleLabel(workspace.role)}` : ''}
@@ -46,9 +52,11 @@ export default function More() {
                 <Text style={styles.trialText}>
                   {ent.trialDaysLeft ?? 0} {ent.trialDaysLeft === 1 ? 'day' : 'days'} left
                 </Text>
-                <Text onPress={() => void Linking.openURL('https://www.eworksocial.com/#pricing')} style={styles.upgrade}>
-                  Upgrade
-                </Text>
+                {PLAN_LINKS ? (
+                  <Text onPress={() => void Linking.openURL('https://www.eworksocial.com/#pricing')} style={styles.upgrade}>
+                    Upgrade
+                  </Text>
+                ) : null}
               </View>
             ) : null}
             {ent && !ent.canWrite ? (
@@ -83,6 +91,12 @@ export default function More() {
         <FadeIn delay={120}>
           <SectionTitle>Accounts</SectionTitle>
           <Card>
+            <MoreRow
+              icon="user"
+              label="Profile and account"
+              text={config?.user.email ?? 'Your details, delete account'}
+              onPress={() => router.navigate('/profile' as Href)}
+            />
             <MoreRow
               icon="link"
               label="Connected accounts"
