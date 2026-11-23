@@ -67,7 +67,7 @@ export default function WhenPicker({
 
   const choose = (at: Date) => {
     if (at.getTime() < Date.now() + MIN_NOTICE) {
-      setError('Pick a time a few minutes from now or later.');
+      setError(`You picked ${formatWhen(at)}. Choose a time at least a few minutes from now, and check the date.`);
       return;
     }
     setError(null);
