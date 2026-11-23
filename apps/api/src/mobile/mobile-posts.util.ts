@@ -48,7 +48,16 @@ export function toPostSummary(p: any) {
     errorMessage: p.errorMessage ?? null,
     updatedAt: p.updatedAt,
     mediaCount: Array.isArray(p.mediaUrls) ? p.mediaUrls.length : 0,
-    thumbUrl: Array.isArray(p.mediaUrls) && typeof p.mediaUrls[0] === 'string' ? p.mediaUrls[0] : null,
+    thumbUrl:
+      Array.isArray(p.mediaUrls) && typeof p.mediaUrls[0] === 'string' && !/\.(mp4|mov|webm)$/i.test(p.mediaUrls[0])
+        ? p.mediaUrls[0]
+        : null,
+    mediaKind:
+      Array.isArray(p.mediaUrls) && typeof p.mediaUrls[0] === 'string'
+        ? /\.(mp4|mov|webm)$/i.test(p.mediaUrls[0])
+          ? 'VIDEO'
+          : 'PHOTO'
+        : null,
     platform: p.socialAccount?.platform ?? null,
     accountName: p.socialAccount?.accountName ?? null,
   };

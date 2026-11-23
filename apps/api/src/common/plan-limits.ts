@@ -38,6 +38,7 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — no agent access on Free
     assetUploadsPerMonth:   5,          // Creative Hub — vision tagging + embedding cap
+    videosPerMonth:         2,          // Short videos posted from the app (storage and bandwidth cost)
     aiImageGenPerMonth:     0,          // AI image generation — premium only
     byokEnabled:            false,      // Bring-your-own AI key — premium only
     autopilotEnabled:       false,      // Scheduled auto-runs — Agency Pro & Enterprise only
@@ -91,6 +92,7 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   false,
     agentActionsPerMonth:   0,          // AI OS Phase 1 — agent access starts at Growth (Copilot tier)
     assetUploadsPerMonth:   25,         // Creative Hub — vision tagging + embedding cap
+    videosPerMonth:         10,          // Short videos posted from the app (storage and bandwidth cost)
     aiImageGenPerMonth:     0,          // AI image generation — premium only (Growth+)
     byokEnabled:            false,      // Bring-your-own AI key — premium only (Growth+)
     autopilotEnabled:       false,      // Scheduled auto-runs — Agency Pro & Enterprise only
@@ -144,6 +146,7 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   true,       // Moved from AGENCY_PRO — makes Growth feel complete ✅
     agentActionsPerMonth:   20,         // AI OS Phase 1 — shadow-mode agent actions/month (Copilot tier)
     assetUploadsPerMonth:   100,        // Creative Hub — vision tagging + embedding cap
+    videosPerMonth:         40,          // Short videos posted from the app (storage and bandwidth cost)
     aiImageGenPerMonth:     50,         // AI image generation — unlocks at Growth
     byokEnabled:            true,       // Bring-your-own AI key — unlocks at Growth
     autopilotEnabled:       true,       // Growth = WEEKLY Autopilot only (see AUTOPILOT_CADENCES); daily is Agency Pro+
@@ -197,6 +200,7 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   true,
     agentActionsPerMonth:   999999,     // AI OS Phase 1 — unlimited agent actions (Autopilot tier)
     assetUploadsPerMonth:   1000,       // Creative Hub — high cap, not truly unlimited (protects against bulk-upload abuse)
+    videosPerMonth:         200,          // Short videos posted from the app (storage and bandwidth cost)
     aiImageGenPerMonth:     500,        // AI image generation — high cap (Autopilot tier)
     byokEnabled:            true,       // Bring-your-own AI key — enabled
     autopilotEnabled:       true,       // Scheduled auto-runs — enabled
@@ -248,6 +252,7 @@ export const PLAN_LIMITS = {
     aiCrmInsightsEnabled:   true,
     agentActionsPerMonth:   999999,
     assetUploadsPerMonth:   999999,
+    videosPerMonth:         999999,          // Short videos posted from the app (storage and bandwidth cost)
     aiImageGenPerMonth:     999999,
     byokEnabled:            true,
     autopilotEnabled:       true,
@@ -354,4 +359,13 @@ export const TRIAL_AGENT_ACTIONS = 5;
 export function getAgentActionLimit(plan: string, isTrialing: boolean): number {
   const base: number = getPlanLimits(plan).agentActionsPerMonth;
   return isTrialing ? Math.min(base, TRIAL_AGENT_ACTIONS) : base;
+}
+
+/** Videos allowed during a free trial, whatever tier the trial grants. */
+export const TRIAL_VIDEOS = 5;
+
+/** Monthly video allowance for a plan, tightened (never raised) while trialling. */
+export function getVideoLimit(plan: string, isTrialing: boolean): number {
+  const base: number = getPlanLimits(plan).videosPerMonth;
+  return isTrialing ? Math.min(base, TRIAL_VIDEOS) : base;
 }

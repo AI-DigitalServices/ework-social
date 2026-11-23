@@ -16,7 +16,8 @@ import { Button, Card, ErrorText, FadeIn, Field, Screen } from '../../ui';
 import { ActionRow, ActionTile } from '../../actions';
 import AiInfo, { LimitNote } from '../../create/AiInfo';
 import type { IdeaUsage } from '../../create/AiInfo';
-import { cropForInstagram, needsInstagramCrop, pickPhoto, uploadPhoto } from '../../create/media';
+import { MAX_VIDEO_SECONDS, cropForInstagram, needsInstagramCrop, pickPhoto, pickVideo, prepareVideo, uploadPhoto, uploadVideo } from '../../create/media';
+import type { VideoUsage } from '../../create/media';
 import { colors, platformColors, radius } from '../../theme';
 
 type Stage = 'write' | 'pick' | 'publish' | 'done';
@@ -63,7 +64,8 @@ export default function Idea() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneNote, setDoneNote] = useState('');
-  const { photo: openPhoto } = useLocalSearchParams<{ photo?: string }>();
+  const { photo: openPhoto, video: videoMode } = useLocalSearchParams<{ photo?: string; video?: string }>();
+  const isVideoMode = videoMode === '1';
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -71,6 +73,66 @@ export default function Idea() {
   const [usage, setUsage] = useState<IdeaUsage | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const autoOpened = useRef(false);
+
+  // Video: the clip goes to storage; one frame goes with the idea so the AI can see what the video shows.
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [frameUrl, setFrameUrl] = useState<string | null>(null);
+  const [videoThumb, setVideoThumb] = useState<string | null>(null);
+  const [videoStatus, setVideoStatus] = useState<string | null>(null);
+  const [videoInfo, setVideoInfo] = useState<{ width: number; height: number } | null>(null);
+  const [videoUsage, setVideoUsage] = useState<VideoUsage | null>(null);
+
+  const clearVideo = () => {
+    setVideoUrl(null);
+    setFrameUrl(null);
+    setVideoThumb(null);
+    setVideoInfo(null);
+    setVideoStatus(null);
+  };
+
+  const loadVideoUsage = useCallback(() => {
+    if (!wid) return;
+    request<VideoUsage>(`/mobile/v1/workspaces/${wid}/create/video-usage`)
+      .then(setVideoUsage)
+      .catch(() => {});
+  }, [wid]);
+  useEffect(() => {
+    if (isVideoMode) loadVideoUsage();
+  }, [isVideoMode, loadVideoUsage]);
+
+  const chooseVideo = useCallback(
+    async (source: 'library' | 'camera') => {
+      if (!wid) return;
+      setError(null);
+      try {
+        const picked = await pickVideo(source);
+        if (!picked) return;
+        setVideoUrl(null);
+        setFrameUrl(null);
+        setVideoThumb(null);
+        setVideoInfo({ width: picked.width, height: picked.height });
+        setVideoStatus('Preparing your video...');
+        const ready = await prepareVideo(picked, (pct) => setVideoStatus(`Preparing your video... ${pct}%`));
+        if (ready.frame) setVideoThumb(ready.frame.uri);
+        setVideoStatus('Uploading... 0%');
+        setVideoUrl(await uploadVideo(wid, ready, (pct) => setVideoStatus(`Uploading... ${pct}%`)));
+        if (ready.frame) {
+          try {
+            setFrameUrl(await uploadPhoto(wid, ready.frame));
+          } catch {
+            // Captions then come from the note alone.
+          }
+        }
+        loadVideoUsage();
+      } catch (err: any) {
+        clearVideo();
+        setError(err?.message || 'We could not add that video. Please try again.');
+      } finally {
+        setVideoStatus(null);
+      }
+    },
+    [wid, loadVideoUsage],
+  );
 
   const choosePhoto = useCallback(
     async (source: 'library' | 'camera') => {
@@ -182,7 +244,7 @@ export default function Idea() {
           body: {
             idea: idea.trim() || 'Photo post',
             platform,
-            ...(photoUrl ? { imageUrl: photoUrl } : {}),
+            ...(photoUrl ? { imageUrl: photoUrl } : frameUrl ? { imageUrl: frameUrl, imageKind: 'VIDEO' } : {}),
             ...(nextHint ? { hint: nextHint } : {}),
           },
         });
@@ -205,7 +267,7 @@ export default function Idea() {
         setBusy(false);
       }
     },
-    [wid, busy, idea, platform, photoUrl],
+    [wid, busy, idea, platform, photoUrl, frameUrl],
   );
 
   const finish = useCallback(
@@ -221,7 +283,7 @@ export default function Idea() {
             idea: idea.trim() || 'Photo post',
             content: text.trim(),
             platform,
-            ...(photoUrl ? { mediaUrls: [photoUrl] } : {}),
+            ...(photoUrl ? { mediaUrls: [photoUrl] } : videoUrl ? { mediaUrls: [videoUrl] } : {}),
           },
         });
         if (accountIds && accountIds.length > 0 && status) {
@@ -260,7 +322,7 @@ export default function Idea() {
         setBusy(false);
       }
     },
-    [wid, idea, text, platform, accounts.length, photoUrl],
+    [wid, idea, text, platform, accounts.length, photoUrl, videoUrl],
   );
 
   const reset = () => {
@@ -268,6 +330,7 @@ export default function Idea() {
     setPhotoDims(null);
     setPhotoUri(null);
     setPhotoUrl(null);
+    clearVideo();
     setLimitHit(false);
     setOptions([]);
     setText('');
@@ -279,6 +342,10 @@ export default function Idea() {
   // Every platform the business set up in onboarding, plus every platform it has connected since.
   const choices = Array.from(new Set([...platforms, ...accounts.map((a) => a.platform)]));
   const color = platformColors[platform] ?? colors.primaryBright;
+  const videoLeft = videoUsage ? videoUsage.remaining : 0;
+  const videoOut = !!videoUsage && videoUsage.limit > 0 && videoUsage.remaining <= 0;
+  const wideVideo = !!videoInfo && videoInfo.width > videoInfo.height;
+  const hasMedia = !!photoUri || !!videoThumb;
 
   const top = (
     <View style={styles.top}>
@@ -300,13 +367,68 @@ export default function Idea() {
       <Screen>
         {top}
         <StepHero
-          icon="✎"
-          kicker="Write an idea"
-          title="What would you like to post about?"
-          sub="A sentence is enough. We write three posts in your voice."
+          icon={isVideoMode ? '▶' : '✎'}
+          kicker={isVideoMode ? 'Upload a video' : 'Create a post'}
+          title={isVideoMode ? 'What is your video about?' : 'What would you like to post about?'}
+          sub={
+            isVideoMode
+              ? `Short clips up to ${MAX_VIDEO_SECONDS} seconds for Reels, Shorts and TikTok. We write the caption in your voice.`
+              : 'Start with a photo, a sentence, or both. We write three posts in your voice.'
+          }
         />
-        <Text style={styles.cap}>Start with a photo (optional)</Text>
-        {photoUri ? (
+        {isVideoMode ? (
+          <>
+            <Text style={styles.cap}>Your video (up to {MAX_VIDEO_SECONDS} seconds)</Text>
+            {videoThumb || videoStatus ? (
+              <View style={styles.photoBox}>
+                {videoThumb ? (
+                  <Image source={{ uri: videoThumb }} style={styles.photo} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.photo, { backgroundColor: colors.cardAlt }]} />
+                )}
+                {videoThumb && !videoStatus ? (
+                  <View style={styles.playBadge}>
+                    <Feather name="play" size={22} color="#fff" />
+                  </View>
+                ) : null}
+                {videoStatus ? (
+                  <View style={styles.photoOverlay}>
+                    <ActivityIndicator color="#fff" />
+                    <Text style={styles.photoNote}>{videoStatus}</Text>
+                  </View>
+                ) : (
+                  <Pressable onPress={clearVideo} hitSlop={10} style={styles.photoX} accessibilityLabel="Remove video">
+                    <Feather name="x" size={16} color="#fff" />
+                  </Pressable>
+                )}
+              </View>
+            ) : videoOut ? (
+              <Card tone="warn">
+                <Text style={styles.igTitle}>You have used all your videos for this month</Text>
+                <Text style={styles.igBody}>
+                  Your plan includes {videoUsage?.limit} {videoUsage?.limit === 1 ? 'video' : 'videos'} a month
+                  {videoUsage?.resets ? `, and it renews on ${new Date(videoUsage.resets).toLocaleDateString([], { month: 'long', day: 'numeric' })}` : ''}.
+                  You can still post photos and text.
+                </Text>
+              </Card>
+            ) : (
+              <ActionRow>
+                <ActionTile compact label="Gallery" icon={(c) => <Feather name="film" size={20} color={c} />} onPress={() => void chooseVideo('library')} />
+                <ActionTile compact label="Record" icon={(c) => <Feather name="video" size={20} color={c} />} onPress={() => void chooseVideo('camera')} />
+              </ActionRow>
+            )}
+            {wideVideo && !videoStatus ? (
+              <Text style={styles.igBody}>This video is wide. Reels, Shorts and TikTok work best with tall (9:16) videos, so it may look small.</Text>
+            ) : null}
+            {videoUsage && videoUsage.limit > 0 && !videoOut && !videoThumb && !videoStatus ? (
+              <Text style={styles.igBody}>
+                {videoLeft} of {videoUsage.limit} videos left this month{videoUsage.trial ? ' in your trial' : ''}.
+              </Text>
+            ) : null}
+          </>
+        ) : null}
+        {isVideoMode ? null : <Text style={styles.cap}>Start with a photo (optional)</Text>}
+        {isVideoMode ? null : photoUri ? (
           <View style={styles.photoBox}>
             <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
             {uploading ? (
@@ -333,16 +455,16 @@ export default function Idea() {
           </Card>
         ) : null}
         <Field
-          label={photoUri ? 'Add a note (optional)' : 'Your idea'}
+          label={hasMedia ? 'Add a note (optional)' : 'Your idea'}
           value={idea}
           onChangeText={setIdea}
           autoCapitalize="sentences"
           multiline
           maxLength={600}
           style={{ minHeight: 110, textAlignVertical: 'top' }}
-          placeholder={photoUri ? 'Anything we should mention about it?' : 'We have fresh red velvet cakes this weekend'}
+          placeholder={hasMedia ? 'Anything we should mention about it?' : 'We have fresh red velvet cakes this weekend'}
         />
-        {chips.length > 0 && !photoUri ? (
+        {chips.length > 0 && !hasMedia ? (
           <View style={{ marginBottom: 12 }}>
             <Text style={styles.cap}>Need a spark?</Text>
             <View style={styles.wrap}>
@@ -364,10 +486,10 @@ export default function Idea() {
         ) : (
           <>
             <Button
-              title={busy ? 'Writing your post...' : photoUrl ? 'Write posts for my photo' : 'Write my post'}
+              title={busy ? 'Writing your post...' : photoUrl ? 'Write posts for my photo' : videoUrl ? 'Write posts for my video' : 'Write my post'}
               onPress={() => void write()}
               loading={busy}
-              disabled={uploading || (idea.trim().length < 3 && !photoUrl)}
+              disabled={uploading || !!videoStatus || (isVideoMode && !videoUrl) || (idea.trim().length < 3 && !photoUrl && !frameUrl)}
             />
             <AiInfo usage={usage} />
           </>
@@ -388,7 +510,7 @@ export default function Idea() {
           tint={colors.accent}
           soft={colors.accentSoft}
         />
-        {photoUri ? <Image source={{ uri: photoUri }} style={styles.photoSmall} resizeMode="cover" /> : null}
+        {photoUri || videoThumb ? <Image source={{ uri: (photoUri || videoThumb) as string }} style={styles.photoSmall} resizeMode="cover" /> : null}
         {options.map((o, i) => {
           const on = i === picked;
           return (
@@ -447,13 +569,13 @@ export default function Idea() {
           soft={colors.okSoft}
         />
         <Card tone="primary">
-          {photoUri ? <Image source={{ uri: photoUri }} style={styles.photoSmall} resizeMode="cover" /> : null}
+          {photoUri || videoThumb ? <Image source={{ uri: (photoUri || videoThumb) as string }} style={styles.photoSmall} resizeMode="cover" /> : null}
           <Text style={styles.preview}>{text}</Text>
         </Card>
         <ErrorText>{error}</ErrorText>
         {accounts.length > 0 ? (
           <>
-            <PublishPanel accounts={accounts} busy={busy} onConfirm={(a, s, at) => void finish(a, s, at)} />
+            <PublishPanel accounts={accounts} busy={busy} kind={videoUrl ? 'VIDEO' : undefined} onConfirm={(a, s, at) => void finish(a, s, at)} />
             <Button title="Just save to my ideas" variant="link" onPress={() => void finish()} />
           </>
         ) : (
@@ -494,6 +616,7 @@ const styles = StyleSheet.create({
   photoSmall: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: 12 },
   photoOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', gap: 8 },
   photoNote: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  playBadge: { position: 'absolute', top: '50%', left: '50%', width: 52, height: 52, marginLeft: -26, marginTop: -26, borderRadius: 26, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
   photoX: { position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   back: { color: colors.primaryBright, fontSize: 15, fontWeight: '600' },
   cap: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 },

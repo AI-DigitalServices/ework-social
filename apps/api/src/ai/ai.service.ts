@@ -93,6 +93,7 @@ Return ONLY the 3 captions, nothing else.`;
       business: IdeaBusiness;
       image?: { mediaType: string; data: string };
       hint?: string;
+      photoKind?: string;
     },
   ): Promise<{ options: string[] }> {
     await this.aiUsage.checkAndIncrement(workspaceId, 'IDEA_POST');
@@ -122,6 +123,16 @@ Return ONLY the 3 captions, nothing else.`;
       if (err instanceof BadRequestException) throw err;
       throw new BadRequestException('Writing your post failed. Please try again.');
     }
+  }
+
+  /** Videos posted from the app this month and the plan's allowance. */
+  videoUsage(workspaceId: string) {
+    return this.aiUsage.getVideoUsage(workspaceId);
+  }
+
+  /** Uses one video from the monthly allowance. Throws when the plan has none left. */
+  consumeVideo(workspaceId: string) {
+    return this.aiUsage.checkAndIncrement(workspaceId, 'VIDEO_UPLOAD');
   }
 
   /** AI writes used and left this month for "Give us an idea". */

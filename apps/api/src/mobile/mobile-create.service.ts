@@ -12,6 +12,11 @@ import { isOwnMediaUrl } from './media-url.util';
 const SHELF_CAP = 100;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+// Video from the app goes to these platforms; YouTube and TikTok only take video.
+const VIDEO_PLATFORMS = ['INSTAGRAM', 'FACEBOOK', 'YOUTUBE', 'TIKTOK'];
+const VIDEO_ONLY_PLATFORMS = ['YOUTUBE', 'TIKTOK'];
+const isVideoUrl = (u: string) => /\.(mp4|mov)$/i.test(u);
+const nameOf = (p: string) => (p === 'TWITTER' ? 'X' : p.charAt(0) + p.slice(1).toLowerCase());
 
 function normalizePlatform(p?: string | null): string | null {
   const v = String(p ?? '').trim().toUpperCase();
@@ -32,7 +37,7 @@ export class MobileCreateService {
     private planGuard: PlanGuardService,
   ) {}
 
-  async suggest(workspaceId: string, dto: { idea: string; platform?: string; imageUrl?: string; hint?: string }) {
+  async suggest(workspaceId: string, dto: { idea: string; platform?: string; imageUrl?: string; hint?: string; imageKind?: string }) {
     const idea = clean(dto.idea, 600);
     if (idea.length < 3) throw new BadRequestException('Tell us a little more about your idea.');
     await this.planGuard.assertCanWrite(workspaceId);
@@ -59,6 +64,7 @@ export class MobileCreateService {
       platform,
       image,
       hint: dto.hint,
+      photoKind: dto.imageKind,
       business: {
         name: workspace?.name ?? '',
         category: category?.label ?? null,
@@ -89,6 +95,12 @@ export class MobileCreateService {
     const open = await this.prisma.postIdea.count({ where: { workspaceId, usedPostId: null } });
     if (open >= SHELF_CAP) {
       throw new BadRequestException('Your ideas shelf is full. Use or delete a few first.');
+    }
+    const videos = mediaUrls.filter(isVideoUrl);
+    if (videos.length > 0) {
+      if (mediaUrls.length > 1) throw new BadRequestException('A video post has one video and nothing else.');
+      // Uses one video from the plan's monthly allowance (throws a plain message when none are left).
+      await this.ai.consumeVideo(workspaceId);
     }
     const row = await this.prisma.postIdea.create({
       data: {
@@ -165,6 +177,20 @@ export class MobileCreateService {
       select: { id: true, platform: true },
     });
     if (found.length !== ids.length) throw new BadRequestException('Choose your connected accounts.');
+
+    const media: string[] = (idea as any).mediaUrls ?? [];
+    const hasVideo = media.some(isVideoUrl);
+    const wrong = found.find((a: any) =>
+      hasVideo ? !VIDEO_PLATFORMS.includes(String(a.platform)) : VIDEO_ONLY_PLATFORMS.includes(String(a.platform)),
+    );
+    if (wrong) {
+      const name = nameOf(String((wrong as any).platform));
+      throw new BadRequestException(
+        hasVideo
+          ? `${name} cannot take a video from the app yet. Choose Instagram, Facebook, YouTube or TikTok.`
+          : `${name} needs a video. Start a post from a video to use it.`,
+      );
+    }
     const byId = new Map<string, { id: string; platform: any }>(found.map((a: any): [string, any] => [a.id, a]));
 
     const tooLong = found.find((a: any) => idea.content.length > charLimit(String(a.platform)));
@@ -217,6 +243,15 @@ export class MobileCreateService {
   /** AI writes used and left this month, for the (?) next to the AI actions. */
   async usage(workspaceId: string) {
     return (await this.usageOf(workspaceId)) ?? { used: 0, limit: 0, remaining: 0, trial: false, resets: null };
+  }
+
+  /** Videos posted from the app this month and the plan's allowance, for the video picker. */
+  async videoUsage(workspaceId: string) {
+    try {
+      return await this.ai.videoUsage(workspaceId);
+    } catch {
+      return { used: 0, limit: 0, remaining: 0, trial: false, resets: null };
+    }
   }
 
   // Never let a usage lookup break writing a post.

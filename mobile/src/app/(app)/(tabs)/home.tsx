@@ -1,5 +1,6 @@
 import { Linking } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
+import { Image } from 'expo-image';
 import { IdeaCard, NextStepCard } from '../../../home/parts';
 import { PLAN_URL, readOnlyInfo } from '../../../plan';
 import { useCallback, useEffect, useState } from 'react';
@@ -23,6 +24,8 @@ type HomePost = {
   scheduledAt: string | null;
   errorMessage: string | null;
   mediaCount: number;
+  thumbUrl?: string | null;
+  mediaKind?: 'PHOTO' | 'VIDEO' | null;
   platform: string | null;
   accountName: string | null;
 };
@@ -392,9 +395,27 @@ function PostRow({ post, failed }: { post: HomePost; failed?: boolean }) {
           {'  ·  '}
           {failed ? 'Failed' : when(post.scheduledAt)}
         </Text>
-        <Text style={styles.postText} numberOfLines={3}>
-          {post.content || '(no text)'}
-        </Text>
+        <View style={styles.postBodyRow}>
+          <Text style={[styles.postText, { flex: 1 }]} numberOfLines={3}>
+            {post.content || '(no text)'}
+          </Text>
+          {post.thumbUrl || post.mediaKind === 'VIDEO' ? (
+            <View style={styles.postThumb}>
+              {post.thumbUrl ? (
+                <Image source={{ uri: post.thumbUrl }} style={styles.postThumbImg} contentFit="cover" transition={150} />
+              ) : (
+                <View style={styles.postThumbVideo}>
+                  <Feather name="play" size={22} color={colors.text} />
+                </View>
+              )}
+              {post.thumbUrl && post.mediaCount > 1 ? (
+                <View style={styles.postThumbMore}>
+                  <Text style={styles.postThumbMoreText}>+{post.mediaCount - 1}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
         {failed && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
       </View>
     </Pressable>
@@ -474,6 +495,12 @@ const styles = StyleSheet.create({
   postStripe: { width: 4 },
   postMeta: { color: colors.muted, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   postText: { color: colors.text, fontSize: 15, lineHeight: 22 },
+  postBodyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  postThumb: { width: 64, height: 64, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.cardAlt },
+  postThumbImg: { width: '100%', height: '100%' },
+  postThumbVideo: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  postThumbMore: { position: 'absolute', right: 4, bottom: 4, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
+  postThumbMoreText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   err: { color: colors.danger, fontSize: 13, marginTop: 8, lineHeight: 18 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

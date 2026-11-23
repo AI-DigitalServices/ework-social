@@ -3,6 +3,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from './push.service';
 import { toMobileTarget } from './notification-target.util';
 
+// Only these ring the phone. Everything else stays in the in-app list.
+export const PUSH_TYPES = new Set(['post_failed', 'approval']);
+
 @Injectable()
 export class NotificationsService {
   // PushService is optional: a module that provides this service without it
@@ -48,7 +51,7 @@ export class NotificationsService {
       data: { userId, type, title, message, link },
     });
     // Best-effort mobile push: never awaited, never allowed to fail the notification.
-    if (this.push) {
+    if (this.push && PUSH_TYPES.has(type)) {
       Promise.resolve(
         this.push.sendToUser(userId, {
           title,

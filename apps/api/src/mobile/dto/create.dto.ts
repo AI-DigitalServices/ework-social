@@ -21,6 +21,11 @@ export class SuggestIdeaDto {
   @IsOptional()
   @IsIn(['SHORTER', 'LONGER', 'FUNNIER', 'MORE_FORMAL', 'MORE_FRIENDLY'])
   hint?: string;
+
+  // What imageUrl shows: a photo, or one frame taken from a video.
+  @IsOptional()
+  @IsIn(['PHOTO', 'VIDEO'])
+  imageKind?: string;
 }
 
 export class SaveIdeaDto {

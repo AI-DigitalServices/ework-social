@@ -17,6 +17,7 @@ export type PostItem = {
   updatedAt: string;
   mediaCount: number;
   thumbUrl?: string | null;
+  mediaKind?: 'PHOTO' | 'VIDEO' | null;
   platform: string | null;
   accountName: string | null;
 };
@@ -139,13 +140,19 @@ export function PostCard({ post, onPress }: { post: PostItem; onPress?: () => vo
                 </View>
               ) : null}
             </View>
+          ) : post.mediaKind === 'VIDEO' ? (
+            <View style={styles.thumbWrap}>
+              <View style={styles.thumbVideo}>
+                <Feather name="play" size={24} color={colors.text} />
+              </View>
+            </View>
           ) : null}
         </View>
         <View style={styles.timeRow}>
           <Feather name={(STATUS_ICONS[post.status] ?? 'edit-2') as never} size={13} color={meta.color} />
           <Text style={styles.time}>
             {time}
-            {post.mediaCount > 0 && !post.thumbUrl ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
+            {post.mediaCount > 0 && !post.thumbUrl && post.mediaKind !== 'VIDEO' ? `  ·  ${post.mediaCount} ${post.mediaCount === 1 ? 'photo' : 'photos'}` : ''}
           </Text>
         </View>
         {post.status === 'FAILED' && post.errorMessage ? <Text style={styles.err}>{post.errorMessage}</Text> : null}
@@ -202,6 +209,7 @@ const styles = StyleSheet.create({
   bodyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   thumbWrap: { width: 72, height: 72, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.cardAlt },
   thumb: { width: '100%', height: '100%' },
+  thumbVideo: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   thumbMore: { position: 'absolute', right: 4, bottom: 4, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
   thumbMoreText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   time: { color: colors.muted, fontSize: 12 },

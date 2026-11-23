@@ -479,6 +479,7 @@ enum AiUsageType {
   IMAGE_GEN
   ONBOARDING_AI
   IDEA_POST
+  VIDEO_UPLOAD
 }
 
 //  AI Operating System (Phase 1 - additive, shadow-mode) 
