@@ -135,6 +135,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
+      <style>{`
+        @media (max-width: 767px) {
+          .home-hero { padding: 20px 18px !important; }
+          .home-stats { grid-template-columns: 1fr 1fr !important; }
+          .home-main { grid-template-columns: 1fr !important; }
+          .home-card { padding: 18px !important; }
+        }
+        @media (max-width: 400px) { .home-actions { grid-template-columns: 1fr !important; } }
+      `}</style>
       {user && (
         <WelcomeModal open={showWelcome} name={user.name?.split(' ')[0] || 'there'} onClose={() => setShowWelcome(false)} />
       )}
@@ -170,7 +179,7 @@ export default function DashboardPage() {
       ))}
 
       {/* ── Hero welcome header ───────────────────────────────────── */}
-      <div style={{
+      <div className="home-hero" style={{
         background: 'linear-gradient(135deg,#1e2d42 0%,#1e293b 60%,#1e2e40 100%)',
         borderRadius: 20, padding: '28px 32px',
         border: '1px solid rgba(255,255,255,0.10)',
@@ -202,7 +211,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Stat cards ────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+      <div className="home-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {STAT_CARD.map(card => {
           const Icon = card.icon;
           return (
@@ -236,11 +245,11 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Quick actions + checklist ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: !checklistDismissed ? '2fr 1fr' : '1fr', gap: 16 }}>
+      <div className="home-main" style={{ display: 'grid', gridTemplateColumns: !checklistDismissed ? '2fr 1fr' : '1fr', gap: 16 }}>
         {/* Quick actions */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+        <div className="home-card" style={{ background: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
           <p style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#1e2d42' }}>Quick Actions</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="home-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {QUICK_ACTIONS.map(action => {
               const ActionIcon = action.icon;
               return (
