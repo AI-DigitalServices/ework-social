@@ -92,7 +92,12 @@ export default function CalendarView({ posts }: Props) {
               }`}>
                 {day}
               </div>
-              <div className="space-y-0.5">
+              <div className="flex gap-1 flex-wrap md:hidden">
+                {dayPosts.slice(0, 4).map(p => (
+                  <span key={p.id} className="w-2 h-2 rounded-full bg-blue-500" />
+                ))}
+              </div>
+              <div className="hidden md:block space-y-0.5">
                 {dayPosts.slice(0, 2).map(post => (
                   <div
                     key={post.id}

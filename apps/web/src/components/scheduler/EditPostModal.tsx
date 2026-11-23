@@ -194,7 +194,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
   return (
     <>
     <Dialog bare open onOpenChange={(o) => { if (!o) onClose(); }} title="Edit post">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '92vh' }}>
+      <div className="edit-shell bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden" style={{ height: '92vh' }}>
 
         {/* ── LEFT: Editor ───────────────────────────────────────────────────── */}
         <div className="flex flex-col flex-1 min-w-0 border-r border-slate-100">
@@ -385,7 +385,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 flex-shrink-0">
+          <div className="compose-footer flex items-center justify-between px-6 py-4 border-t border-slate-100 flex-shrink-0">
             <button onClick={onClose}
               className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
               <X className="w-4 h-4" /> Cancel
@@ -405,7 +405,7 @@ export default function EditPostModal({ post, accounts, mode, onClose, onSaved }
         </div>
 
         {/* ── RIGHT: Phone Preview ────────────────────────────────────────────── */}
-        <div className="w-80 flex-shrink-0 bg-slate-50 flex flex-col items-center pt-4 pb-4 px-3">
+        <div className="hidden md:flex w-80 flex-shrink-0 bg-slate-50 flex-col items-center pt-4 pb-4 px-3">
           <div className="flex items-center gap-2 mb-3 self-start flex-shrink-0">
             <Smartphone className="w-4 h-4 text-slate-400" />
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Preview</p>
