@@ -111,6 +111,13 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .an-grid4 { grid-template-columns: 1fr 1fr !important; }
+          .an-grid3 { gap: 8px !important; }
+          .an-grid2 { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* ── Hero header ───────────────────────────────────────────── */}
       <div style={{
@@ -133,7 +140,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Stat cards — row 1 (posts) ────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+      <div className="an-grid4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {STAT_CARDS.slice(0, 4).map(card => {
           const Icon = card.icon;
           return (
@@ -152,7 +159,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Stat cards — row 2 (CRM) ──────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+      <div className="an-grid3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
         {STAT_CARDS.slice(4).map(card => {
           const Icon = card.icon;
           return (
@@ -200,7 +207,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Pipeline + Platform breakdown ─────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="an-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* CRM Pipeline pie */}
         <div style={{ background: 'linear-gradient(135deg,#1e2d42 0%,#243756 100%)', borderRadius: 20, padding: '28px 24px 20px', border: '1px solid rgba(255,255,255,0.10)' }}>

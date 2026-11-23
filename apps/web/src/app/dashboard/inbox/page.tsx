@@ -959,6 +959,20 @@ export default function InboxPage() {
   return (
     <>
       <style>{STYLES}</style>
+      <style>{`
+        .inbox-back { display: none; }
+        @media (max-width: 767px) {
+          .inbox-root { height: auto !important; overflow: visible !important; padding-bottom: 24px; }
+          .inbox-head { flex-wrap: wrap; gap: 12px; }
+          .inbox-stats { grid-template-columns: 1fr 1fr !important; }
+          .inbox-split { flex-direction: column !important; min-height: 0 !important; }
+          .inbox-list { width: 100% !important; max-height: 70dvh; }
+          .inbox-thread { width: 100% !important; height: calc(100dvh - 150px); min-height: 460px; }
+          .inbox-split[data-open="1"] .inbox-list { display: none !important; }
+          .inbox-split[data-open="0"] .inbox-thread { display: none !important; }
+          .inbox-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 6px 12px; border-radius: 10px; border: 1px solid #E2E8F0; background: #fff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; }
+        }
+      `}</style>
 
       {/* Toast */}
       {toast && (
@@ -1106,10 +1120,10 @@ export default function InboxPage() {
         </div>
       )}
 
-      <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="inbox-root" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
+        <div className="inbox-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <div style={{
@@ -1162,7 +1176,7 @@ export default function InboxPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16, flexShrink: 0 }}>
+        <div className="inbox-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16, flexShrink: 0 }}>
           {STATS.map(s => <StatCard key={s.label} {...s} />)}
         </div>
 
@@ -1268,10 +1282,10 @@ export default function InboxPage() {
         </div>
 
         {/* Main split pane */}
-        <div style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0 }}>
+        <div className="inbox-split" data-open={selected ? '1' : '0'} style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0 }}>
 
           {/* List panel */}
-          <div style={{
+          <div className="inbox-list" style={{
             width: 345, flexShrink: 0, background: '#fff', borderRadius: 18,
             border: '1px solid #EEF2FF', overflow: 'hidden',
             boxShadow: '0 4px 24px rgba(99,102,241,0.07)',
@@ -1313,7 +1327,7 @@ export default function InboxPage() {
           </div>
 
           {/* Thread panel */}
-          <div style={{
+          <div className="inbox-thread" style={{
             flex: 1, background: '#fff', borderRadius: 18,
             border: '1px solid #EEF2FF', overflow: 'hidden',
             boxShadow: '0 4px 24px rgba(99,102,241,0.07)',
@@ -1328,6 +1342,7 @@ export default function InboxPage() {
                   padding: '16px 20px', borderBottom: '1px solid #F1F5F9', flexShrink: 0,
                   background: 'linear-gradient(135deg, #FAFBFF, #F5F3FF)',
                 }}>
+                  <button type="button" className="inbox-back" onClick={() => setSelected(null)}>← Back to inbox</button>
                   {/* Sender row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
