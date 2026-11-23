@@ -139,3 +139,21 @@ body {
     font-size: 16px !important;
   }
 }
+
+/* Phones: scheduler windows fit the visible screen, and their buttons clear the home bar. */
+@media (max-width: 767px) {
+  .compose-footer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+@supports (height: 100dvh) {
+  @media (max-width: 767px) {
+    .compose-shell {
+      height: 100dvh !important;
+      border-radius: 0 !important;
+    }
+    .edit-shell {
+      height: 92dvh !important;
+    }
+  }
+}
