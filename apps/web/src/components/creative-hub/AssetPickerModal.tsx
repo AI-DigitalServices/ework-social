@@ -104,7 +104,7 @@ export default function AssetPickerModal({
           ) : assets.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-16">No assets found. Upload some in Creative Hub first.</p>
           ) : (
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {assets.map((asset) => {
                 const isSelected = selected.has(asset.url);
                 return (

@@ -298,7 +298,7 @@ export default function AgentPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Sparkles className="w-6 h-6 text-blue-600" />
             <h1 className={`text-3xl font-bold text-slate-900 ${libreBaskerville.className}`}>AI Agent</h1>
             <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Beta — Shadow Mode</span>

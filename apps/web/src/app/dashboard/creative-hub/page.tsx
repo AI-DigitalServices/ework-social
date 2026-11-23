@@ -168,7 +168,7 @@ export default function CreativeHubPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
         <div>
           <div className="flex items-center gap-2">
             <ImageIcon className="w-6 h-6 text-blue-600" />
@@ -178,7 +178,7 @@ export default function CreativeHubPage() {
             Every marketing asset in one searchable library — uploads and AI-generated output alike, auto-tagged on the way in.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             ref={fileInputRef}
             type="file"
@@ -280,7 +280,7 @@ export default function CreativeHubPage() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2 flex-wrap mb-6">
         {['', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT'].map((k) => (
           <button
             key={k || 'all'}
