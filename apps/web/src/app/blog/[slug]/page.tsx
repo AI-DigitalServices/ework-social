@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props) {
   const post = getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — eWork Social Blog`,
+    title: post.seoTitle ? `${post.seoTitle} | eWork Social` : `${post.title} — eWork Social Blog`,
     description: post.excerpt,
     alternates: { canonical: `https://www.eworksocial.com/blog/${post.slug}` },
     openGraph: {

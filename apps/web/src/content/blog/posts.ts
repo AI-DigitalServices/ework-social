@@ -9,6 +9,7 @@ export interface BlogPost {
   coverImage: string;
   content: string;
   updatedAt?: string;
+  seoTitle?: string;
   related?: string[];
   faq?: { q: string; a: string }[];
 }
@@ -1104,6 +1105,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "whats-new-in-ework-social-november-2026-product-update",
     title: "What's New in eWork Social: November 2026 Product Update",
+    seoTitle: "What's New in eWork Social: November 2026",
     excerpt: "Agency Pro workspaces can now put their own logo on client approval pages and emails, and the dashboard is tuned for phones. Here is everything new, who gets it and where to find each setup guide.",
     category: "Product Updates",
     author: "Bernard Oshapi",
@@ -1154,6 +1156,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "founders-log-003-the-month-the-dashboard-fit-in-your-pocket",
     title: "Founder's Log #003: The Month the Dashboard Fit in Your Pocket",
+    seoTitle: "Founder's Log #003: Dashboard in Your Pocket",
     excerpt: "Building eWork Social in public: why I reviewed every dashboard page on a phone-sized screen, what I found hidden behind the browser bar, and why the brand logo is an Agency Pro feature.",
     category: "Product Updates",
     author: "Bernard Oshapi",
@@ -1198,6 +1201,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "how-to-white-label-client-approvals-social-media-agency",
     title: "How to White-Label Client Approvals for Your Social Media Agency (Add Your Logo)",
+    seoTitle: "How to White-Label Client Approvals",
     excerpt: "On Agency Pro you can show your logo and agency name on the client approval page and in the approval email. Here is how to set it up in under two minutes.",
     category: "New Features",
     author: "Bernard Oshapi",
@@ -1254,6 +1258,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "send-website-contact-form-leads-to-crm-automatically",
     title: "How to Send Website Contact Form Leads to Your CRM Automatically",
+    seoTitle: "Send Website Form Leads to Your CRM",
     excerpt: "Point your website form at a private eWork Social address and every submission becomes a CRM lead. Setup steps for WordPress, Elementor, Make, n8n and plain HTML forms.",
     category: "New Features",
     author: "Bernard Oshapi",
@@ -1313,6 +1318,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "which-social-media-management-plan-starter-vs-growth-vs-agency-pro",
     title: "Which Social Media Management Plan Do You Need? Starter vs Growth vs Agency Pro",
+    seoTitle: "Starter vs Growth vs Agency Pro: Which Plan?",
     excerpt: "A plain-language comparison of the eWork Social plans: who each one is for, what changes at each step and how to decide without overpaying.",
     category: "Plans & Upgrades",
     author: "Bernard Oshapi",
@@ -1360,6 +1366,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "when-to-upgrade-social-media-management-tool-5-signs",
     title: "When to Upgrade Your Social Media Management Tool: 5 Signs You've Outgrown Your Plan",
+    seoTitle: "5 Signs to Upgrade Your Social Media Tool",
     excerpt: "Hitting limits, juggling WhatsApp approvals or copying leads by hand are all signals. Here are five clear signs it is time to upgrade, and which eWork Social plan solves each one.",
     category: "Plans & Upgrades",
     author: "Bernard Oshapi",
@@ -1403,6 +1410,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "manage-social-media-from-your-phone-ework-social-mobile-dashboard",
     title: "Can You Manage Social Media From Your Phone? Using the eWork Social Dashboard on Mobile",
+    seoTitle: "Manage Social Media From Your Phone",
     excerpt: "The post creator, calendar, Engagement Hub, analytics and more now fit a phone screen. Here is exactly what changed and how to get the best from it.",
     category: "Improvements",
     author: "Bernard Oshapi",
@@ -1447,6 +1455,7 @@ const allPosts: BlogPost[] = [
   {
     slug: "get-clients-to-approve-social-media-posts-faster",
     title: "How to Get Clients to Approve Social Media Posts Faster (With Video Previews)",
+    seoTitle: "Get Clients to Approve Posts Faster",
     excerpt: "Clients now see video posts in a proper player and review pages fit narrow phone screens. Here is how to send approvals that get answered quickly.",
     category: "Improvements",
     author: "Bernard Oshapi",
@@ -1493,6 +1502,8 @@ const allPosts: BlogPost[] = [
 
 // A post whose publishedAt is in the future stays hidden and appears on its date.
 export function getPublishedPosts(now: Date = new Date()): BlogPost[] {
+  // Staging/preview only: show scheduled posts early. Never set this in production.
+  if (process.env.BLOG_SHOW_SCHEDULED === 'true') return allPosts;
   const today = now.toISOString().slice(0, 10);
   return allPosts.filter(p => p.publishedAt <= today);
 }
