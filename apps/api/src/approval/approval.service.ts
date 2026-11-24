@@ -88,7 +88,11 @@ export class ApprovalService {
 
     // Send email to client
     const approvalUrl = `${this.config.get('FRONTEND_URL')}/approve/${approval.token}`;
-    await this.sendApprovalEmail(email, name, post, approvalUrl);
+    const brand =
+      (await this.canWhiteLabel(workspaceId)) && post.workspace?.logo
+        ? { name: String(post.workspace.name), logo: String(post.workspace.logo) }
+        : null;
+    await this.sendApprovalEmail(email, name, post, approvalUrl, brand);
 
     this.posthog.capture(workspaceId, 'approval_sent', { platform: post.socialAccount?.platform, clientName: name });
 
@@ -110,13 +114,7 @@ export class ApprovalService {
     if (!approval) throw new NotFoundException('Approval link not found or expired');
 
     // The agency logo is only shown to clients when the plan includes it.
-    let showLogo = false;
-    try {
-      const eff = await this.planGuard.getEffectivePlan(approval.workspaceId);
-      showLogo = getPlanLimits(eff.plan).whiteLabelEnabled === true;
-    } catch {
-      showLogo = false;
-    }
+    const showLogo = await this.canWhiteLabel(approval.workspaceId);
 
     return {
       id: approval.id,
@@ -240,11 +238,22 @@ export class ApprovalService {
     });
   }
 
+  // True when the workspace's plan includes white-label (Agency Pro, and the trial).
+  private async canWhiteLabel(workspaceId: string): Promise<boolean> {
+    try {
+      const eff = await this.planGuard.getEffectivePlan(workspaceId);
+      return getPlanLimits(eff.plan).whiteLabelEnabled === true;
+    } catch {
+      return false;
+    }
+  }
+
   private async sendApprovalEmail(
     clientEmail: string,
     clientName: string,
     post: any,
     approvalUrl: string,
+    brand: { name: string; logo: string } | null = null,
   ) {
     const platformName = post.socialAccount?.platform || 'Social Media';
     const scheduledDate = post.scheduledAt
@@ -253,22 +262,31 @@ export class ApprovalService {
         })
       : 'To be scheduled';
 
+    const headerHtml = brand
+      ? `<img src="${escapeHtml(brand.logo)}" alt="${escapeHtml(brand.name)}" style="max-height: 56px; max-width: 220px; background: #ffffff; padding: 8px 14px; border-radius: 10px; display: inline-block;" />
+            <div style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 10px;">${escapeHtml(brand.name)}</div>`
+      : `<div style="font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -0.5px;">
+              eWork<span style="color: #378ADD;">/</span>Social
+            </div>`;
+    const introWho = brand ? escapeHtml(brand.name) : 'Your agency';
+    const subject = brand
+      ? `${brand.name.replace(/[\r\n]+/g, ' ')}: content ready for your review — ${platformName}`
+      : `Content ready for your review — ${platformName}`;
+
     await this.email.sendEmail({
       to: clientEmail,
-      subject: `Content ready for your review — ${platformName}`,
+      subject,
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #080C14; color: #C8D8E8; border-radius: 16px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #185FA5, #0D3A6B); padding: 32px 40px; text-align: center;">
-            <div style="font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -0.5px;">
-              eWork<span style="color: #378ADD;">/</span>Social
-            </div>
+            ${headerHtml}
             <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0; font-size: 14px;">Content Approval Request</p>
           </div>
 
           <div style="padding: 36px 40px;">
             <h2 style="color: #fff; font-size: 20px; margin: 0 0 8px;">Hi ${escapeHtml(clientName)},</h2>
             <p style="color: #7A8FA6; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-              Your agency has prepared a post for <strong style="color: #C8D8E8;">${escapeHtml(platformName)}</strong> 
+              ${introWho} has prepared a post for <strong style="color: #C8D8E8;">${escapeHtml(platformName)}</strong> 
               scheduled for <strong style="color: #C8D8E8;">${scheduledDate}</strong>. 
               Please review and approve before it goes live.
             </p>
