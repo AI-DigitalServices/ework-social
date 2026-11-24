@@ -1,7 +1,9 @@
 import { MetadataRoute } from 'next';
-import { posts } from '@/content/blog/posts';
+import { getPublishedPosts } from '@/content/blog/posts';
 
 const BASE = 'https://www.eworksocial.com';
+
+export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // Static public pages
@@ -57,9 +59,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Dynamic blog post pages — auto-includes every post in posts.ts
-  const blogPages: MetadataRoute.Sitemap = posts.map((post) => ({
+  const blogPages: MetadataRoute.Sitemap = getPublishedPosts().map((post) => ({
     url: `${BASE}/blog/${post.slug}`,
-    lastModified: new Date(post.publishedAt),
+    lastModified: new Date(post.updatedAt ?? post.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: post.slug.startsWith('founders-log') ? 0.8 : 0.7,
   }));

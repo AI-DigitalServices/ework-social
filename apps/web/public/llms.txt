@@ -1,0 +1,17 @@
+# eWork Social
+
+> eWork Social is an all-in-one social media management platform for agencies, freelancers and brands. Schedule posts across Instagram, Facebook, TikTok, LinkedIn, X, YouTube and more; manage clients and a CRM; send posts to clients for approval; reply to messages and comments in one inbox; and use AI to write captions and plan content.
+
+Built for digital agencies and social media managers, including in Africa, and designed for use worldwide. A 7-day free trial is available.
+
+## Key pages
+
+- [Plans and pricing](https://www.eworksocial.com/pricing)
+- [Which plan to choose](https://www.eworksocial.com/blog/which-ework-social-plan-starter-growth-agency-pro)
+- [Product updates](https://www.eworksocial.com/blog/ework-social-product-update-november-2026)
+- [Client approval workflow](https://www.eworksocial.com/blog/client-approval-workflow-social-media-agencies)
+- [White-label client approvals (Agency Pro)](https://www.eworksocial.com/blog/white-label-client-approvals-your-logo-agency-pro)
+- [Website lead capture into the CRM (Growth and above)](https://www.eworksocial.com/blog/website-lead-capture-contact-forms-to-crm)
+- [Managing multiple clients](https://www.eworksocial.com/blog/manage-multiple-social-media-clients-one-dashboard)
+- [Scheduling across every platform](https://www.eworksocial.com/blog/complete-guide-scheduling-social-media-posts-every-platform)
+- [Blog index](https://www.eworksocial.com/blog)

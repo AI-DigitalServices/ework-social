@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { posts, getPost } from '@/content/blog/posts';
+import { getPublishedPosts, getPost } from '@/content/blog/posts';
 
 export const dynamic = 'force-static';
-export const revalidate = false;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  return posts.map(p => ({ slug: p.slug }));
+  return getPublishedPosts().map(p => ({ slug: p.slug }));
 }
 
 type Props = { params: Promise<{ slug: string }> };
@@ -18,12 +18,22 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: `${post.title} — eWork Social Blog`,
     description: post.excerpt,
+    alternates: { canonical: `https://www.eworksocial.com/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: 'article',
+      url: `https://www.eworksocial.com/blog/${post.slug}`,
       publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author],
+      images: [{ url: post.coverImage }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: [post.coverImage],
     },
   };
 }
@@ -33,8 +43,46 @@ export default async function BlogPostPage({ params }: Props) {
   const post = getPost(slug);
   if (!post) notFound();
 
+  const url = `https://www.eworksocial.com/blog/${post!.slug}`;
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post!.title,
+      description: post!.excerpt,
+      image: post!.coverImage,
+      datePublished: post!.publishedAt,
+      dateModified: post!.updatedAt ?? post!.publishedAt,
+      author: { '@type': 'Person', name: post!.author },
+      publisher: { '@type': 'Organization', name: 'eWork Social', logo: { '@type': 'ImageObject', url: 'https://www.eworksocial.com/icon.png' } },
+      mainEntityOfPage: url,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.eworksocial.com' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.eworksocial.com/blog' },
+        { '@type': 'ListItem', position: 3, name: post!.title, item: url },
+      ],
+    },
+  ];
+  if (post!.faq && post!.faq.length > 0) {
+    jsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: post!.faq.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+    });
+  }
+  const related = (post!.related ?? []).map(s => getPost(s)).filter((p): p is NonNullable<typeof p> => !!p);
+
   return (
     <div style={{ minHeight: '100vh', background: '#080C14', fontFamily: "'Inter', sans-serif" }}>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
 
       {/* Nav */}
       <nav className="blog-nav" style={{ borderBottom: '1px solid #1A2840', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, position: 'sticky', top: 0, background: '#080C14', zIndex: 10 }}>
@@ -101,6 +149,32 @@ export default async function BlogPostPage({ params }: Props) {
           className="blog-content"
           dangerouslySetInnerHTML={{ __html: post!.content }}
         />
+
+        {post!.faq && post!.faq.length > 0 && (
+          <section className="blog-content" style={{ marginTop: 56 }}>
+            <h2>Frequently asked questions</h2>
+            {post!.faq.map(f => (
+              <div key={f.q}>
+                <h3>{f.q}</h3>
+                <p>{f.a}</p>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {related.length > 0 && (
+          <section style={{ marginTop: 56 }}>
+            <h2 style={{ color: '#F0F6FF', fontSize: 22, fontFamily: 'Georgia, serif', margin: '0 0 16px' }}>Keep reading</h2>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {related.map(r => (
+                <Link key={r.slug} href={`/blog/${r.slug}`} style={{ display: 'block', padding: '16px 18px', background: '#0C1524', border: '1px solid #1A2840', borderRadius: 12, textDecoration: 'none' }}>
+                  <span style={{ color: '#60A5FA', fontSize: 12, fontWeight: 600 }}>{r.category}</span>
+                  <p style={{ color: '#F0F6FF', fontSize: 16, fontWeight: 600, margin: '4px 0 0' }}>{r.title}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Bottom CTA */}
         <div style={{ marginTop: 64, padding: '40px', background: '#0C1524', border: '1px solid #1A2840', borderRadius: 20, textAlign: 'center' }}>

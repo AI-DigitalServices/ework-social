@@ -1,13 +1,17 @@
 import Link from 'next/link';
-import { posts } from '@/content/blog/posts';
+import { getPublishedPosts } from '@/content/blog/posts';
 import BlogList from './BlogList';
 
+export const revalidate = 3600;
+
 export const metadata = {
+  alternates: { canonical: 'https://www.eworksocial.com/blog' },
   title: 'Blog — eWork Social',
   description: 'Tips, guides and insights for freelance social media managers and digital marketing agencies in Africa.',
 };
 
 export default function BlogPage() {
+  const posts = [...getPublishedPosts()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: "'Inter', sans-serif" }}>
       <style>{`@media (max-width: 520px) { .blog-nav { padding: 0 16px !important; } .blog-nav-home { display: none !important; } }`}</style>
