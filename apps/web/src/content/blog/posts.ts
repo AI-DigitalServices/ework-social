@@ -1102,15 +1102,15 @@ const allPosts: BlogPost[] = [
 `,
   },
   {
-    slug: "ework-social-product-update-november-2026",
-    title: "eWork Social Product Update, November 2026: Your Logo on Client Approvals, a Phone-Friendly Dashboard and More",
+    slug: "whats-new-in-ework-social-november-2026-product-update",
+    title: "What's New in eWork Social: November 2026 Product Update",
     excerpt: "Agency Pro workspaces can now put their own logo on client approval pages and emails, and the dashboard is tuned for phones. Here is everything new, who gets it and where to find each setup guide.",
     category: "Product Updates",
     author: "Bernard Oshapi",
     publishedAt: "2026-11-25",
     readTime: 5,
     coverImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80",
-    related: ["white-label-client-approvals-your-logo-agency-pro", "use-ework-social-dashboard-on-your-phone", "faster-client-approvals-video-previews-phone-friendly-review-pages", "website-lead-capture-contact-forms-to-crm"],
+    related: ["how-to-white-label-client-approvals-social-media-agency", "manage-social-media-from-your-phone-ework-social-mobile-dashboard", "get-clients-to-approve-social-media-posts-faster", "send-website-contact-form-leads-to-crm-automatically"],
     faq: [
       { q: "What is new in eWork Social in November 2026?", a: "Agency Pro workspaces can show their own logo and agency name on client approval pages and approval emails. The web dashboard is easier to use on phones, client review pages show video posts with a proper player, and website lead capture sends contact-form leads into your CRM on Growth and above." },
       { q: "Do I need to install or change anything to get the update?", a: "No. eWork Social runs in your browser, so the changes are already live. Refresh the page or log in again if you do not see them." },
@@ -1122,10 +1122,10 @@ const allPosts: BlogPost[] = [
 
 <h2>What is new at a glance</h2>
 <ul>
-  <li><strong>Your logo on client approvals (Agency Pro).</strong> Clients see your logo and agency name on the approval page and in the approval email. <a href="/blog/white-label-client-approvals-your-logo-agency-pro">Read the setup guide</a>.</li>
-  <li><strong>A phone-friendly dashboard.</strong> The post creator, calendar, Engagement Hub, analytics and more now fit a phone screen. <a href="/blog/use-ework-social-dashboard-on-your-phone">See what changed</a>.</li>
-  <li><strong>Better client review pages.</strong> Video posts show a video player, and the review page fits narrow screens. <a href="/blog/faster-client-approvals-video-previews-phone-friendly-review-pages">Read the details</a>.</li>
-  <li><strong>Website lead capture (Growth and above).</strong> Contact-form submissions from your site become CRM leads automatically. <a href="/blog/website-lead-capture-contact-forms-to-crm">Follow the setup guide</a>.</li>
+  <li><strong>Your logo on client approvals (Agency Pro).</strong> Clients see your logo and agency name on the approval page and in the approval email. <a href="/blog/how-to-white-label-client-approvals-social-media-agency">Read the setup guide</a>.</li>
+  <li><strong>A phone-friendly dashboard.</strong> The post creator, calendar, Engagement Hub, analytics and more now fit a phone screen. <a href="/blog/manage-social-media-from-your-phone-ework-social-mobile-dashboard">See what changed</a>.</li>
+  <li><strong>Better client review pages.</strong> Video posts show a video player, and the review page fits narrow screens. <a href="/blog/get-clients-to-approve-social-media-posts-faster">Read the details</a>.</li>
+  <li><strong>Website lead capture (Growth and above).</strong> Contact-form submissions from your site become CRM leads automatically. <a href="/blog/send-website-contact-form-leads-to-crm-automatically">Follow the setup guide</a>.</li>
 </ul>
 
 <h2>Who gets what</h2>
@@ -1135,7 +1135,7 @@ const allPosts: BlogPost[] = [
   <li><strong>Growth:</strong> everything above plus the client approval portal and website lead capture.</li>
   <li><strong>Agency Pro:</strong> all of it, plus your own logo and name on client approvals.</li>
 </ul>
-<p>Not sure which plan fits? Our <a href="/blog/which-ework-social-plan-starter-growth-agency-pro">plan comparison guide</a> walks through each one, and the <a href="/pricing">pricing page</a> always shows current limits.</p>
+<p>Not sure which plan fits? Our <a href="/blog/which-social-media-management-plan-starter-vs-growth-vs-agency-pro">plan comparison guide</a> walks through each one, and the <a href="/pricing">pricing page</a> always shows current limits.</p>
 
 <h2>How to see the changes in your account</h2>
 <ol>
@@ -1160,7 +1160,7 @@ const allPosts: BlogPost[] = [
     publishedAt: "2026-12-01",
     readTime: 6,
     coverImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80",
-    related: ["ework-social-product-update-november-2026", "use-ework-social-dashboard-on-your-phone", "white-label-client-approvals-your-logo-agency-pro", "founders-log-002-the-week-the-hub-woke-up"],
+    related: ["whats-new-in-ework-social-november-2026-product-update", "manage-social-media-from-your-phone-ework-social-mobile-dashboard", "how-to-white-label-client-approvals-social-media-agency", "founders-log-002-the-week-the-hub-woke-up"],
     faq: [
       { q: "What is the Founder's Log?", a: "It is an honest, first-person series about building eWork Social: what shipped, what broke and what I would do differently." },
       { q: "Why did you review the dashboard on a phone-sized screen?", a: "Many of our users and almost all of their clients open links on their phones. If a button is hidden on a 375-pixel-wide screen, it is effectively missing for those people." },
@@ -1183,7 +1183,7 @@ const allPosts: BlogPost[] = [
 <p>A hidden button costs more trust than a missing feature. A missing feature is a gap you can explain. A button that is there but unreachable feels like the product is broken. If you build anything for clients, test it on a phone first, because that is where your clients will see it.</p>
 
 <h2>Why the brand logo is an Agency Pro feature</h2>
-<p>The other decision this month was your logo on client approvals. I thought about who it is for: agencies that sell social media management as their own service, and want clients to see their brand, not ours. That is white-label branding, and it is a clear reason to be on Agency Pro. Free and Starter workspaces keep the standard look. You can read the full setup in <a href="/blog/white-label-client-approvals-your-logo-agency-pro">the white-label approvals guide</a>.</p>
+<p>The other decision this month was your logo on client approvals. I thought about who it is for: agencies that sell social media management as their own service, and want clients to see their brand, not ours. That is white-label branding, and it is a clear reason to be on Agency Pro. Free and Starter workspaces keep the standard look. You can read the full setup in <a href="/blog/how-to-white-label-client-approvals-social-media-agency">the white-label approvals guide</a>.</p>
 
 <h2>Try it yourself in two minutes</h2>
 <ol>
@@ -1192,19 +1192,19 @@ const allPosts: BlogPost[] = [
   <li>Write down anything you had to pinch, zoom or scroll sideways to reach. That list is your fix list.</li>
 </ol>
 
-<p>The full release summary is in the <a href="/blog/ework-social-product-update-november-2026">November 2026 product update</a>, and the details of what changed are in <a href="/blog/use-ework-social-dashboard-on-your-phone">the phone-friendly dashboard guide</a>. If you missed the previous entry, <a href="/blog/founders-log-002-the-week-the-hub-woke-up">Founder's Log #002</a> covers the week the Engagement Hub came to life.</p>
+<p>The full release summary is in the <a href="/blog/whats-new-in-ework-social-november-2026-product-update">November 2026 product update</a>, and the details of what changed are in <a href="/blog/manage-social-media-from-your-phone-ework-social-mobile-dashboard">the phone-friendly dashboard guide</a>. If you missed the previous entry, <a href="/blog/founders-log-002-the-week-the-hub-woke-up">Founder's Log #002</a> covers the week the Engagement Hub came to life.</p>
 `,
   },
   {
-    slug: "white-label-client-approvals-your-logo-agency-pro",
-    title: "Put Your Own Logo on Client Approvals: White-Label Approval Pages and Emails in eWork Social",
+    slug: "how-to-white-label-client-approvals-social-media-agency",
+    title: "How to White-Label Client Approvals for Your Social Media Agency (Add Your Logo)",
     excerpt: "On Agency Pro you can show your logo and agency name on the client approval page and in the approval email. Here is how to set it up in under two minutes.",
     category: "New Features",
     author: "Bernard Oshapi",
     publishedAt: "2026-11-27",
     readTime: 5,
     coverImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
-    related: ["client-approval-workflow-social-media-agencies", "faster-client-approvals-video-previews-phone-friendly-review-pages", "which-ework-social-plan-starter-growth-agency-pro", "ework-social-product-update-november-2026"],
+    related: ["client-approval-workflow-social-media-agencies", "get-clients-to-approve-social-media-posts-faster", "which-social-media-management-plan-starter-vs-growth-vs-agency-pro", "whats-new-in-ework-social-november-2026-product-update"],
     faq: [
       { q: "Which plan includes the brand logo on client approvals?", a: "Agency Pro. You can also try it during the 7-day free trial. Other plans keep the standard eWork Social look on approval pages and emails." },
       { q: "What file types can I upload as a logo?", a: "PNG, JPG or WebP, up to 2 MB. A square or wide logo works best, and the logo is shown on a white background so dark logos stay readable." },
@@ -1225,7 +1225,7 @@ const allPosts: BlogPost[] = [
   <li>Choose a PNG, JPG or WebP file up to 2 MB. A square or wide logo works best.</li>
   <li>Wait for the "Brand logo saved" message. To change it later, click <strong>Replace logo</strong>. To go back to the default, click <strong>Remove</strong>.</li>
 </ol>
-<p>If the Brand Logo card shows an Agency Pro badge and the button is greyed out, your workspace is on a lower plan. Compare the options in <a href="/blog/which-ework-social-plan-starter-growth-agency-pro">our plan guide</a>.</p>
+<p>If the Brand Logo card shows an Agency Pro badge and the button is greyed out, your workspace is on a lower plan. Compare the options in <a href="/blog/which-social-media-management-plan-starter-vs-growth-vs-agency-pro">our plan guide</a>.</p>
 
 <h2>What your clients will see</h2>
 <ul>
@@ -1248,19 +1248,19 @@ const allPosts: BlogPost[] = [
   <li>Each workspace has its own logo. If you keep one workspace per client, you can show your agency's logo in every one, or the client's own brand, whichever fits your service.</li>
 </ul>
 
-<p>Want to see how clients experience the page itself? Read <a href="/blog/faster-client-approvals-video-previews-phone-friendly-review-pages">Faster client approvals: video previews and phone-friendly review pages</a>, or see everything else that changed in the <a href="/blog/ework-social-product-update-november-2026">November 2026 product update</a>. <a href="/register">Start a free trial</a> to try it with your own logo.</p>
+<p>Want to see how clients experience the page itself? Read <a href="/blog/get-clients-to-approve-social-media-posts-faster">Faster client approvals: video previews and phone-friendly review pages</a>, or see everything else that changed in the <a href="/blog/whats-new-in-ework-social-november-2026-product-update">November 2026 product update</a>. <a href="/register">Start a free trial</a> to try it with your own logo.</p>
 `,
   },
   {
-    slug: "website-lead-capture-contact-forms-to-crm",
-    title: "Send Website Contact-Form Leads Straight Into Your CRM With eWork Social Lead Capture",
+    slug: "send-website-contact-form-leads-to-crm-automatically",
+    title: "How to Send Website Contact Form Leads to Your CRM Automatically",
     excerpt: "Point your website form at a private eWork Social address and every submission becomes a CRM lead. Setup steps for WordPress, Elementor, Make, n8n and plain HTML forms.",
     category: "New Features",
     author: "Bernard Oshapi",
     publishedAt: "2026-12-03",
     readTime: 6,
     coverImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
-    related: ["automate-agency-webhooks-zapier-byok-ework-social", "which-ework-social-plan-starter-growth-agency-pro", "ai-powered-social-media-engagement-dms-comments", "ework-social-product-update-november-2026"],
+    related: ["automate-agency-webhooks-zapier-byok-ework-social", "which-social-media-management-plan-starter-vs-growth-vs-agency-pro", "ai-powered-social-media-engagement-dms-comments", "whats-new-in-ework-social-november-2026-product-update"],
     faq: [
       { q: "Which plan includes website lead capture?", a: "Growth and above. On lower plans the panel in Settings shows an upgrade note instead." },
       { q: "Will the same person be added twice?", a: "No. If the same email address submits again, eWork Social does not create a duplicate. The new message is added as a note on the existing contact." },
@@ -1307,19 +1307,19 @@ const allPosts: BlogPost[] = [
 <h2>Turn leads into conversations</h2>
 <p>Once a lead is in the CRM, you can follow up where they already are. Pair lead capture with the Engagement Hub, described in <a href="/blog/ai-powered-social-media-engagement-dms-comments">our guide to managing DMs and comments</a>, to keep every conversation in one place.</p>
 
-<p>Not sure the Growth plan is the right fit? Read <a href="/blog/which-ework-social-plan-starter-growth-agency-pro">how to choose between Starter, Growth and Agency Pro</a>, or <a href="/register">start your free trial</a> to set up your first form. You can also see how this fits into the rest of the release in the <a href="/blog/ework-social-product-update-november-2026">November 2026 product update</a>.</p>
+<p>Not sure the Growth plan is the right fit? Read <a href="/blog/which-social-media-management-plan-starter-vs-growth-vs-agency-pro">how to choose between Starter, Growth and Agency Pro</a>, or <a href="/register">start your free trial</a> to set up your first form. You can also see how this fits into the rest of the release in the <a href="/blog/whats-new-in-ework-social-november-2026-product-update">November 2026 product update</a>.</p>
 `,
   },
   {
-    slug: "which-ework-social-plan-starter-growth-agency-pro",
-    title: "Starter, Growth or Agency Pro? How to Choose the Right eWork Social Plan",
+    slug: "which-social-media-management-plan-starter-vs-growth-vs-agency-pro",
+    title: "Which Social Media Management Plan Do You Need? Starter vs Growth vs Agency Pro",
     excerpt: "A plain-language comparison of the eWork Social plans: who each one is for, what changes at each step and how to decide without overpaying.",
     category: "Plans & Upgrades",
     author: "Bernard Oshapi",
     publishedAt: "2026-12-08",
     readTime: 6,
     coverImage: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80",
-    related: ["when-to-upgrade-social-media-tool-5-signs-you-have-outgrown-your-plan", "white-label-client-approvals-your-logo-agency-pro", "website-lead-capture-contact-forms-to-crm", "manage-multiple-social-media-clients-one-dashboard"],
+    related: ["when-to-upgrade-social-media-management-tool-5-signs", "how-to-white-label-client-approvals-social-media-agency", "send-website-contact-form-leads-to-crm-automatically", "manage-multiple-social-media-clients-one-dashboard"],
     faq: [
       { q: "Is there a free trial?", a: "Yes. The free trial lasts 7 days and does not need a card. It includes 5 social accounts, 50 posts a month, 1 workspace and a basic CRM, with a watermark on posts." },
       { q: "Which plan is best for a solo social media manager?", a: "Starter suits one person with a handful of clients. Move to Growth when you need the client approval portal, more accounts or team members." },
@@ -1341,10 +1341,10 @@ const allPosts: BlogPost[] = [
 <p>If you manage a few brands yourself and mainly need to schedule posts without a watermark, Starter covers it. You get a CRM and pipeline to keep client details together, and 30 days of analytics to show results. If you are still learning how to organise clients, our guide to <a href="/blog/manage-multiple-social-media-clients-one-dashboard">managing multiple clients from one dashboard</a> is a good start.</p>
 
 <h2>Growth: for the growing agency</h2>
-<p>Growth is where agency workflows begin. The client approval portal replaces WhatsApp screenshots, you can invite up to 5 team members, and bulk scheduling saves hours each week. Website lead capture, covered in <a href="/blog/website-lead-capture-contact-forms-to-crm">this setup guide</a>, is also included from this plan up.</p>
+<p>Growth is where agency workflows begin. The client approval portal replaces WhatsApp screenshots, you can invite up to 5 team members, and bulk scheduling saves hours each week. Website lead capture, covered in <a href="/blog/send-website-contact-form-leads-to-crm-automatically">this setup guide</a>, is also included from this plan up.</p>
 
 <h2>Agency Pro: for agencies that sell the service as their own</h2>
-<p>Agency Pro adds the pieces that make the platform feel like yours: your logo and name on client approvals (see <a href="/blog/white-label-client-approvals-your-logo-agency-pro">the white-label guide</a>), full API access, unlimited posts and unlimited AI. It also raises the ceiling to 100 social accounts and 15 team members.</p>
+<p>Agency Pro adds the pieces that make the platform feel like yours: your logo and name on client approvals (see <a href="/blog/how-to-white-label-client-approvals-social-media-agency">the white-label guide</a>), full API access, unlimited posts and unlimited AI. It also raises the ceiling to 100 social accounts and 15 team members.</p>
 
 <h2>A simple way to decide</h2>
 <ol>
@@ -1354,19 +1354,19 @@ const allPosts: BlogPost[] = [
   <li>Still unsure? Start the free trial and test the features that matter to you before paying.</li>
 </ol>
 
-<p>Already on a plan and wondering whether it is time to move up? Read <a href="/blog/when-to-upgrade-social-media-tool-5-signs-you-have-outgrown-your-plan">five signs you have outgrown your plan</a>. Ready to try? <a href="/register">Start your free trial</a>.</p>
+<p>Already on a plan and wondering whether it is time to move up? Read <a href="/blog/when-to-upgrade-social-media-management-tool-5-signs">five signs you have outgrown your plan</a>. Ready to try? <a href="/register">Start your free trial</a>.</p>
 `,
   },
   {
-    slug: "when-to-upgrade-social-media-tool-5-signs-you-have-outgrown-your-plan",
-    title: "5 Signs You Have Outgrown Your Social Media Plan (and What to Upgrade To)",
+    slug: "when-to-upgrade-social-media-management-tool-5-signs",
+    title: "When to Upgrade Your Social Media Management Tool: 5 Signs You've Outgrown Your Plan",
     excerpt: "Hitting limits, juggling WhatsApp approvals or copying leads by hand are all signals. Here are five clear signs it is time to upgrade, and which eWork Social plan solves each one.",
     category: "Plans & Upgrades",
     author: "Bernard Oshapi",
     publishedAt: "2026-12-10",
     readTime: 5,
     coverImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
-    related: ["which-ework-social-plan-starter-growth-agency-pro", "white-label-client-approvals-your-logo-agency-pro", "client-approval-workflow-social-media-agencies", "website-lead-capture-contact-forms-to-crm"],
+    related: ["which-social-media-management-plan-starter-vs-growth-vs-agency-pro", "how-to-white-label-client-approvals-social-media-agency", "client-approval-workflow-social-media-agencies", "send-website-contact-form-leads-to-crm-automatically"],
     faq: [
       { q: "How do I upgrade my eWork Social plan?", a: "Open Settings and choose the Plan tab. Pick the plan you want and follow the steps there. Your existing workspaces, clients and posts stay as they are." },
       { q: "Will I lose my data if I upgrade?", a: "No. Upgrading unlocks more limits and features. Your content stays in place." },
@@ -1385,10 +1385,10 @@ const allPosts: BlogPost[] = [
 <p>If approvals live in screenshots and voice notes, you are losing time on every post. The client approval portal comes with Growth and above, and it gives clients a link they open without logging in. Read about the <a href="/blog/client-approval-workflow-social-media-agencies">approval workflow agencies use</a> to fix it.</p>
 
 <h2>4. You want clients to see your brand, not ours</h2>
-<p>When your clients receive approval pages and emails, they should feel like part of your service. Agency Pro lets you add your own logo and agency name, as shown in <a href="/blog/white-label-client-approvals-your-logo-agency-pro">the white-label guide</a>.</p>
+<p>When your clients receive approval pages and emails, they should feel like part of your service. Agency Pro lets you add your own logo and agency name, as shown in <a href="/blog/how-to-white-label-client-approvals-social-media-agency">the white-label guide</a>.</p>
 
 <h2>5. You copy leads or data between tools by hand</h2>
-<p>If contact-form enquiries are landing in your inbox and you retype them into a CRM, website lead capture on Growth and above will do it for you. Agency Pro adds full API access for deeper automation. Our <a href="/blog/website-lead-capture-contact-forms-to-crm">lead capture guide</a> shows the setup.</p>
+<p>If contact-form enquiries are landing in your inbox and you retype them into a CRM, website lead capture on Growth and above will do it for you. Agency Pro adds full API access for deeper automation. Our <a href="/blog/send-website-contact-form-leads-to-crm-automatically">lead capture guide</a> shows the setup.</p>
 
 <h2>How to upgrade</h2>
 <ol>
@@ -1397,19 +1397,19 @@ const allPosts: BlogPost[] = [
   <li>Complete the checkout. Your clients, workspaces and posts stay exactly as they are.</li>
 </ol>
 
-<p>For a side-by-side view, read <a href="/blog/which-ework-social-plan-starter-growth-agency-pro">Starter, Growth or Agency Pro: how to choose</a> or open the <a href="/pricing">pricing page</a>. New here? <a href="/register">Start a free trial</a> first.</p>
+<p>For a side-by-side view, read <a href="/blog/which-social-media-management-plan-starter-vs-growth-vs-agency-pro">Starter, Growth or Agency Pro: how to choose</a> or open the <a href="/pricing">pricing page</a>. New here? <a href="/register">Start a free trial</a> first.</p>
 `,
   },
   {
-    slug: "use-ework-social-dashboard-on-your-phone",
-    title: "Use eWork Social on Your Phone: The Dashboard Is Now Built for Small Screens",
+    slug: "manage-social-media-from-your-phone-ework-social-mobile-dashboard",
+    title: "Can You Manage Social Media From Your Phone? Using the eWork Social Dashboard on Mobile",
     excerpt: "The post creator, calendar, Engagement Hub, analytics and more now fit a phone screen. Here is exactly what changed and how to get the best from it.",
     category: "Improvements",
     author: "Bernard Oshapi",
     publishedAt: "2026-12-15",
     readTime: 5,
     coverImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80",
-    related: ["founders-log-003-the-month-the-dashboard-fit-in-your-pocket", "ework-social-product-update-november-2026", "complete-guide-scheduling-social-media-posts-every-platform", "ai-powered-social-media-engagement-dms-comments"],
+    related: ["founders-log-003-the-month-the-dashboard-fit-in-your-pocket", "whats-new-in-ework-social-november-2026-product-update", "complete-guide-scheduling-social-media-posts-every-platform", "ai-powered-social-media-engagement-dms-comments"],
     faq: [
       { q: "Can I schedule posts from my phone browser?", a: "Yes. Log in at eworksocial.com on your phone, open the dashboard and create or edit posts as you would on a computer. The post window now fits your screen with its buttons in reach." },
       { q: "Did the desktop layout change?", a: "No. Every phone adjustment applies to small screens only. Tablets and computers look the same as before." },
@@ -1441,19 +1441,19 @@ const allPosts: BlogPost[] = [
 <h2>What stays the same</h2>
 <p>Tablets and computers look exactly as before. Everything above applies only to small screens, so nothing you rely on at your desk moves. For the complete scheduling workflow, see <a href="/blog/complete-guide-scheduling-social-media-posts-every-platform">the guide to scheduling across every platform</a>, and for inbox tips read <a href="/blog/ai-powered-social-media-engagement-dms-comments">how to manage DMs and comments</a>.</p>
 
-<p>Curious about the story behind the changes? Read <a href="/blog/founders-log-003-the-month-the-dashboard-fit-in-your-pocket">Founder's Log #003</a>, or see the whole release in the <a href="/blog/ework-social-product-update-november-2026">November 2026 product update</a>. <a href="/register">Start your free trial</a> and try it on your own phone.</p>
+<p>Curious about the story behind the changes? Read <a href="/blog/founders-log-003-the-month-the-dashboard-fit-in-your-pocket">Founder's Log #003</a>, or see the whole release in the <a href="/blog/whats-new-in-ework-social-november-2026-product-update">November 2026 product update</a>. <a href="/register">Start your free trial</a> and try it on your own phone.</p>
 `,
   },
   {
-    slug: "faster-client-approvals-video-previews-phone-friendly-review-pages",
-    title: "Faster Client Approvals: Video Previews and Phone-Friendly Review Pages",
+    slug: "get-clients-to-approve-social-media-posts-faster",
+    title: "How to Get Clients to Approve Social Media Posts Faster (With Video Previews)",
     excerpt: "Clients now see video posts in a proper player and review pages fit narrow phone screens. Here is how to send approvals that get answered quickly.",
     category: "Improvements",
     author: "Bernard Oshapi",
     publishedAt: "2026-12-17",
     readTime: 5,
     coverImage: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=1200&q=80",
-    related: ["client-approval-workflow-social-media-agencies", "white-label-client-approvals-your-logo-agency-pro", "use-ework-social-dashboard-on-your-phone", "ework-social-product-update-november-2026"],
+    related: ["client-approval-workflow-social-media-agencies", "how-to-white-label-client-approvals-social-media-agency", "manage-social-media-from-your-phone-ework-social-mobile-dashboard", "whats-new-in-ework-social-november-2026-product-update"],
     faq: [
       { q: "Do clients need an account to approve a post?", a: "No. Clients open a secure link from the email and approve or request changes without logging in." },
       { q: "Can clients watch video posts on the review page?", a: "Yes. Video posts now play in a video player on the review page. Before this improvement, a video could appear as a broken picture." },
@@ -1466,7 +1466,7 @@ const allPosts: BlogPost[] = [
 <ul>
   <li><strong>Video previews:</strong> a video post shows a player with controls. Previously it could show as a broken picture, which made clients unsure what they were approving.</li>
   <li><strong>Narrow screens:</strong> the platform bar at the top of the post wraps on small phones instead of running off the edge.</li>
-  <li><strong>Your branding (Agency Pro):</strong> your logo and name can appear on the page and in the email. See <a href="/blog/white-label-client-approvals-your-logo-agency-pro">the white-label guide</a>.</li>
+  <li><strong>Your branding (Agency Pro):</strong> your logo and name can appear on the page and in the email. See <a href="/blog/how-to-white-label-client-approvals-social-media-agency">the white-label guide</a>.</li>
 </ul>
 
 <h2>Send an approval in four steps</h2>
@@ -1486,7 +1486,7 @@ const allPosts: BlogPost[] = [
   <li>Handle revisions through the same link, not a new chat thread, so there is one record of what was approved.</li>
 </ul>
 
-<p>For the full process, from brief to publish, read <a href="/blog/client-approval-workflow-social-media-agencies">the client approval workflow every agency needs</a>. To see how the dashboard itself adapts to phones, read <a href="/blog/use-ework-social-dashboard-on-your-phone">the phone-friendly dashboard guide</a>, and for everything else in this release, see the <a href="/blog/ework-social-product-update-november-2026">November 2026 product update</a>. <a href="/register">Start your free trial</a> to send your first approval.</p>
+<p>For the full process, from brief to publish, read <a href="/blog/client-approval-workflow-social-media-agencies">the client approval workflow every agency needs</a>. To see how the dashboard itself adapts to phones, read <a href="/blog/manage-social-media-from-your-phone-ework-social-mobile-dashboard">the phone-friendly dashboard guide</a>, and for everything else in this release, see the <a href="/blog/whats-new-in-ework-social-november-2026-product-update">November 2026 product update</a>. <a href="/register">Start your free trial</a> to send your first approval.</p>
 `,
   },
 ];
