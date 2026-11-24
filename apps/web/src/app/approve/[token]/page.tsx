@@ -104,9 +104,18 @@ export default function ApprovalPage() {
 
       {/* Header */}
       <div style={{ background: 'rgba(24,95,165,0.15)', borderBottom: '1px solid rgba(55,138,221,0.2)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
-        <div style={{ color: '#378ADD', fontWeight: 900, fontSize: 18, letterSpacing: '-0.03em', fontFamily: 'monospace' }}>
-          eWork<span style={{ color: '#fff' }}>/</span>Social
-        </div>
+        {data?.workspace?.logo ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <div style={{ background: '#fff', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <img src={data.workspace.logo} alt={data.workspace.name} style={{ height: 30, maxWidth: 120, objectFit: 'contain' }} />
+            </div>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.workspace.name}</span>
+          </div>
+        ) : (
+          <div style={{ color: '#378ADD', fontWeight: 900, fontSize: 18, letterSpacing: '-0.03em', fontFamily: 'monospace' }}>
+            eWork<span style={{ color: '#fff' }}>/</span>Social
+          </div>
+        )}
         <span style={{ color: '#7A8FA6', fontSize: 13 }}>Content Approval Portal</span>
       </div>
 

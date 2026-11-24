@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
-import { Save, Users, Crown, Plus, X, Trash2, Shield, Eye, Edit, AlertTriangle } from 'lucide-react';
+import { Save, Users, Crown, Plus, X, Trash2, Shield, Eye, Edit, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import api from '@/lib/api';
+import { uploadMedia } from '@/lib/supabase';
+import { useTrialStatus } from '@/hooks/useTrialStatus';
 
 const ROLES = [
   { value: 'ADMIN', label: 'Admin', icon: Shield, desc: 'Can manage everything except billing' },
@@ -24,6 +26,22 @@ export default function WorkspaceTab() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const trialStatus = useTrialStatus();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logo, setLogo] = useState<string | null>((workspace as any)?.logo ?? null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const canUseLogo = ['AGENCY_PRO', 'ENTERPRISE'].includes(workspace?.plan || '') || !!trialStatus?.trialActive;
+  const isOwner = workspace?.isOwner !== false;
+
+  useEffect(() => {
+    if (!workspace?.id) return;
+    api.get('/workspace/my')
+      .then((res) => {
+        const mine = (res.data || []).find((x: any) => x.id === workspace.id);
+        if (mine) setLogo(mine.logo ?? null);
+      })
+      .catch(() => {});
+  }, [workspace?.id]);
 
   const handleDelete = async () => {
     if (deleteConfirmText !== workspace?.name) return;
@@ -105,6 +123,42 @@ export default function WorkspaceTab() {
     } finally { setRemoving(null); }
   };
 
+  const logoError = (err: any, fallback: string) => {
+    const m = err?.response?.data?.message || err?.message;
+    return Array.isArray(m) ? m.join(', ') : m || fallback;
+  };
+
+  const handleLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { showToast('error', 'Use a PNG, JPG or WebP image'); return; }
+    if (file.size > 2 * 1024 * 1024) { showToast('error', 'Logo must be under 2 MB'); return; }
+    setLogoBusy(true);
+    try {
+      const url = await uploadMedia(file, workspace!.id);
+      const res = await api.patch(`/workspace/${workspace!.id}/logo`, { logo: url });
+      const saved = res.data?.logo ?? url;
+      setLogo(saved);
+      setWorkspace({ ...(workspace as any), logo: saved });
+      showToast('success', 'Brand logo saved');
+    } catch (err: any) {
+      showToast('error', logoError(err, 'Could not save the logo'));
+    } finally { setLogoBusy(false); }
+  };
+
+  const handleLogoRemove = async () => {
+    setLogoBusy(true);
+    try {
+      await api.patch(`/workspace/${workspace!.id}/logo`, { logo: null });
+      setLogo(null);
+      setWorkspace({ ...(workspace as any), logo: null });
+      showToast('success', 'Brand logo removed');
+    } catch (err: any) {
+      showToast('error', logoError(err, 'Could not remove the logo'));
+    } finally { setLogoBusy(false); }
+  };
+
   const getRoleConfig = (role: string) => ROLES.find(r => r.value === role) || ROLES[1];
 
   return (
@@ -143,6 +197,42 @@ export default function WorkspaceTab() {
             {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
+      </div>
+
+      {/* Brand logo */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h3 className="font-bold text-slate-800">Brand Logo</h3>
+          {!canUseLogo && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Agency Pro</span>
+          )}
+        </div>
+        <p className="text-slate-500 text-sm mb-4">Shown to your clients on the post approval page, in place of the eWork Social name.</p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="w-20 h-20 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+            {logo ? <img src={logo} alt="Brand logo" className="w-full h-full object-contain" /> : <ImageIcon className="w-6 h-6 text-slate-300" />}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleLogoFile} />
+            <button onClick={() => logoInputRef.current?.click()} disabled={!canUseLogo || !isOwner || logoBusy}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+              {logoBusy ? 'Working...' : logo ? 'Replace logo' : 'Upload logo'}
+            </button>
+            {logo && (
+              <button onClick={handleLogoRemove} disabled={!isOwner || logoBusy}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition disabled:opacity-40">
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-slate-400 mt-3">
+          {!canUseLogo
+            ? 'Available on the Agency Pro plan.'
+            : !isOwner
+              ? 'Only the workspace owner can change the logo.'
+              : 'PNG, JPG or WebP, up to 2 MB. A square or wide logo works best.'}
+        </p>
       </div>
 
       {/* Danger Zone */}

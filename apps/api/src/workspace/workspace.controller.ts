@@ -27,6 +27,13 @@ export class WorkspaceController {
     return this.workspaceService.renameWorkspace(workspaceId, body.name.trim(), req.user.sub);
   }
 
+  @Patch(':workspaceId/logo')
+  @UseGuards(JwtGuard)
+  setLogo(@Param('workspaceId') workspaceId: string, @Body() body: { logo?: string | null }, @Req() req: any) {
+    const logo = body?.logo ? String(body.logo) : null;
+    return this.workspaceService.setLogo(workspaceId, logo, req.user.sub);
+  }
+
   @Delete(':workspaceId')
   @UseGuards(JwtGuard)
   deleteWorkspace(@Param('workspaceId') workspaceId: string, @Req() req: any) {

@@ -54,6 +54,7 @@ export class WorkspaceService {
       id: w.id,
       name: w.name,
       slug: w.slug,
+      logo: w.logo ?? null,
       plan: w.subscription?.plan || 'FREE',
       isOwner: true,
       role: 'OWNER' as const,
@@ -65,6 +66,7 @@ export class WorkspaceService {
         id: m.workspace.id,
         name: m.workspace.name,
         slug: m.workspace.slug,
+        logo: m.workspace.logo ?? null,
         plan: m.workspace.subscription?.plan || 'FREE',
         isOwner: false,
         role: m.role as 'ADMIN' | 'EDITOR' | 'VIEWER',
@@ -254,6 +256,30 @@ export class WorkspaceService {
       where: { id: workspaceId },
       data: { name: newName.trim() },
     });
+  }
+
+  // Brand logo shown to clients on the approval page. Agency Pro (and the trial) only; removing is always allowed.
+  async setLogo(workspaceId: string, logo: string | null, requesterId: string) {
+    const workspace = await this.prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!workspace) throw new BadRequestException('Workspace not found');
+    if (workspace.ownerId !== requesterId) {
+      throw new ForbiddenException('Only the workspace owner can change the brand logo');
+    }
+    if (logo === null) {
+      return this.prisma.workspace.update({ where: { id: workspaceId }, data: { logo: null } });
+    }
+    await this.planGuard.checkFeatureAccess(workspaceId, 'whiteLabel');
+    let url: URL;
+    try {
+      url = new URL(logo);
+    } catch {
+      throw new BadRequestException('Invalid logo URL');
+    }
+    const base = process.env.SUPABASE_URL;
+    if (url.protocol !== 'https:' || (base && !logo.startsWith(`${base}/storage/v1/object/public/`))) {
+      throw new BadRequestException('Logo must be an image uploaded through eWork Social');
+    }
+    return this.prisma.workspace.update({ where: { id: workspaceId }, data: { logo } });
   }
 
   async deleteWorkspace(workspaceId: string, requesterId: string) {

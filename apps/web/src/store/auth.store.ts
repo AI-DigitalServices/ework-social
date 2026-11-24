@@ -12,6 +12,7 @@ export interface Workspace {
   id: string;
   name: string;
   slug: string;
+  logo?: string | null;
   plan?: string;
   isOwner?: boolean;
   role?: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER';

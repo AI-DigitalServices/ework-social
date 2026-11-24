@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { PlanGuardService } from '../common/plan-guard.service';
+import { getPlanLimits } from '../common/plan-limits';
 import { writeChecksEnabled } from '../common/roles';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../analytics/posthog.service';
@@ -108,6 +109,15 @@ export class ApprovalService {
 
     if (!approval) throw new NotFoundException('Approval link not found or expired');
 
+    // The agency logo is only shown to clients when the plan includes it.
+    let showLogo = false;
+    try {
+      const eff = await this.planGuard.getEffectivePlan(approval.workspaceId);
+      showLogo = getPlanLimits(eff.plan).whiteLabelEnabled === true;
+    } catch {
+      showLogo = false;
+    }
+
     return {
       id: approval.id,
       token: approval.token,
@@ -116,7 +126,7 @@ export class ApprovalService {
       revisionNote: approval.revisionNote,
       workspace: {
         name: approval.workspace.name,
-        logo: approval.workspace.logo,
+        logo: showLogo ? approval.workspace.logo : null,
       },
       post: {
         id: approval.post.id,
