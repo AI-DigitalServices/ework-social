@@ -108,10 +108,7 @@ export default function More() {
         </FadeIn>
 
         <FadeIn delay={160}>
-          <SectionTitle>Coming soon</SectionTitle>
-          <Card>
-            <Soon icon="inbox" label="Inbox" text="Reply to messages and comments." last />
-          </Card>
+          <Text style={styles.webNote}>Inbox, CRM and analytics are on the web dashboard.</Text>
         </FadeIn>
 
         <FadeIn delay={200}>
@@ -163,23 +160,6 @@ function MoreRow({
   );
 }
 
-function Soon({ icon, label, text, last }: { icon?: string; label: string; text: string; last?: boolean }) {
-  return (
-    <View style={[styles.soon, !last && styles.wsBorder]}>
-      {icon ? (
-        <View style={[styles.iconTile, { backgroundColor: colors.accentSoft }]}>
-          <Feather name={icon as never} size={18} color={colors.accent} />
-        </View>
-      ) : null}
-      <View style={{ flex: 1 }}>
-        <Text style={styles.wsName}>{label}</Text>
-        <Text style={styles.sub}>{text}</Text>
-      </View>
-      <Pill label="Soon" color={colors.accent} soft={colors.accentSoft} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   glow: {
@@ -212,7 +192,7 @@ const styles = StyleSheet.create({
   ws: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
   wsBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   wsName: { color: colors.text, fontSize: 15, flexShrink: 1 },
-  soon: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  webNote: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: space.lg },
   moreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   iconTile: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
 });
