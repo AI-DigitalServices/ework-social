@@ -119,9 +119,9 @@ export default function LoginPage() {
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 auto 16px' }}>
                   {user?.name?.charAt(0).toUpperCase()}
                 </div>
-                <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 22, fontWeight: 700, color: '#F0F6FF', marginBottom: 6 }}>
+                <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 22, fontWeight: 700, color: '#F0F6FF', marginBottom: 6 }}>
                   Welcome back 👋
-                </h2>
+                </h1>
                 <p style={{ color: '#4A6080', fontSize: 14 }}>{user?.name} · {user?.email}</p>
               </div>
 
@@ -143,9 +143,9 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 24, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>
+              <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 24, fontWeight: 700, color: '#F0F6FF', marginBottom: 8, letterSpacing: '-0.5px' }}>
                 Sign in
-              </h2>
+              </h1>
               <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 28 }}>
                 Access your eWork Social dashboard
               </p>

@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
         <div style={{ background: '#070B12', border: '1px solid #1A2840', borderRadius: 20, padding: '40px 36px' }}>
           {!sent ? (
             <>
-              <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 24, fontWeight: 700, color: '#F0F6FF', marginBottom: 8 }}>Forgot password?</h2>
+              <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 24, fontWeight: 700, color: '#F0F6FF', marginBottom: 8 }}>Forgot password?</h1>
               <p style={{ color: '#4A6080', fontSize: 14, marginBottom: 32 }}>Enter your email and we will send you a reset link.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-              <h2 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 22, fontWeight: 700, color: '#F0F6FF', marginBottom: 12 }}>Check your inbox!</h2>
+              <h1 style={{ fontFamily: 'Libre Baskerville, serif', fontSize: 22, fontWeight: 700, color: '#F0F6FF', marginBottom: 12 }}>Check your inbox!</h1>
               <p style={{ color: '#6B8299', fontSize: 15, lineHeight: 1.7, marginBottom: 24 }}>
                 We sent a password reset link to <strong style={{ color: '#E8F0FA' }}>{email}</strong>. It expires in 1 hour.
               </p>
