@@ -74,7 +74,21 @@ export default async function BlogPostPage({ params }: Props) {
       mainEntity: post!.faq.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     });
   }
-  const related = (post!.related ?? []).map(s => getPost(s)).filter((p): p is NonNullable<typeof p> => !!p);
+  const published = getPublishedPosts();
+  const publishedSlugs = new Set(published.map(p => p.slug));
+  // Links to posts that are not live yet are shown as plain text until their publish date.
+  const bodyHtml = post!.content.replace(
+    /<a\s+[^>]*href="(?:https?:\/\/[a-z.]*eworksocial\.com)?\/blog\/([a-z0-9-]+)"[^>]*>([\s\S]*?)<\/a>/gi,
+    (whole: string, slug: string, text: string) => (publishedSlugs.has(slug) ? whole : text),
+  );
+  let related = (post!.related ?? []).map(s => getPost(s)).filter((p): p is NonNullable<typeof p> => !!p);
+  if (related.length < 3) {
+    const have = new Set(related.map(r => r.slug));
+    const others = published
+      .filter(p => p.slug !== post!.slug && !have.has(p.slug))
+      .sort((a, b) => (a.category === post!.category ? -1 : 0) - (b.category === post!.category ? -1 : 0) || b.publishedAt.localeCompare(a.publishedAt));
+    related = [...related, ...others].slice(0, Math.max(3, related.length));
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#080C14', fontFamily: "'Inter', sans-serif" }}>
@@ -147,7 +161,7 @@ export default async function BlogPostPage({ params }: Props) {
         `}</style>
         <div
           className="blog-content"
-          dangerouslySetInnerHTML={{ __html: post!.content }}
+          dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
 
         {post!.faq && post!.faq.length > 0 && (
